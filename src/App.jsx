@@ -1,120 +1,172 @@
-// src/App.jsx
-import './App.css';
-import './components/NowPlaying.css';
-import NowPlaying from './components/NowPlaying';
+import { useRef, useState } from "react";
+import "./App.css";
+
+const LIVE_STREAM_URL = "https://YOUR-AZURACAST-STREAM-URL-HERE";
 
 function App() {
-  return (
-    <div className="tv-page">
-      {/* HERO SECTION – dark background with hero artwork + AzuraCast player */}
-      <header className="tv-hero">
-        <div className="tv-hero-inner">
-          <div className="tv-hero-player">
-            <iframe
-              title="TrueVoice Digital Player"
-              src="http://143.244.188.4/public/truevoice_digital/embed?theme=dark"
-              scrolling="no"
-              frameBorder="0"
-              allow="autoplay"
-            />
-          </div>
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-          {/* HERO ARTWORK CARD – this is the big magenta rectangle */}
-          <div className="tv-hero-art" />
+  const handlePlayToggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      if (!audio.src) {
+        audio.src = LIVE_STREAM_URL;
+      }
+      audio
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.error("Error playing stream:", err);
+          alert("Unable to start the stream. Check the stream URL or server.");
+        });
+    }
+  };
+
+  return (
+    <div className="tv-app">
+      {/* hidden audio element for live stream */}
+      <audio ref={audioRef} hidden />
+
+      {/* Top band */}
+      <header className="tv-header">
+        <div className="tv-header-inner">
+          <div className="tv-brand">TrueVoice.Digital</div>
         </div>
       </header>
 
-      {/* MAIN LIGHT PANEL */}
       <main className="tv-main">
-        {/* Top row: Now Playing + Verse card */}
-        <section className="tv-row tv-row-top">
-          <NowPlaying />
+        {/* HERO ROW */}
+        <section className="tv-hero">
+          {/* Now Playing card */}
+          <div className="tv-now-playing">
+            <div className="tv-artwork-placeholder" />
+            <div className="tv-now-content">
+              <span className="tv-eyebrow">NOW PLAYING</span>
+              <h1 className="tv-song-title">Song Title</h1>
+              <p className="tv-artist-name">Artist Name</p>
 
-          <article className="verse-card">
-            <p className="verse-label">Verse for Today</p>
-            <p className="verse-text">
-              “I came that they may have life and have it abundantly.”
-            </p>
-            <p className="verse-ref">
-              John <strong>10:10</strong>
-            </p>
-          </article>
-        </section>
-
-        {/* Featured Podcasts */}
-        <section className="tv-row">
-          <h2 className="section-title">Featured Podcasts</h2>
-          <div className="cards-3">
-            <article className="pod-card">
-              <div className="pod-thumb" />
-              <h3 className="pod-title">Podcast Episode</h3>
-              <p className="pod-subtitle">Brief dictat doloexiqs</p>
-            </article>
-
-            <article className="pod-card">
-              <div className="pod-thumb" />
-              <h3 className="pod-title">Podcast Episode</h3>
-              <p className="pod-subtitle">Brief dictat doloexiqs</p>
-            </article>
-
-            <article className="pod-card">
-              <div className="pod-thumb" />
-              <h3 className="pod-title">Latest Videos</h3>
-              <p className="pod-subtitle">Lorem ipsum door</p>
-            </article>
-          </div>
-        </section>
-
-        {/* Prayer + Encouragement */}
-        <section className="tv-row tv-row-connect">
-          <article className="connect-card connect-card-prayer">
-            <h3 className="connect-title">Prayer Request</h3>
-            <p className="connect-text">
-              Lorem ipsum dolor sit amet — let the TrueVoice community stand
-              with you in prayer.
-            </p>
-            <button className="np-btn np-btn-primary">Share a Request</button>
-          </article>
-
-          <article className="connect-card">
-            <h3 className="connect-title">Share an encouragement</h3>
-            <p className="connect-text">
-              Tell a short testimony or word of encouragement for listeners.
-            </p>
-            <button className="np-btn np-btn-ghost">Share a story</button>
-          </article>
-        </section>
-
-        {/* Support / Merch */}
-        <section className="tv-row tv-row-support">
-          <div className="support-copy">
-            <h3 className="section-title">Support the Mission</h3>
-            <p className="support-text">
-              Keep TrueVoice streaming strong with one-time gifts, monthly
-              support, or grabbing some merch to share the message.
-            </p>
-          </div>
-
-          <div className="support-merch">
-            <div className="merch-grid">
-              <div className="merch-card">
-                <div className="merch-thumb" />
-                <p className="merch-label">Sticker</p>
-              </div>
-              <div className="merch-card">
-                <div className="merch-thumb" />
-                <p className="merch-label">T-Shirt</p>
-              </div>
-              <div className="merch-card">
-                <div className="merch-thumb" />
-                <p className="merch-label">Mug</p>
+              <div className="tv-player-controls">
+                <button
+                  className="tv-btn tv-btn-primary"
+                  onClick={handlePlayToggle}
+                >
+                  {isPlaying ? "Pause Live" : "Play Live"}
+                </button>
+                <button className="tv-btn tv-btn-secondary">
+                  Recent Tracks
+                </button>
+                <button className="tv-icon-btn" title="Share stream">
+                  ↗
+                </button>
               </div>
             </div>
-            <button className="shop-btn">Shop More</button>
+          </div>
+
+          {/* Verse card */}
+          <aside className="tv-verse-card">
+            <h2 className="tv-verse-label">VERSE FOR TODAY</h2>
+            <p className="tv-verse-text">
+              “I came that they may have life and have it abundantly.”
+            </p>
+            <p className="tv-verse-ref">John 10:10</p>
+          </aside>
+        </section>
+
+        {/* FEATURED PODCASTS */}
+        <section className="tv-section">
+          <h2 className="tv-section-title">Featured Podcasts</h2>
+          <div className="tv-card-grid">
+            <PodcastCard
+              title="Podcast Episode"
+              description="Brief description about this episode."
+            />
+            <PodcastCard
+              title="Podcast Episode"
+              description="Brief description about this episode."
+            />
+            <PodcastCard
+              title="Latest Videos"
+              description="Highlights, teachings, and stories."
+            />
+          </div>
+        </section>
+
+        {/* TRUEVOICE CONNECT */}
+        <section className="tv-section">
+          <h2 className="tv-section-title">TrueVoice Connect</h2>
+          <div className="tv-card-grid">
+            <ConnectCard label="Watch Live" />
+            <ConnectCard label="Listen Again" />
+            <ConnectCard label="Stories & Testimonies" />
+          </div>
+        </section>
+
+        {/* SUPPORT / MERCH */}
+        <section className="tv-section tv-support-grid">
+          <div>
+            <h2 className="tv-section-title">Support the Mission</h2>
+            <div className="tv-support-actions">
+              <button className="tv-support-btn tv-support-btn-primary">
+                Prayer Request
+                <span className="tv-support-subtext">
+                  Share what we can pray for.
+                </span>
+              </button>
+              <button className="tv-support-btn tv-support-btn-outline">
+                Share an encouragement
+                <span className="tv-support-subtext">
+                  Share a testimony or story.
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="tv-section-title">Shop & Give</h2>
+            <p className="tv-support-copy">
+              Keep TrueVoice streaming strong through your support.
+            </p>
+            <div className="tv-merch-grid">
+              <div className="tv-merch-item">Merch</div>
+              <div className="tv-merch-item">Merch</div>
+              <div className="tv-merch-item">Merch</div>
+            </div>
+            <button className="tv-btn tv-btn-primary tv-shop-btn">
+              Shop More
+            </button>
           </div>
         </section>
       </main>
+
+      <footer className="tv-footer">
+        <p>© {new Date().getFullYear()} TrueVoice.Digital · All rights reserved.</p>
+      </footer>
     </div>
+  );
+}
+
+function PodcastCard({ title, description }) {
+  return (
+    <article className="tv-card">
+      <div className="tv-card-thumb" />
+      <h3 className="tv-card-title">{title}</h3>
+      <p className="tv-card-text">{description}</p>
+    </article>
+  );
+}
+
+function ConnectCard({ label }) {
+  return (
+    <article className="tv-card tv-connect-card">
+      <div className="tv-play-icon">▶</div>
+      <h3 className="tv-card-title">{label}</h3>
+    </article>
   );
 }
 
