@@ -1,0 +1,38 @@
+/* Hero Background Container */
+.hero-section {
+  width: 100%;
+  height: 450px;        /* ADJUST THIS to fit the soundwave band */
+  background-image: url("/images/truevoice-hero.jpg");
+  background-repeat: no-repeat;
+
+  /* KEY FIXES */
+  background-size: contain;      /* shows the entire image */
+  background-position: center bottom;  /* ensures soundwave shows */
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  padding-bottom: 40px;
+  background-color: #0b0e1a;     /* fallback dark background */
+
+  /* Optional soft fade at bottom for a smooth transition */
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+
+/* Text Overlay (if used later) */
+.hero-title {
+  color: white;
+  font-size: 3.4rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+.hero-subtitle {
+  color: #dcdcdc;
+  font-size: 1.4rem;
+  text-align: center;
+  margin-top: 10px;
+}

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import "./App.css";
+import Hero from "./components/Hero";
 
 const LIVE_STREAM_URL = "https://YOUR-AZURACAST-STREAM-URL-HERE";
 
@@ -39,6 +40,8 @@ function App() {
           <div className="tv-brand">TrueVoice.Digital</div>
         </div>
       </header>
+
+      <Hero />
 
       <main className="tv-main">
         {/* HERO ROW */}
