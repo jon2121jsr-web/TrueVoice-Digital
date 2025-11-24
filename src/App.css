@@ -1,42 +1,306 @@
-#root {
-  max-width: 1280px;
+/* === Global === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #020312;
+  color: #161b3d;
+}
+
+/* Page wrapper */
+.tv-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #131735 0, #020312 52%, #020312 100%);
+  color: #161b3d;
+}
+
+/* === HERO SECTION === */
+
+.tv-hero {
+  padding: 56px 0 164px;
+}
+
+.tv-hero-inner {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+}
+
+/* AzuraCast iframe block */
+.tv-hero-player iframe {
+  width: 100%;
+  height: 190px;
+  border-radius: 24px;
+  background: #050716;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.65);
+}
+
+/* Big magenta hero card on the right */
+.tv-hero-art {
+  height: 260px;
+  border-radius: 40px;
+  background: radial-gradient(circle at 20% 0%, #f9a8ff 0, #c084fc 24%, #8b5cf6 46%, #4c1d95 100%);
+  box-shadow: 0 40px 110px rgba(0, 0, 0, 0.8);
+}
+
+/* === MAIN PANEL === */
+
+.tv-main {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: -120px auto 80px;
+  padding: 40px 32px 80px;
+  border-radius: 40px 40px 0 0;
+  background: linear-gradient(180deg, #f5f7ff 0%, #edf1ff 45%, #e8ecff 100%);
+  box-shadow: 0 -14px 60px rgba(5, 10, 40, 0.55);
+}
+
+/* Layout rows */
+.tv-row {
+  margin-bottom: 40px;
+}
+
+.tv-row-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr);
+  gap: 28px;
+}
+
+/* === Verse card === */
+
+.verse-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px 28px 26px;
+  box-shadow: 0 18px 60px rgba(15, 35, 85, 0.12);
+}
+
+.verse-label {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #9ca7c7;
+  margin: 0 0 12px;
+}
+
+.verse-text {
+  margin: 0 0 10px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #111827;
+}
+
+.verse-ref {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+/* === Section titles === */
+
+.section-title {
+  margin: 0 0 20px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* === Featured cards === */
+
+.cards-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.pod-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 18px 18px 22px;
+  box-shadow: 0 18px 60px rgba(16, 36, 90, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.pod-thumb {
+  height: 170px;
+  border-radius: 20px;
+  margin-bottom: 18px;
+  background: linear-gradient(135deg, #e3f2ff, #f7e7ff);
+}
+
+.pod-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.pod-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7594;
+}
+
+/* === Connect (Prayer / Encouragement) === */
+
+.tv-row-connect {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.1fr);
+  gap: 24px;
+}
+
+.connect-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px 26px 26px;
+  box-shadow: 0 18px 60px rgba(17, 30, 80, 0.14);
+}
+
+.connect-card-prayer {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #ffffff;
+}
+
+.connect-title {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.connect-text {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Re-use NowPlaying button styles for the CTAs */
+.connect-card-prayer .np-btn-primary {
+  background: linear-gradient(135deg, #7f5dff, #ff5cc0);
+}
+
+/* === Support / Merch === */
+
+.tv-row-support {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.3fr);
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.support-copy {
+  padding-right: 16px;
+}
+
+.support-text {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.support-merch {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.merch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.merch-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 12px 10px 14px;
+  box-shadow: 0 18px 60px rgba(17, 30, 80, 0.12);
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.merch-thumb {
+  height: 110px;
+  border-radius: 18px;
+  margin-bottom: 8px;
+  background: linear-gradient(140deg, #ffe4c7, #fde4ff);
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.merch-label {
+  margin: 0;
+  font-size: 14px;
+  color: #111827;
+}
+
+.shop-btn {
+  margin-top: 8px;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 40px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #7f5dff, #ff5cc0);
+  color: #ffffff;
+  box-shadow: 0 18px 40px rgba(127, 93, 255, 0.5);
+}
+
+/* === Responsive tweaks === */
+
+@media (max-width: 1024px) {
+  .tv-hero-inner {
+    grid-template-columns: minmax(0, 1fr);
   }
-  to {
-    transform: rotate(360deg);
+
+  .tv-main {
+    margin: -80px 16px 60px;
+    padding: 30px 18px 60px;
+  }
+
+  .tv-row-top,
+  .tv-row-connect,
+  .tv-row-support,
+  .cards-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .merch-grid {
+    grid-template-columns: repeat(3, minmax(0, 80px));
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+@media (max-width: 640px) {
+  .tv-main {
+    margin: -70px 12px 50px;
+    padding: 26px 16px 48px;
   }
-}
 
-.card {
-  padding: 2em;
-}
+  .tv-hero-inner {
+    padding: 0 16px;
+  }
 
-.read-the-docs {
-  color: #888;
+  .tv-hero-art {
+    height: 210px;
+  }
+
+  .cards-3,
+  .merch-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
