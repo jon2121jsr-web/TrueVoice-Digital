@@ -1,38 +1,156 @@
-/* Hero Background Container */
+/* src/components/Hero.css */
+
+/* MAIN HERO CONTAINER */
 .hero-section {
+  position: relative;
   width: 100%;
-  height: 450px;        /* ADJUST THIS to fit the soundwave band */
+  height: 480px; /* Adjust to taste: 440–520px range usually looks good */
+
   background-image: url("/images/truevoice-hero.jpg");
   background-repeat: no-repeat;
 
-  /* KEY FIXES */
-  background-size: contain;      /* shows the entire image */
-  background-position: center bottom;  /* ensures soundwave shows */
+  /* PARALLAX (desktop) */
+  background-attachment: fixed;
+  background-size: contain;       /* keep the whole artwork visible */
+  background-position: center bottom;
+
+  background-color: #050816;      /* side bands / fallback */
+  overflow: hidden;
+}
+
+/* NEON GLOW BEHIND THE CIRCLE */
+.hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 50% 38%,
+      rgba(255, 0, 255, 0.45),
+      transparent 55%
+    );
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* SOFT FADE INTO THE MAIN PAGE BELOW */
+.hero-section::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 140px;
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 8, 22, 0) 0%,
+    rgba(5, 8, 22, 0.45) 38%,
+    #e7f0ff 100%
+  );
+  pointer-events: none;
+}
+
+/* LAYER THAT HOLDS ANIMATED WAVE */
+.hero-effects-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* everything below is still clickable */
+}
+
+/* ANIMATED SOUND-WAVE (EQ STYLE) */
+.hero-wave {
+  position: absolute;
+  left: 50%;
+  bottom: 78px; /* tune this to line up visually with the waveform band */
+  transform: translateX(-50%);
 
   display: flex;
+  gap: 4px;
+  height: 60px;
   align-items: flex-end;
-  justify-content: center;
-
-  padding-bottom: 40px;
-  background-color: #0b0e1a;     /* fallback dark background */
-
-  /* Optional soft fade at bottom for a smooth transition */
-  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
 }
 
-/* Text Overlay (if used later) */
-.hero-title {
-  color: white;
-  font-size: 3.4rem;
-  font-weight: 700;
-  text-align: center;
-  margin: 0;
+.hero-wave span {
+  --bar-width: 4px;
+
+  width: var(--bar-width);
+  border-radius: 999px;
+
+  background: rgba(255, 0, 255, 0.82);
+  box-shadow:
+    0 0 8px rgba(255, 0, 255, 0.9),
+    0 0 16px rgba(255, 0, 255, 0.5);
+
+  height: 10px;
+  opacity: 0.5;
+
+  animation: hero-wave-pulse 1.4s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.075s);
 }
 
-.hero-subtitle {
-  color: #dcdcdc;
-  font-size: 1.4rem;
-  text-align: center;
-  margin-top: 10px;
+@keyframes hero-wave-pulse {
+  0%,
+  100% {
+    height: 8px;
+    opacity: 0.4;
+  }
+  50% {
+    height: 46px;
+    opacity: 1;
+  }
+}
+
+/* ========== RESPONSIVE TWEAKS ========== */
+
+@media (max-width: 1200px) {
+  .hero-section {
+    height: 440px;
+  }
+
+  .hero-wave {
+    bottom: 70px;
+  }
+}
+
+/* Tablets / small laptops */
+@media (max-width: 1024px) {
+  .hero-section {
+    height: 420px;
+    background-attachment: scroll; /* disable parallax for smoother scrolling */
+  }
+
+  .hero-wave {
+    bottom: 66px;
+    gap: 3px;
+  }
+
+  .hero-wave span {
+    --bar-width: 3px;
+  }
+}
+
+/* Standard mobile */
+@media (max-width: 768px) {
+  .hero-section {
+    height: 360px;
+    background-size: cover;        /* fill screen better on phones */
+    background-position: center 40%;
+    background-attachment: scroll;
+  }
+
+  .hero-wave {
+    bottom: 56px;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .hero-section {
+    height: 320px;
+    background-position: center 36%;
+  }
+
+  .hero-wave {
+    bottom: 50px;
+  }
 }
