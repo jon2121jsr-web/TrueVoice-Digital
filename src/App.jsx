@@ -1,12 +1,22 @@
 import { useRef, useState } from "react";
 import "./App.css";
-import Hero from "./components/Hero";
 
-const LIVE_STREAM_URL = "https://YOUR-AZURACAST-STREAM-URL-HERE";
+import Hero from "./components/Hero";
+import { NowPlayingPanel } from "./components/NowPlayingPanel";
+import { VerseOfTheDay } from "./components/VerseOfTheDay";
+import { PodcastList } from "./components/PodcastList";
+
+// Real AzuraCast URLs (from your AzuraCast dashboard)
+const LIVE_STREAM_URL =
+  "http://143.244.188.4/listen/truevoice_digital/radio.mp3";
+
+const PUBLIC_PAGE_URL =
+  "http://143.244.188.4/public/truevoice_digital";
 
 function App() {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const handlePlayToggle = () => {
     const audio = audioRef.current;
@@ -29,6 +39,26 @@ function App() {
     }
   };
 
+  const handleToggleHistory = () => {
+    setShowHistory((prev) => !prev);
+  };
+
+  const handleShare = () => {
+    // Try to copy the public page URL; fall back to opening it
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard
+        .writeText(PUBLIC_PAGE_URL)
+        .then(() => {
+          alert("Stream link copied to clipboard.");
+        })
+        .catch(() => {
+          window.open(PUBLIC_PAGE_URL, "_blank", "noopener,noreferrer");
+        });
+    } else {
+      window.open(PUBLIC_PAGE_URL, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div className="tv-app">
       {/* hidden audio element for live stream */}
@@ -41,63 +71,51 @@ function App() {
         </div>
       </header>
 
+      {/* Hero banner */}
       <Hero />
 
       <main className="tv-main">
-        {/* HERO ROW */}
+        {/* HERO ROW – dynamic Now Playing + Verse of the Day */}
         <section className="tv-hero">
-          {/* Now Playing card */}
+          {/* Left: live now playing info + controls */}
           <div className="tv-now-playing">
-            <div className="tv-artwork-placeholder" />
-            <div className="tv-now-content">
-              <span className="tv-eyebrow">NOW PLAYING</span>
-              <h1 className="tv-song-title">Song Title</h1>
-              <p className="tv-artist-name">Artist Name</p>
+            <NowPlayingPanel showHistory={showHistory} />
 
-              <div className="tv-player-controls">
-                <button
-                  className="tv-btn tv-btn-primary"
-                  onClick={handlePlayToggle}
-                >
-                  {isPlaying ? "Pause Live" : "Play Live"}
-                </button>
-                <button className="tv-btn tv-btn-secondary">
-                  Recent Tracks
-                </button>
-                <button className="tv-icon-btn" title="Share stream">
-                  ↗
-                </button>
-              </div>
+            <div className="tv-player-controls">
+              <button
+                className="tv-btn tv-btn-primary"
+                onClick={handlePlayToggle}
+              >
+                {isPlaying ? "Pause Live" : "Play Live"}
+              </button>
+
+              <button
+                className="tv-btn tv-btn-secondary"
+                onClick={handleToggleHistory}
+              >
+                {showHistory ? "Hide Tracks" : "Recent Tracks"}
+              </button>
+
+              <button
+                className="tv-icon-btn"
+                title="Share stream"
+                onClick={handleShare}
+              >
+                ↗
+              </button>
             </div>
           </div>
 
-          {/* Verse card */}
+          {/* Right: Verse of the Day card */}
           <aside className="tv-verse-card">
-            <h2 className="tv-verse-label">VERSE FOR TODAY</h2>
-            <p className="tv-verse-text">
-              “I came that they may have life and have it abundantly.”
-            </p>
-            <p className="tv-verse-ref">John 10:10</p>
+            <VerseOfTheDay />
           </aside>
         </section>
 
-        {/* FEATURED PODCASTS */}
+        {/* FEATURED PODCASTS – dynamic from feeds (will say "No episodes" until feeds added) */}
         <section className="tv-section">
           <h2 className="tv-section-title">Featured Podcasts</h2>
-          <div className="tv-card-grid">
-            <PodcastCard
-              title="Podcast Episode"
-              description="Brief description about this episode."
-            />
-            <PodcastCard
-              title="Podcast Episode"
-              description="Brief description about this episode."
-            />
-            <PodcastCard
-              title="Latest Videos"
-              description="Highlights, teachings, and stories."
-            />
-          </div>
+          <PodcastList maxEpisodes={6} />
         </section>
 
         {/* TRUEVOICE CONNECT */}
@@ -148,19 +166,11 @@ function App() {
       </main>
 
       <footer className="tv-footer">
-        <p>© {new Date().getFullYear()} TrueVoice.Digital · All rights reserved.</p>
+        <p>
+          © {new Date().getFullYear()} TrueVoice.Digital · All rights reserved.
+        </p>
       </footer>
     </div>
-  );
-}
-
-function PodcastCard({ title, description }) {
-  return (
-    <article className="tv-card">
-      <div className="tv-card-thumb" />
-      <h3 className="tv-card-title">{title}</h3>
-      <p className="tv-card-text">{description}</p>
-    </article>
   );
 }
 

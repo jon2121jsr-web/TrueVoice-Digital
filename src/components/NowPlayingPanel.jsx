@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 
-export function NowPlayingPanel({ showHistory = false }) {
+export function NowPlayingPanel() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,9 +37,9 @@ export function NowPlayingPanel({ showHistory = false }) {
     };
   }, []);
 
+  // ---- derive display values ----
   const song = data?.song;
-  const title =
-    song?.title || (loading ? "Loading current track…" : "Live Stream");
+  const title = song?.title || (loading ? "Loading current track…" : "Live Stream");
   const artist = song?.artist || "TrueVoice Digital";
   const art = song?.art || null;
   const listeners = data?.listeners ?? null;
@@ -54,11 +54,9 @@ export function NowPlayingPanel({ showHistory = false }) {
       : "LIVE"
     : "AutoDJ";
 
-  const history = data?.history || [];
-
   return (
     <>
-      {/* LEFT: artwork */}
+      {/* LEFT: artwork area (uses your existing hero styles) */}
       <div className="tv-artwork-placeholder">
         {art && (
           <img
@@ -69,7 +67,7 @@ export function NowPlayingPanel({ showHistory = false }) {
         )}
       </div>
 
-      {/* RIGHT: text/meta */}
+      {/* RIGHT: text/meta area (uses your existing hero styles) */}
       <div className="tv-now-content">
         <span className="tv-eyebrow">
           {error ? "STREAM STATUS" : "NOW PLAYING"}
@@ -91,45 +89,6 @@ export function NowPlayingPanel({ showHistory = false }) {
             <span className="tv-listeners">{listeners} listening</span>
           )}
         </div>
-
-        {/* Recent tracks panel */}
-        {showHistory && history.length > 0 && (
-          <ul className="tv-history-list">
-            {history.slice(0, 6).map((h) => (
-              <li key={h.id} className="tv-history-item">
-                {h.art && (
-                  <img
-                    src={h.art}
-                    alt={h.title}
-                    className="tv-history-thumb"
-                  />
-                )}
-                <div className="tv-history-text">
-                  <span className="tv-history-title">{h.title}</span>
-                  <span className="tv-history-artist">{h.artist}</span>
-                  {h.playedAt && (
-                    <span className="tv-history-time">
-                      {h.playedAt.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {showHistory && !loading && history.length === 0 && !error && (
-          <p className="tv-history-empty">No recent tracks available.</p>
-        )}
-
-        {error && (
-          <p className="error">
-            {error}
-          </p>
-        )}
       </div>
     </>
   );

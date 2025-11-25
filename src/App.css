@@ -1,4 +1,4 @@
-:root {
+:root { 
   --tv-bg: #e7f0ff;
   --tv-bg-alt: #f5f8ff;
   --tv-primary: #275fdb;
@@ -85,11 +85,25 @@ button {
   grid-template-columns: 110px minmax(0, 1fr);
   gap: 18px;
   box-shadow: var(--tv-shadow-soft);
+  align-items: center; /* keep artwork + text centered vertically */
 }
 
+/* Artwork tile now controlled, no blown-up image */
 .tv-artwork-placeholder {
+  position: relative;
   border-radius: var(--tv-radius-md);
   background: linear-gradient(145deg, #d4e0ff, #f1f4ff);
+  overflow: hidden;
+  height: 110px; /* square-ish card */
+}
+
+/* Album art inside the placeholder */
+.tv-artwork-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
 }
 
 .tv-now-content {
@@ -112,9 +126,39 @@ button {
 }
 
 .tv-artist-name {
-  margin: 4px 0 14px;
+  margin: 4px 0 10px;
   color: var(--tv-text-muted);
   font-size: 0.95rem;
+}
+
+/* LIVE / listeners row under title/artist */
+.tv-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 10px;
+}
+
+.tv-live-pill {
+  font-size: 0.72rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--tv-border-subtle);
+  background: var(--tv-bg-alt);
+  color: var(--tv-text-muted);
+}
+
+.tv-live-pill-on {
+  background: #ff3366;
+  border-color: #ff3366;
+  color: white;
+}
+
+.tv-listeners {
+  font-size: 0.8rem;
+  opacity: 0.85;
 }
 
 .tv-player-controls {
@@ -375,4 +419,58 @@ button {
   .tv-card-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .tv-artwork-placeholder {
+    height: 150px; /* a bit taller on small screens */
+  }
+
+  .tv-meta-row {
+    margin-top: 6px;
+  }
+}
+/* Recent tracks list inside now-playing card */
+.tv-history-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.tv-history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 0.8rem;
+}
+
+.tv-history-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.tv-history-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-history-title {
+  font-weight: 500;
+}
+
+.tv-history-artist {
+  color: var(--tv-text-muted);
+}
+
+.tv-history-time {
+  font-size: 0.7rem;
+  color: var(--tv-text-muted);
+}
+
+.tv-history-empty {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--tv-text-muted);
 }
