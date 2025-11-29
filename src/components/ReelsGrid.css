@@ -1,0 +1,213 @@
+/* TrueVoice Reels – container inside the existing tv-section */
+
+.reels-intro {
+  margin: 4px 0 16px;
+  font-size: 0.9rem;
+  color: var(--tv-text-muted);
+}
+
+/* Channel layout */
+
+.reels-channel {
+  margin-top: 18px;
+}
+
+.reels-channel-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.reels-channel-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.reels-channel-count {
+  font-size: 0.8rem;
+  color: var(--tv-text-muted);
+}
+
+/* GRID of tiles */
+
+.reels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+/* Individual reel card */
+
+.reel-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: none;
+  background: #f5f8ff;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 6px 16px rgba(9, 33, 93, 0.08);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.reel-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(9, 33, 93, 0.14);
+}
+
+/* Thumbnail with fixed 16:9 aspect ratio */
+
+.reel-thumb-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 */
+  overflow: hidden;
+  background: #000;
+}
+
+.reel-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* “Watch” pill overlay */
+
+.reel-play-pill {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+}
+
+/* Metadata below thumb */
+
+.reel-meta {
+  padding: 10px 12px 12px;
+}
+
+.reel-title {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.reel-speaker {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  color: var(--tv-text-muted);
+}
+
+.reel-topic {
+  font-weight: 500;
+}
+
+.reel-source {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--tv-text-muted);
+}
+
+/* Modal */
+
+.reel-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.reel-modal {
+  width: 92%;
+  max-width: 900px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.reel-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e1e6f5;
+}
+
+.reel-modal-title {
+  margin: 0 0 2px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.reel-modal-subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--tv-text-muted);
+}
+
+.reel-modal-close {
+  border: none;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.reel-modal-body {
+  padding: 12px 16px 14px;
+}
+
+.reel-modal-video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 */
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.reel-modal-video-wrapper iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.reel-modal-description {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--tv-text-muted);
+}
+
+.reel-modal-link {
+  font-size: 0.8rem;
+  color: #275fdb;
+  text-decoration: none;
+}
+
+.reel-modal-link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive tweaks */
+
+@media (max-width: 640px) {
+  .reels-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

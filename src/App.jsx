@@ -5,8 +5,9 @@ import Hero from "./components/Hero";
 import { NowPlayingPanel } from "./components/NowPlayingPanel";
 import { VerseOfTheDay } from "./components/VerseOfTheDay";
 import { PodcastList } from "./components/PodcastList";
+import ReelsGrid from "./components/ReelsGrid";
 
-// Real AzuraCast URLs (from your AzuraCast dashboard)
+// Real AzuraCast URLs (update later to https when ready)
 const LIVE_STREAM_URL =
   "http://143.244.188.4/listen/truevoice_digital/radio.mp3";
 
@@ -116,6 +117,11 @@ function App() {
         <section className="tv-section">
           <h2 className="tv-section-title">Featured Podcasts</h2>
           <PodcastList maxEpisodes={6} />
+        </section>
+
+        {/* TRUEVOICE REELS – Give Me An Answer clips */}
+        <section className="tv-section">
+          <ReelsGrid />
         </section>
 
         {/* TRUEVOICE CONNECT */}
