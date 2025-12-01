@@ -4,15 +4,14 @@ import "./App.css";
 import Hero from "./components/Hero";
 import { NowPlayingPanel } from "./components/NowPlayingPanel";
 import { VerseOfTheDay } from "./components/VerseOfTheDay";
-import { PodcastList } from "./components/PodcastList";
+import PodcastList from "./components/PodcastList";
 import ReelsGrid from "./components/ReelsGrid";
 
 // Real AzuraCast URLs (update later to https when ready)
 const LIVE_STREAM_URL =
   "http://143.244.188.4/listen/truevoice_digital/radio.mp3";
 
-const PUBLIC_PAGE_URL =
-  "http://143.244.188.4/public/truevoice_digital";
+const PUBLIC_PAGE_URL = "http://143.244.188.4/public/truevoice_digital";
 
 function App() {
   const audioRef = useRef(null);
@@ -113,9 +112,8 @@ function App() {
           </aside>
         </section>
 
-        {/* FEATURED PODCASTS – dynamic from feeds (will say "No episodes" until feeds added) */}
+        {/* FEATURED PODCASTS – handled entirely inside PodcastList */}
         <section className="tv-section">
-          <h2 className="tv-section-title">Featured Podcasts</h2>
           <PodcastList maxEpisodes={6} />
         </section>
 
