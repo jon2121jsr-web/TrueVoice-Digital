@@ -148,7 +148,7 @@ button {
 
 .tv-live-pill {
   font-size: 0.72rem;
-  letter-letter-spacing: 0.1em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 3px 10px;
   border-radius: 999px;
@@ -247,6 +247,8 @@ button {
   font-weight: 600;
 }
 
+/* live dot states */
+
 .tv-live-dot {
   width: 8px;
   height: 8px;
@@ -254,6 +256,18 @@ button {
   background: #ff3366;
   box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.6);
   animation: tv-live-pulse 1.3s infinite;
+}
+
+.tv-live-dot-idle {
+  background: var(--tv-border-subtle);
+  animation: none;
+  box-shadow: none;
+}
+
+.tv-live-dot-off {
+  background: #d11c3b;
+  animation: none;
+  box-shadow: none;
 }
 
 @keyframes tv-live-pulse {
@@ -271,6 +285,21 @@ button {
   }
 }
 
+/* "Now Streaming" label inside player bar (mobile variant) */
+
+.tv-player-subtitle {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(39, 95, 219, 0.18);
+  background: rgba(39, 95, 219, 0.06);
+  color: var(--tv-primary-dark);
+}
+
+/* Controls row */
+
 .tv-player-controls {
   display: flex;
   align-items: center;
@@ -284,20 +313,34 @@ button {
   border-radius: 999px;
   font-size: 0.9rem;
   font-weight: 500;
+  border: none;
+  transition: background 0.16s ease, transform 0.08s ease, box-shadow 0.16s ease;
 }
 
 .tv-btn-primary {
   background: var(--tv-primary);
   color: white;
+  box-shadow: 0 10px 24px rgba(39, 95, 219, 0.25);
 }
 
 .tv-btn-primary:hover {
   background: var(--tv-primary-dark);
+  box-shadow: 0 12px 28px rgba(39, 95, 219, 0.35);
+  transform: translateY(-1px);
+}
+
+.tv-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(39, 95, 219, 0.22);
 }
 
 .tv-btn-secondary {
   background: var(--tv-bg-alt);
   color: var(--tv-text-main);
+}
+
+.tv-btn-secondary:hover {
+  background: #e2e8ff;
 }
 
 .tv-icon-btn {
@@ -310,6 +353,27 @@ button {
   justify-content: center;
   font-size: 0.9rem;
   color: var(--tv-text-muted);
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease,
+    transform 0.08s ease;
+}
+
+.tv-icon-btn:hover {
+  background: var(--tv-bg-alt);
+  color: var(--tv-primary);
+  border-color: var(--tv-primary);
+  transform: translateY(-1px);
+}
+
+.tv-icon-btn:active {
+  transform: translateY(0);
+}
+
+/* Focus styles */
+
+.tv-btn:focus-visible,
+.tv-icon-btn:focus-visible {
+  outline: 2px solid rgba(39, 95, 219, 0.7);
+  outline-offset: 2px;
 }
 
 /* Verse */
@@ -353,6 +417,11 @@ button {
   box-shadow: var(--tv-shadow-soft);
 }
 
+/* tighter stacked spacing for Connect / Reels / Podcasts */
+.tv-section--stacked {
+  margin-bottom: 18px;
+}
+
 .tv-section-title {
   margin: 0 0 14px;
   font-size: 1.1rem;
@@ -372,6 +441,30 @@ button {
   padding: 12px;
   display: flex;
   flex-direction: column;
+}
+
+/* simple connect card styling */
+.tv-connect-card {
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tv-play-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  background: white;
+  box-shadow: 0 8px 18px rgba(15, 35, 94, 0.26);
+  margin-bottom: 4px;
+}
+
+.tv-card-title {
+  margin: 0;
+  font-size: 0.92rem;
 }
 
 /* --- PODCASTS --- */
@@ -636,6 +729,12 @@ button {
   .tv-player-bar {
     flex-direction: column;
     align-items: flex-start;
+    gap: 8px;
+  }
+
+  .tv-player-label {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .tv-player-controls {
@@ -665,5 +764,67 @@ button {
   .tv-footer-attrib {
     font-size: 0.72rem;
     letter-spacing: 0.1em;
+  }
+}
+
+/* Mobile mini-player */
+
+.tv-mini-player {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .tv-mini-player {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 10px 14px;
+    background: rgba(12, 24, 52, 0.96);
+    color: #f9fbff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 40;
+    box-shadow: 0 -8px 25px rgba(6, 15, 40, 0.6);
+  }
+
+  .tv-mini-player-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tv-mini-pill {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .tv-mini-player-title {
+    font-size: 0.86rem;
+    font-weight: 500;
+  }
+
+  .tv-mini-player-btn {
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    border: none;
+    background: #ffffff;
+    color: #162143;
+    white-space: nowrap;
+    transition: transform 0.08s ease, box-shadow 0.16s ease;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+  }
+
+  .tv-mini-player-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
   }
 }

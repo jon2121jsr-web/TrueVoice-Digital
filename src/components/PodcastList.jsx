@@ -1,3 +1,4 @@
+// src/components/PodcastList.jsx
 import React, { useEffect, useState } from "react";
 
 const PODCASTS = [
@@ -18,7 +19,6 @@ const PODCASTS = [
     audience: "20s & 30s, young professionals",
     description:
       "Straightforward, practical teaching for young adults navigating faith, dating, work, and calling.",
-    // Subsplash RSS feed wrapped with rss2json
     feedUrl:
       "https://api.rss2json.com/v1/api.json?rss_url=https://podcasts.subsplash.com/z73b3th/podcast.rss",
     image: "/images/podcasts/becoming-something.jpg",
@@ -113,6 +113,7 @@ function PodcastList() {
                   src={podcast.image}
                   alt={podcast.title}
                   className="tv-podcast-art"
+                  loading="lazy"
                 />
                 <div className="tv-podcast-heading">
                   <h3 className="tv-podcast-title">{podcast.title}</h3>
@@ -135,17 +136,23 @@ function PodcastList() {
                   <p className="tv-podcast-status">Loading latest episodes…</p>
                 )}
 
-                {!isLoading && episodes.length === 0 && (
-                  <p className="tv-podcast-status">
-                    Browse episodes on the original feed below.
-                  </p>
+                {!isLoading && error && (
+                  <p className="tv-podcast-status">{error}</p>
                 )}
+
+                {!isLoading &&
+                  !error &&
+                  episodes.length === 0 && (
+                    <p className="tv-podcast-status">
+                      Browse episodes on the original feed below.
+                    </p>
+                  )}
 
                 {!isLoading &&
                   !error &&
                   displayEpisodes.map((ep) => {
                     const episodeUrl =
-                      (ep.enclosure && ep.enclosure.link) ||
+                      (ep.enclosure && (ep.enclosure.link || ep.enclosure.url)) ||
                       ep.link ||
                       podcast.websiteUrl;
 
@@ -171,7 +178,7 @@ function PodcastList() {
               </div>
 
               {/* View all / less toggle */}
-              {!isLoading && episodes.length > 3 && (
+              {!isLoading && !error && episodes.length > 3 && (
                 <button
                   type="button"
                   className="tv-podcast-viewall"

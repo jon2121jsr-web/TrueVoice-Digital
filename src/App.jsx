@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 import Hero from "./components/Hero";
@@ -7,16 +7,32 @@ import { VerseOfTheDay } from "./components/VerseOfTheDay";
 import PodcastList from "./components/PodcastList";
 import ReelsGrid from "./components/ReelsGrid";
 
-// Real AzuraCast URLs (update later to https when ready)
+// Stream + public page URLs
+// For Vercel, set:
+// VITE_TRUEVOICE_STREAM_URL
+// VITE_TRUEVOICE_PUBLIC_PAGE_URL
 const LIVE_STREAM_URL =
+  import.meta.env.VITE_TRUEVOICE_STREAM_URL ||
   "http://143.244.188.4/listen/truevoice_digital/radio.mp3";
 
-const PUBLIC_PAGE_URL = "http://143.244.188.4/public/truevoice_digital";
+const PUBLIC_PAGE_URL =
+  import.meta.env.VITE_TRUEVOICE_PUBLIC_PAGE_URL ||
+  "http://143.244.188.4/public/truevoice_digital";
 
 function App() {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  // Now-playing / LIVE status from AzuraCast
+  const [streamStatus, setStreamStatus] = useState({
+    isLive: false,
+    hasError: false,
+    isLoading: true,
+  });
+
+  // Mini-player visibility (mobile / tablet)
+  const [isMiniPlayerVisible, setIsMiniPlayerVisible] = useState(false);
 
   const handlePlayToggle = () => {
     const audio = audioRef.current;
@@ -56,6 +72,54 @@ function App() {
     }
   };
 
+  // Show mini-player on mobile / tablet when user scrolls down,
+  // regardless of play/pause state (so you can resume from there).
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      if (typeof window === "undefined") return;
+
+      const isNarrow = window.innerWidth <= 900; // phone + tablet
+      const scrolledPastHero = window.scrollY > 150; // slightly below hero
+
+      if (isNarrow && scrolledPastHero) {
+        setIsMiniPlayerVisible(true);
+      } else {
+        setIsMiniPlayerVisible(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScrollOrResize);
+    window.addEventListener("resize", handleScrollOrResize);
+    handleScrollOrResize();
+
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, []);
+
+  // LIVE dot behavior:
+  // - Red: streamStatus.hasError
+  // - Pulsing: user is playing OR AzuraCast says isLive
+  // - Grey idle: not playing, no error
+  const isDotOffline = streamStatus.hasError;
+  const isDotActive =
+    (isPlaying || streamStatus.isLive) && !streamStatus.hasError;
+
+  const liveDotClass = isDotOffline
+    ? "tv-live-dot tv-live-dot-off"
+    : isDotActive
+    ? "tv-live-dot"
+    : "tv-live-dot tv-live-dot-idle";
+
+  const playerTitleText = streamStatus.hasError
+    ? "Stream Offline"
+    : streamStatus.isLive
+    ? "Live 24/7 Stream"
+    : "TrueVoice Radio";
+
+  const showNowStreamingLabel = isPlaying || streamStatus.isLive;
+
   return (
     <div className="tv-app">
       {/* hidden audio element for live stream */}
@@ -76,13 +140,19 @@ function App() {
         <section className="tv-hero">
           {/* Left: live now playing info + controls */}
           <div className="tv-now-playing">
-            <NowPlayingPanel showHistory={showHistory} />
+            <NowPlayingPanel
+              showHistory={showHistory}
+              onStatusChange={setStreamStatus}
+            />
 
             {/* Player bar with LIVE indicator + controls */}
             <div className="tv-player-bar">
               <div className="tv-player-label">
-                <span className="tv-live-dot" />
-                <span className="tv-player-title">TrueVoice Live 24/7</span>
+                <span className={liveDotClass} />
+                <span className="tv-player-title">{playerTitleText}</span>
+                {showNowStreamingLabel && (
+                  <span className="tv-player-subtitle">Now Streaming</span>
+                )}
               </div>
 
               <div className="tv-player-controls">
@@ -118,7 +188,7 @@ function App() {
         </section>
 
         {/* 1) TRUEVOICE CONNECT – directly under the player */}
-        <section className="tv-section">
+        <section className="tv-section tv-section--stacked">
           <h2 className="tv-section-title">TrueVoice Connect</h2>
           <div className="tv-card-grid">
             <ConnectCard label="Watch Live" />
@@ -128,12 +198,12 @@ function App() {
         </section>
 
         {/* 2) TRUEVOICE REELS – short-form clips */}
-        <section className="tv-section">
+        <section className="tv-section tv-section--stacked">
           <ReelsGrid />
         </section>
 
         {/* 3) TRUEVOICE NETWORK PODCASTS – below Reels */}
-        <section className="tv-section">
+        <section className="tv-section tv-section--stacked">
           <PodcastList />
         </section>
 
@@ -173,6 +243,23 @@ function App() {
           </div>
         </section>
       </main>
+
+      {/* Mobile / tablet mini-player for when user scrolls away from the main hero */}
+      {isMiniPlayerVisible && (
+        <div className="tv-mini-player">
+          <div className="tv-mini-player-main">
+            <span className="tv-mini-pill">
+              {streamStatus.hasError ? "Offline" : "Now Streaming"}
+            </span>
+            <span className="tv-mini-player-title">
+              TrueVoice.Digital · Live
+            </span>
+          </div>
+          <button className="tv-mini-player-btn" onClick={handlePlayToggle}>
+            {isPlaying ? "Pause" : "Listen"}
+          </button>
+        </div>
+      )}
 
       <footer className="tv-footer">
         <p>

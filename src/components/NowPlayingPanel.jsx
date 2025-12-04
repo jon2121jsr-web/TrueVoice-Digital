@@ -2,11 +2,12 @@
 import { useEffect, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 
-export function NowPlayingPanel({ showHistory }) {
+export function NowPlayingPanel({ showHistory, onStatusChange }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Poll AzuraCast now-playing endpoint
   useEffect(() => {
     let isMounted = true;
 
@@ -15,13 +16,13 @@ export function NowPlayingPanel({ showHistory }) {
         setLoading(true);
         const result = await fetchNowPlaying();
         if (isMounted) {
-          setData(result);
+          setData(result || null);
           setError(null);
         }
       } catch (err) {
         if (isMounted) {
           console.error("NowPlaying error:", err);
-          setError(err.message || "Failed to load now playing.");
+          setError(err?.message || "Failed to load now playing.");
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -29,8 +30,8 @@ export function NowPlayingPanel({ showHistory }) {
     }
 
     load();
-
     const id = window.setInterval(load, 30_000);
+
     return () => {
       isMounted = false;
       window.clearInterval(id);
@@ -47,7 +48,7 @@ export function NowPlayingPanel({ showHistory }) {
   const isLive = data?.isLive ?? false;
   const liveStreamer = data?.liveStreamer || null;
 
-  // History – try a couple of common shapes
+  // History – flexible in case of different API field names
   const historyRaw =
     (Array.isArray(data?.history) && data.history) ||
     (Array.isArray(data?.recent_tracks) && data.recent_tracks) ||
@@ -64,11 +65,23 @@ export function NowPlayingPanel({ showHistory }) {
 
   const formatTime = (value) => {
     if (!value) return "";
-    const d = new Date(
-      typeof value === "number" ? value * 1000 : value // unix seconds or ISO
-    );
+    const d =
+      typeof value === "number"
+        ? new Date(value * 1000) // unix seconds
+        : new Date(value); // ISO or ms
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
+
+  // Bubble status up to App for LIVE dot + mini-player
+  useEffect(() => {
+    if (typeof onStatusChange === "function") {
+      onStatusChange({
+        isLive: !!isLive,
+        hasError: !!error,
+        isLoading: !!loading,
+      });
+    }
+  }, [isLive, error, loading, onStatusChange]);
 
   return (
     <div className="tv-now-inner">
@@ -79,6 +92,7 @@ export function NowPlayingPanel({ showHistory }) {
             src={art}
             alt={`${title} cover art`}
             className="tv-artwork-img"
+            loading="lazy"
           />
         )}
       </div>
@@ -130,6 +144,7 @@ export function NowPlayingPanel({ showHistory }) {
                         src={item.art}
                         alt={item.title || "Previous track"}
                         className="tv-history-thumb"
+                        loading="lazy"
                       />
                     )}
                     <div className="tv-history-text">

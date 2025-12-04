@@ -37,13 +37,15 @@ function ReelsGrid() {
                 src={item.thumbnailUrl}
                 alt={item.title}
                 className="reel-thumb"
+                loading="lazy"
               />
               <div className="reel-play-pill">Watch</div>
             </div>
             <div className="reel-meta">
               <h4 className="reel-title">{item.title}</h4>
               <p className="reel-speaker">
-                {item.speaker} • <span className="reel-topic">{item.topic}</span>
+                {item.speaker} •{" "}
+                <span className="reel-topic">{item.topic}</span>
               </p>
               {item.source && (
                 <p className="reel-source">Source: {item.source}</p>
@@ -56,10 +58,11 @@ function ReelsGrid() {
   );
 
   return (
-    <section className="tv-section">
+    <>
       <h2 className="tv-section-title">TrueVoice Reels</h2>
       <p className="reels-intro">
-        Short-form, high-impact teaching and Q&amp;A content from trusted voices.
+        Short-form, high-impact teaching and Q&amp;A content from trusted
+        voices.
       </p>
 
       {renderChannel("Give Me an Answer", GMAA_REELS)}
@@ -67,10 +70,7 @@ function ReelsGrid() {
 
       {activeVideo && (
         <div className="reel-modal-backdrop" onClick={handleClose}>
-          <div
-            className="reel-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="reel-modal" onClick={(e) => e.stopPropagation()}>
             <header className="reel-modal-header">
               <div>
                 <h3 className="reel-modal-title">{activeVideo.title}</h3>
@@ -117,7 +117,7 @@ function ReelsGrid() {
           </div>
         </div>
       )}
-    </section>
+    </>
   );
 }
 
