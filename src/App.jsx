@@ -43,14 +43,11 @@ function App() {
     setShowHistory((prev) => !prev);
   };
 
+  // Share stream without noisy alerts
   const handleShare = () => {
-    // Try to copy the public page URL; fall back to opening it
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard
         .writeText(PUBLIC_PAGE_URL)
-        .then(() => {
-          alert("Stream link copied to clipboard.");
-        })
         .catch(() => {
           window.open(PUBLIC_PAGE_URL, "_blank", "noopener,noreferrer");
         });
@@ -81,28 +78,36 @@ function App() {
           <div className="tv-now-playing">
             <NowPlayingPanel showHistory={showHistory} />
 
-            <div className="tv-player-controls">
-              <button
-                className="tv-btn tv-btn-primary"
-                onClick={handlePlayToggle}
-              >
-                {isPlaying ? "Pause Live" : "Play Live"}
-              </button>
+            {/* Player bar with LIVE indicator + controls */}
+            <div className="tv-player-bar">
+              <div className="tv-player-label">
+                <span className="tv-live-dot" />
+                <span className="tv-player-title">TrueVoice Live 24/7</span>
+              </div>
 
-              <button
-                className="tv-btn tv-btn-secondary"
-                onClick={handleToggleHistory}
-              >
-                {showHistory ? "Hide Tracks" : "Recent Tracks"}
-              </button>
+              <div className="tv-player-controls">
+                <button
+                  className="tv-btn tv-btn-primary"
+                  onClick={handlePlayToggle}
+                >
+                  {isPlaying ? "Pause" : "Listen Live"}
+                </button>
 
-              <button
-                className="tv-icon-btn"
-                title="Share stream"
-                onClick={handleShare}
-              >
-                ↗
-              </button>
+                <button
+                  className="tv-btn tv-btn-secondary"
+                  onClick={handleToggleHistory}
+                >
+                  {showHistory ? "Hide History" : "Track History"}
+                </button>
+
+                <button
+                  className="tv-icon-btn"
+                  title="Share stream"
+                  onClick={handleShare}
+                >
+                  ↗
+                </button>
+              </div>
             </div>
           </div>
 
@@ -112,17 +117,7 @@ function App() {
           </aside>
         </section>
 
-        {/* FEATURED PODCASTS – handled entirely inside PodcastList */}
-        <section className="tv-section">
-          <PodcastList maxEpisodes={6} />
-        </section>
-
-        {/* TRUEVOICE REELS – Give Me An Answer clips */}
-        <section className="tv-section">
-          <ReelsGrid />
-        </section>
-
-        {/* TRUEVOICE CONNECT */}
+        {/* 1) TRUEVOICE CONNECT – directly under the player */}
         <section className="tv-section">
           <h2 className="tv-section-title">TrueVoice Connect</h2>
           <div className="tv-card-grid">
@@ -132,7 +127,17 @@ function App() {
           </div>
         </section>
 
-        {/* SUPPORT / MERCH */}
+        {/* 2) TRUEVOICE REELS – short-form clips */}
+        <section className="tv-section">
+          <ReelsGrid />
+        </section>
+
+        {/* 3) TRUEVOICE NETWORK PODCASTS – below Reels */}
+        <section className="tv-section">
+          <PodcastList />
+        </section>
+
+        {/* 4) SUPPORT / MERCH */}
         <section className="tv-section tv-support-grid">
           <div>
             <h2 className="tv-section-title">Support the Mission</h2>
@@ -173,6 +178,7 @@ function App() {
         <p>
           © {new Date().getFullYear()} TrueVoice.Digital · All rights reserved.
         </p>
+        <p className="tv-footer-attrib">Powered by OUTPUT Digital</p>
       </footer>
     </div>
   );

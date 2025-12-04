@@ -7,12 +7,9 @@ const PODCASTS = [
     audience: "Young adults, college & up",
     description:
       "In-depth conversations about the Bible and theology from the team behind BibleProject videos.",
-    // rss2json proxy around the Simplecast RSS feed
     feedUrl:
       "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.simplecast.com/3NVmUWZO",
-    // local artwork in /public/images/podcasts
     image: "/images/podcasts/bibleproject.jpg",
-    // Working show page for the BibleProject podcast
     websiteUrl: "https://thebibleproject.simplecast.com/episodes",
   },
   {
@@ -21,41 +18,42 @@ const PODCASTS = [
     audience: "20s & 30s, young professionals",
     description:
       "Straightforward, practical teaching for young adults navigating faith, dating, work, and calling.",
+    // Subsplash RSS feed wrapped with rss2json
     feedUrl:
-      "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.simplecast.com/ppXLGdTb",
+      "https://api.rss2json.com/v1/api.json?rss_url=https://podcasts.subsplash.com/z73b3th/podcast.rss",
     image: "/images/podcasts/becoming-something.jpg",
-    // Correct Apple Podcasts show page
     websiteUrl:
       "https://podcasts.apple.com/us/podcast/becoming-something-with-jonathan-pokluda/id1454045768",
   },
-
-  // When you're ready to add the next shows, just copy one of the objects
-  // above, update id/title/feeds/image/websiteUrl and you're done.
-  // {
-  //   id: "whoa-thats-good",
-  //   title: "WHOA That’s Good with Sadie Robertson Huff",
-  //   audience: "Young women, teens & 20s",
-  //   description: "Conversations with Sadie about faith, purpose, and real life.",
-  //   feedUrl: "https://api.rss2json.com/v1/api.json?rss_url=<<Sadie RSS URL>>",
-  //   image: "/images/podcasts/whoa-thats-good.jpg",
-  //   websiteUrl: "<<Sadie show page (Apple/Spotify/etc.)>>",
-  // },
-  // {
-  //   id: "made-for-this",
-  //   title: "Made For This with Jennie Allen",
-  //   audience: "Women, small group leaders",
-  //   description:
-  //     "Biblical teaching and honest conversations to help you live the life God made you for.",
-  //   feedUrl: "https://api.rss2json.com/v1/api.json?rss_url=<<Jennie RSS URL>>",
-  //   image: "/images/podcasts/made-for-this.jpg",
-  //   websiteUrl: "<<Jennie show page>>",
-  // },
+  {
+    id: "whoa-thats-good",
+    title: "WHOA That's Good with Sadie Robertson Huff",
+    audience: "Young women, teens & 20s",
+    description:
+      "Conversations with Sadie about faith, purpose, and real-life questions with guests from all walks of life.",
+    feedUrl:
+      "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.megaphone.fm/LEW1514366617",
+    image: "/images/podcasts/whoa-thats-good.jpg",
+    websiteUrl: "https://www.liveoriginal.com/podcast",
+  },
+  {
+    id: "made-for-this",
+    title: "Made For This with Jennie Allen",
+    audience: "Women, small group leaders",
+    description:
+      "Biblical teaching and honest conversations to help you live the life God made you for.",
+    feedUrl:
+      "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.transistor.fm/made-for-this-with-jennie-allen",
+    image: "/images/podcasts/made-for-this.jpg",
+    websiteUrl: "https://www.jennieallen.com/podcast",
+  },
 ];
 
-function PodcastsList() {
+function PodcastList() {
   const [episodesByShow, setEpisodesByShow] = useState({});
   const [loadingByShow, setLoadingByShow] = useState({});
   const [errorByShow, setErrorByShow] = useState({});
+  const [expandedByShow, setExpandedByShow] = useState({});
 
   useEffect(() => {
     PODCASTS.forEach((podcast) => {
@@ -71,7 +69,7 @@ function PodcastsList() {
           const items = Array.isArray(data.items) ? data.items : [];
           setEpisodesByShow((prev) => ({
             ...prev,
-            [podcast.id]: items.slice(0, 6),
+            [podcast.id]: items,
           }));
         })
         .catch((err) => {
@@ -87,6 +85,13 @@ function PodcastsList() {
     });
   }, []);
 
+  const toggleExpanded = (id) => {
+    setExpandedByShow((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   return (
     <section className="tv-section">
       <h2 className="tv-section-title">TrueVoice Network Podcasts</h2>
@@ -95,6 +100,11 @@ function PodcastsList() {
           const episodes = episodesByShow[podcast.id] || [];
           const isLoading = loadingByShow[podcast.id];
           const error = errorByShow[podcast.id];
+          const isExpanded = !!expandedByShow[podcast.id];
+
+          const displayEpisodes = isExpanded
+            ? episodes.slice(0, 12)
+            : episodes.slice(0, 3);
 
           return (
             <article key={podcast.id} className="tv-podcast-card">
@@ -113,13 +123,17 @@ function PodcastsList() {
                 </div>
               </div>
 
-              <div className="tv-podcast-episodes">
+              <div
+                className={
+                  "tv-podcast-episodes " +
+                  (isExpanded
+                    ? "tv-podcast-episodes--expanded"
+                    : "tv-podcast-episodes--compact")
+                }
+              >
                 {isLoading && (
                   <p className="tv-podcast-status">Loading latest episodes…</p>
                 )}
-
-                {/* Do NOT show the red error message anymore */}
-                {/* error is still logged to console but not shown to users */}
 
                 {!isLoading && episodes.length === 0 && (
                   <p className="tv-podcast-status">
@@ -129,8 +143,7 @@ function PodcastsList() {
 
                 {!isLoading &&
                   !error &&
-                  episodes.map((ep) => {
-                    // Prefer the audio file if we have it; fall back to link/website
+                  displayEpisodes.map((ep) => {
                     const episodeUrl =
                       (ep.enclosure && ep.enclosure.link) ||
                       ep.link ||
@@ -157,6 +170,17 @@ function PodcastsList() {
                   })}
               </div>
 
+              {/* View all / less toggle */}
+              {!isLoading && episodes.length > 3 && (
+                <button
+                  type="button"
+                  className="tv-podcast-viewall"
+                  onClick={() => toggleExpanded(podcast.id)}
+                >
+                  {isExpanded ? "View less" : "View all"}
+                </button>
+              )}
+
               <div className="tv-podcast-footer">
                 <a
                   href={podcast.websiteUrl}
@@ -175,4 +199,4 @@ function PodcastsList() {
   );
 }
 
-export default PodcastsList;
+export default PodcastList;

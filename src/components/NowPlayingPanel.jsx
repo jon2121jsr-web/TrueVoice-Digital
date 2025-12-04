@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 
-export function NowPlayingPanel() {
+export function NowPlayingPanel({ showHistory }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,12 +39,20 @@ export function NowPlayingPanel() {
 
   // ---- derive display values ----
   const song = data?.song;
-  const title = song?.title || (loading ? "Loading current track…" : "Live Stream");
+  const title =
+    song?.title || (loading ? "Loading current track…" : "Live Stream");
   const artist = song?.artist || "TrueVoice Digital";
   const art = song?.art || null;
   const listeners = data?.listeners ?? null;
   const isLive = data?.isLive ?? false;
   const liveStreamer = data?.liveStreamer || null;
+
+  // History – try a couple of common shapes
+  const historyRaw =
+    (Array.isArray(data?.history) && data.history) ||
+    (Array.isArray(data?.recent_tracks) && data.recent_tracks) ||
+    [];
+  const history = historyRaw.slice(0, 6);
 
   const liveLabel = error
     ? "OFF AIR"
@@ -54,9 +62,17 @@ export function NowPlayingPanel() {
       : "LIVE"
     : "AutoDJ";
 
+  const formatTime = (value) => {
+    if (!value) return "";
+    const d = new Date(
+      typeof value === "number" ? value * 1000 : value // unix seconds or ISO
+    );
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
-    <>
-      {/* LEFT: artwork area (uses your existing hero styles) */}
+    <div className="tv-now-inner">
+      {/* LEFT: artwork area */}
       <div className="tv-artwork-placeholder">
         {art && (
           <img
@@ -67,7 +83,7 @@ export function NowPlayingPanel() {
         )}
       </div>
 
-      {/* RIGHT: text/meta area (uses your existing hero styles) */}
+      {/* RIGHT: text/meta + optional history */}
       <div className="tv-now-content">
         <span className="tv-eyebrow">
           {error ? "STREAM STATUS" : "NOW PLAYING"}
@@ -89,7 +105,55 @@ export function NowPlayingPanel() {
             <span className="tv-listeners">{listeners} listening</span>
           )}
         </div>
+
+        {showHistory && (
+          <div className="tv-history-block">
+            <h2 className="tv-history-heading">Recent Tracks</h2>
+            {history.length === 0 ? (
+              <p className="tv-history-empty">
+                History will appear here as tracks play.
+              </p>
+            ) : (
+              <ul className="tv-history-list">
+                {history.map((item, idx) => (
+                  <li
+                    key={
+                      item.id ||
+                      item.song_id ||
+                      item.played_at ||
+                      `${item.title}-${idx}`
+                    }
+                    className="tv-history-item"
+                  >
+                    {item.art && (
+                      <img
+                        src={item.art}
+                        alt={item.title || "Previous track"}
+                        className="tv-history-thumb"
+                      />
+                    )}
+                    <div className="tv-history-text">
+                      <span className="tv-history-title">
+                        {item.title || "Unknown title"}
+                      </span>
+                      {item.artist && (
+                        <span className="tv-history-artist">
+                          {item.artist}
+                        </span>
+                      )}
+                    </div>
+                    {item.played_at && (
+                      <span className="tv-history-time">
+                        {formatTime(item.played_at)}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }

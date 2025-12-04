@@ -1,4 +1,4 @@
-:root { 
+:root {
   --tv-bg: #e7f0ff;
   --tv-bg-alt: #f5f8ff;
   --tv-primary: #275fdb;
@@ -42,7 +42,6 @@ button {
 }
 
 .tv-header {
-  background: #3a6cff;
   background: linear-gradient(90deg, #3a6cff, #7aa5ff);
   color: white;
   padding: 14px 32px;
@@ -81,23 +80,29 @@ button {
   background: white;
   border-radius: var(--tv-radius-lg);
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--tv-shadow-soft);
+}
+
+/* Inner layout for artwork + text */
+.tv-now-inner {
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
   gap: 18px;
-  box-shadow: var(--tv-shadow-soft);
-  align-items: center; /* keep artwork + text centered vertically */
+  align-items: center;
 }
 
-/* Artwork tile now controlled, no blown-up image */
+/* Artwork tile */
 .tv-artwork-placeholder {
   position: relative;
   border-radius: var(--tv-radius-md);
   background: linear-gradient(145deg, #d4e0ff, #f1f4ff);
   overflow: hidden;
-  height: 110px; /* square-ish card */
+  height: 110px;
 }
 
-/* Album art inside the placeholder */
 .tv-artwork-img {
   width: 100%;
   height: 100%;
@@ -105,6 +110,8 @@ button {
   display: block;
   border-radius: inherit;
 }
+
+/* Text content */
 
 .tv-now-content {
   display: flex;
@@ -131,17 +138,17 @@ button {
   font-size: 0.95rem;
 }
 
-/* LIVE / listeners row under title/artist */
+/* LIVE row */
 .tv-meta-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
 }
 
 .tv-live-pill {
   font-size: 0.72rem;
-  letter-spacing: 0.10em;
+  letter-letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 3px 10px;
   border-radius: 999px;
@@ -159,6 +166,109 @@ button {
 .tv-listeners {
   font-size: 0.8rem;
   opacity: 0.85;
+}
+
+/* Optional history block */
+
+.tv-history-block {
+  margin-top: 8px;
+}
+
+.tv-history-heading {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--tv-text-muted);
+}
+
+.tv-history-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.tv-history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 0.8rem;
+}
+
+.tv-history-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.tv-history-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-history-title {
+  font-weight: 500;
+}
+
+.tv-history-artist,
+.tv-history-time {
+  font-size: 0.7rem;
+  color: var(--tv-text-muted);
+}
+
+.tv-history-empty {
+  font-size: 0.8rem;
+  color: var(--tv-text-muted);
+}
+
+/* Player bar */
+
+.tv-player-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tv-player-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--tv-text-muted);
+}
+
+.tv-player-title {
+  font-weight: 600;
+}
+
+.tv-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ff3366;
+  box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.6);
+  animation: tv-live-pulse 1.3s infinite;
+}
+
+@keyframes tv-live-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.6);
+  }
+  70% {
+    transform: scale(1.45);
+    box-shadow: 0 0 0 8px rgba(255, 51, 102, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 51, 102, 0);
+  }
 }
 
 .tv-player-controls {
@@ -215,7 +325,6 @@ button {
 }
 
 .tv-verse-label {
-  margin: 0 0 6px;
   font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -223,13 +332,12 @@ button {
 }
 
 .tv-verse-text {
-  margin: 0 0 8px;
+  margin: 8px 0;
   font-size: 0.98rem;
   line-height: 1.6;
 }
 
 .tv-verse-ref {
-  margin: 0;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--tv-text-muted);
@@ -250,65 +358,164 @@ button {
   font-size: 1.1rem;
 }
 
-/* Card grid */
+/* Generic card grid */
 
 .tv-card-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
 }
 
 .tv-card {
   background: var(--tv-bg-alt);
   border-radius: var(--tv-radius-md);
-  padding: 10px 12px 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
 }
 
-.tv-card-thumb {
-  height: 70px;
-  border-radius: var(--tv-radius-sm);
-  background: linear-gradient(145deg, #d7e3ff, #edf1ff);
-  margin-bottom: 10px;
+/* --- PODCASTS --- */
+
+.tv-podcast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  align-items: stretch;
 }
 
-.tv-card-title {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
+.tv-podcast-card {
+  background: var(--tv-bg-alt);
+  border-radius: var(--tv-radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--tv-shadow-soft);
+  display: flex;
+  flex-direction: column;
+  height: 360px;
 }
 
-.tv-card-text {
+.tv-podcast-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.tv-podcast-art {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.tv-podcast-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tv-podcast-title {
   margin: 0;
+  font-size: 1rem;
+}
+
+.tv-podcast-audience {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+}
+
+.tv-podcast-description {
+  margin: 4px 0 0;
   font-size: 0.82rem;
   color: var(--tv-text-muted);
 }
 
-/* Connect cards */
+/* Episodes list container – base */
+.tv-podcast-episodes {
+  margin-top: 8px;
+  border-radius: var(--tv-radius-md);
+  background: white;
+  border: 1px solid var(--tv-border-subtle);
+  padding: 6px 8px;
+  overflow-y: auto;
+  flex: 1;
+}
 
-.tv-connect-card {
-  align-items: center;
+.tv-podcast-episodes--compact {
+  max-height: 150px;
+}
+
+.tv-podcast-episodes--expanded {
+  max-height: 320px;
+}
+
+/* Episode rows */
+.tv-podcast-episode-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 4px;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--tv-text-main);
+  border-radius: 8px;
+}
+
+.tv-podcast-episode-row:hover {
+  background: var(--tv-bg-alt);
+}
+
+.tv-podcast-episode-title {
+  flex: 1;
+}
+
+.tv-podcast-episode-date {
+  font-size: 0.72rem;
+  color: var(--tv-text-muted);
+}
+
+.tv-podcast-status {
+  margin: 4px 2px;
+  font-size: 0.8rem;
+  color: var(--tv-text-muted);
+}
+
+/* View All / View Less */
+
+.tv-podcast-viewall {
+  margin-top: 6px;
+  margin-bottom: 2px;
+  font-size: 0.78rem;
+  text-decoration: underline;
+  color: var(--tv-text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+/* Footer pinned to bottom of card */
+.tv-podcast-footer {
+  margin-top: auto;
+  display: flex;
   justify-content: center;
+  width: 100%;
+}
+
+.tv-podcast-cta {
+  padding-inline: 18px;
+  font-size: 0.8rem;
   text-align: center;
 }
 
-.tv-play-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  border: 2px solid var(--tv-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-}
-
-/* Support section */
+/* Support / merch */
 
 .tv-support-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.2fr);
+  grid-template-columns: 1.5fr 1.2fr;
   gap: 22px;
 }
 
@@ -319,12 +526,9 @@ button {
 }
 
 .tv-support-btn {
-  text-align: left;
   padding: 12px 14px;
   border-radius: var(--tv-radius-md);
-  border: 1px solid transparent;
   font-size: 0.95rem;
-  background: var(--tv-bg-alt);
 }
 
 .tv-support-btn-primary {
@@ -334,18 +538,14 @@ button {
 
 .tv-support-btn-outline {
   background: white;
-  border-color: var(--tv-border-subtle);
+  border: 1px solid var(--tv-border-subtle);
+  color: var(--tv-text-muted);
 }
 
 .tv-support-subtext {
   display: block;
   margin-top: 4px;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.tv-support-btn-outline .tv-support-subtext {
-  color: var(--tv-text-muted);
 }
 
 .tv-support-copy {
@@ -376,390 +576,94 @@ button {
   width: 100%;
 }
 
-/* Footer */
+/* FOOTER + ATTRIBUTION */
 
 .tv-footer {
-  padding: 14px 32px 20px;
+  padding: 14px 12px 20px;
   text-align: center;
   font-size: 0.8rem;
   color: var(--tv-text-muted);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 20px;
+}
+
+.tv-footer-attrib {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--tv-text-muted);
+  opacity: 0.9;
+  margin-top: -2px;
 }
 
 /* Responsive */
 
 @media (max-width: 900px) {
   .tv-hero {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .tv-support-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .tv-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .tv-header-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+  .tv-podcast-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tv-support-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tv-podcast-card {
+    height: auto;
   }
 }
 
 @media (max-width: 640px) {
   .tv-main {
-    padding: 18px 14px 24px;
+    padding: 18px 14px;
   }
 
-  .tv-now-playing {
-    grid-template-columns: minmax(0, 1fr);
+  .tv-now-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .tv-player-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tv-player-controls {
+    flex-wrap: wrap;
+    width: 100%;
   }
 
   .tv-card-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .tv-artwork-placeholder {
-    height: 150px; /* a bit taller on small screens */
-  }
-
-  .tv-meta-row {
-    margin-top: 6px;
-  }
-}
-
-/* Recent tracks list inside now-playing card */
-.tv-history-list {
-  list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
-}
-
-.tv-history-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-  font-size: 0.8rem;
-}
-
-.tv-history-thumb {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.tv-history-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.tv-history-title {
-  font-weight: 500;
-}
-
-.tv-history-artist {
-  color: var(--tv-text-muted);
-}
-
-.tv-history-time {
-  font-size: 0.7rem;
-  color: var(--tv-text-muted);
-}
-
-.tv-history-empty {
-  margin-top: 8px;
-  font-size: 0.8rem;
-  color: var(--tv-text-muted);
-}
-
-/* --- TRUEVOICE NETWORK PODCASTS --- */
-
-.tv-podcast-network {
-  margin-top: 4px;
-}
-
-.tv-podcast-status {
-  font-size: 0.9rem;
-  color: var(--tv-text-muted);
-}
-
-.tv-podcast-status.tv-podcast-error {
-  color: #b91c1c;
-}
-
-.tv-podcast-grid {
-  margin-top: 6px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-}
-
-.tv-podcast-card {
-  background: var(--tv-bg-alt);
-  border-radius: var(--tv-radius-md);
-  padding: 12px 14px 14px;
-  box-shadow: 0 10px 24px rgba(9, 33, 93, 0.12);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.tv-podcast-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.tv-podcast-cover {
-  width: 60px;
-  height: 60px;
-  border-radius: 14px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.tv-podcast-header-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.tv-podcast-title {
-  margin: 0;
-  font-size: 0.98rem;
-  font-weight: 600;
-}
-
-.tv-podcast-audience {
-  margin: 2px 0 0;
-  font-size: 0.8rem;
-  color: var(--tv-text-muted);
-}
-
-.tv-podcast-description {
-  margin: 2px 0 4px;
-  font-size: 0.85rem;
-  color: var(--tv-text-muted);
-}
-
-.tv-episode-list {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.tv-episode-item {
-  font-size: 0.83rem;
-}
-
-.tv-episode-link {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  text-decoration: none;
-  color: inherit;
-  background: white;
-  border: 1px solid rgba(204, 214, 242, 0.9);
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease,
-    transform 0.08s ease;
-}
-
-.tv-episode-link:hover {
-  background: #e0e7ff;
-  border-color: #a5b4fc;
-  transform: translateY(-1px);
-}
-
-.tv-episode-title {
-  flex: 1;
-  font-weight: 500;
-}
-
-.tv-episode-meta {
-  font-size: 0.75rem;
-  color: var(--tv-text-muted);
-  white-space: nowrap;
-}
-
-.tv-podcast-footer {
-  margin-top: 6px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.tv-podcast-btn {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--tv-border-subtle);
-  font-size: 0.78rem;
-  text-decoration: none;
-  color: var(--tv-text-main);
-  background: white;
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease,
-    color 0.12s ease;
-}
-
-.tv-podcast-btn:hover {
-  background: #e0e7ff;
-  border-color: #a5b4fc;
-  color: #111827;
-}
-
-/* Mobile tweaks for podcasts + controls */
-
-@media (max-width: 640px) {
-  .tv-player-controls {
-    flex-wrap: wrap;
-    row-gap: 8px;
-  }
-
-  .tv-podcast-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .tv-podcast-card {
-    padding: 10px 12px;
+    padding: 12px;
   }
 
-  .tv-podcast-cover {
+  .tv-podcast-art {
     width: 52px;
     height: 52px;
   }
-}
-/* --- Podcast section layout --- */
 
-.tv-podcast-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
+  .tv-footer {
+    font-size: 0.78rem;
+    padding: 18px 10px 24px;
+    gap: 6px;
+  }
 
-.tv-podcast-card {
-  background: var(--tv-bg-alt);
-  border-radius: var(--tv-radius-lg);
-  padding: 16px 18px 14px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--tv-shadow-soft);
-}
-
-.tv-podcast-header {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.tv-podcast-art {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  object-fit: cover;
-  flex-shrink: 0;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-}
-
-.tv-podcast-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.tv-podcast-title {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.tv-podcast-audience {
-  margin: 0;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--tv-text-muted);
-}
-
-.tv-podcast-description {
-  margin: 4px 0 0;
-  font-size: 0.82rem;
-  color: var(--tv-text-muted);
-}
-
-/* Episodes list inside each card */
-
-.tv-podcast-episodes {
-  margin-top: 8px;
-  border-radius: var(--tv-radius-md);
-  background: white;
-  border: 1px solid var(--tv-border-subtle);
-  padding: 6px 8px;
-  max-height: 220px;
-  overflow-y: auto;
-}
-
-.tv-podcast-episode-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 4px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-size: 0.82rem;
-  color: var(--tv-text-main);
-}
-
-.tv-podcast-episode-row:hover {
-  background: var(--tv-bg-alt);
-}
-
-.tv-podcast-episode-title {
-  flex: 1;
-}
-
-.tv-podcast-episode-date {
-  flex-shrink: 0;
-  font-size: 0.72rem;
-  color: var(--tv-text-muted);
-}
-
-.tv-podcast-status {
-  margin: 4px 2px;
-  font-size: 0.8rem;
-  color: var(--tv-text-muted);
-}
-
-.tv-podcast-status-error {
-  color: #d93025;
-}
-
-.tv-podcast-footer {
-  margin-top: 10px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.tv-podcast-cta {
-  padding-inline: 14px;
-  font-size: 0.8rem;
-}
-
-/* Stack cards on smaller screens */
-
-@media (max-width: 900px) {
-  .tv-podcast-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .tv-footer-attrib {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
   }
 }
