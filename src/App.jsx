@@ -13,11 +13,11 @@ import ReelsGrid from "./components/ReelsGrid";
 // VITE_TRUEVOICE_PUBLIC_PAGE_URL
 const LIVE_STREAM_URL =
   import.meta.env.VITE_TRUEVOICE_STREAM_URL ||
-  "http://143.244.188.4/listen/truevoice_digital/radio.mp3";
+  "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
 const PUBLIC_PAGE_URL =
   import.meta.env.VITE_TRUEVOICE_PUBLIC_PAGE_URL ||
-  "http://143.244.188.4/public/truevoice_digital";
+ "https://stream.truevoice.digital/public/truevoice_digital"
 
 function App() {
   const audioRef = useRef(null);
