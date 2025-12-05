@@ -30,8 +30,7 @@ export function NowPlayingPanel({ showHistory, onStatusChange }) {
     }
 
     load();
-    const id = window.setInterval(load, 30_000);
-
+    const id = window.setInterval(load, 30_000); // back to original 30s poll
     return () => {
       isMounted = false;
       window.clearInterval(id);
