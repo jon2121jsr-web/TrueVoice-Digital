@@ -1,8 +1,7 @@
 // src/services/api.js
 
-// Base AzuraCast URL and station slug.
-// These can be configured in Vercel / .env.* files.
-// Fallbacks are your known good values.
+// ------- AZURACAST NOW-PLAYING -------
+
 const BASE_URL =
   import.meta.env.VITE_AZURACAST_BASE_URL ||
   "https://stream.truevoice.digital";
@@ -35,9 +34,8 @@ export async function fetchNowPlaying() {
   const payload = await res.json();
 
   // Some AzuraCast installs return a single station object here,
-  // others wrap it under `now_playing`. We normalize that.
-  const hasNowPlayingObject = payload && payload.now_playing;
-  const root = hasNowPlayingObject ? payload : { now_playing: payload };
+  // others wrap it under `now_playing`. Normalize it.
+  const root = payload && payload.now_playing ? payload : { now_playing: payload };
 
   const np = root.now_playing || {};
   const song = np.song || {};
@@ -76,4 +74,48 @@ export async function fetchNowPlaying() {
     history,
     recent_tracks: history,
   };
+}
+
+// ------- VERSE OF THE DAY -------
+
+/**
+ * Fetch a verse of the day.
+ * If the external API fails for any reason, we fall back to a static verse.
+ *
+ * Shape expected by VerseOfTheDay.jsx (based on our earlier wiring):
+ * {
+ *   reference: "Psalm 27:13 (NIV)",
+ *   text: "I remain confident of this: ...",
+ *   translation: "NIV"
+ * }
+ */
+export async function fetchVerseOfTheDay() {
+  try {
+    // Example free verse-of-the-day API.
+    // If this ever fails (CORS / network), we catch and return a static verse.
+    const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json");
+    if (!res.ok) {
+      throw new Error(`Verse API HTTP ${res.status}`);
+    }
+
+    const json = await res.json();
+    const item = json?.verse?.details || json?.verse?.details || json?.verse || {};
+
+    const text =
+      item.text ||
+      "I remain confident of this: I will see the goodness of the Lord in the land of the living.";
+    const reference = item.reference || "Psalm 27:13 (NIV)";
+    const translation = item.translation || "NIV";
+
+    return { text, reference, translation };
+  } catch (err) {
+    console.error("fetchVerseOfTheDay failed, using fallback:", err);
+    // Fallback static verse so the UI always has something meaningful
+    return {
+      text:
+        "I remain confident of this: I will see the goodness of the Lord in the land of the living.",
+      reference: "Psalm 27:13 (NIV)",
+      translation: "NIV",
+    };
+  }
 }
