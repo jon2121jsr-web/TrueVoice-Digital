@@ -1,13 +1,20 @@
 // src/components/NowPlayingPanel.jsx
-import { useEffect, useState } from "react";
-import { fetchNowPlaying } from "../services/api";
+import { useEffect, useMemo, useState } from "react";
+import { fetchNowPlaying } from "../services/api"; // keep your current source
 
-export function NowPlayingPanel({ showHistory, onStatusChange }) {
+export function NowPlayingPanel({
+  streamUrl,
+  audioRef,
+  showHistory = false, // we’re not using “Track History” button anymore
+  onStatusChange,
+}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Poll AzuraCast now-playing endpoint
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Poll now-playing endpoint
   useEffect(() => {
     let isMounted = true;
 
@@ -30,7 +37,8 @@ export function NowPlayingPanel({ showHistory, onStatusChange }) {
     }
 
     load();
-    const id = window.setInterval(load, 30_000); // back to original 30s poll
+    const id = window.setInterval(load, 15_000);
+
     return () => {
       isMounted = false;
       window.clearInterval(id);
@@ -44,129 +52,126 @@ export function NowPlayingPanel({ showHistory, onStatusChange }) {
   const artist = song?.artist || "TrueVoice Digital";
   const art = song?.art || null;
   const listeners = data?.listeners ?? null;
-  const isLive = data?.isLive ?? false;
-  const liveStreamer = data?.liveStreamer || null;
 
-  // History – flexible in case of different API field names
-  const historyRaw =
-    (Array.isArray(data?.history) && data.history) ||
-    (Array.isArray(data?.recent_tracks) && data.recent_tracks) ||
-    [];
-  const history = historyRaw.slice(0, 6);
+  // “isLive” can be flaky depending on source; we’ll show streaming UI based on play state
+  const liveLabel = useMemo(() => {
+    if (error) return "OFF AIR";
+    return isPlaying ? "NOW STREAMING" : "READY";
+  }, [error, isPlaying]);
 
-  const liveLabel = error
-    ? "OFF AIR"
-    : isLive
-    ? liveStreamer
-      ? `LIVE • ${liveStreamer}`
-      : "LIVE"
-    : "AutoDJ";
-
-  const formatTime = (value) => {
-    if (!value) return "";
-    const d =
-      typeof value === "number"
-        ? new Date(value * 1000) // unix seconds
-        : new Date(value); // ISO or ms
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
-  // Bubble status up to App for LIVE dot + mini-player
+  // Keep App informed (LIVE dot / status)
   useEffect(() => {
     if (typeof onStatusChange === "function") {
       onStatusChange({
-        isLive: !!isLive,
+        isLive: !!isPlaying && !error,
         hasError: !!error,
         isLoading: !!loading,
+        station: "TrueVoice Radio",
       });
     }
-  }, [isLive, error, loading, onStatusChange]);
+  }, [isPlaying, error, loading, onStatusChange]);
+
+  // Make sure the audio element exists and is wired
+  useEffect(() => {
+    if (!audioRef?.current) return;
+    if (streamUrl && audioRef.current.src !== streamUrl) {
+      audioRef.current.src = streamUrl;
+    }
+    audioRef.current.preload = "none";
+
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onEnded = () => setIsPlaying(false);
+
+    audioRef.current.addEventListener("play", onPlay);
+    audioRef.current.addEventListener("pause", onPause);
+    audioRef.current.addEventListener("ended", onEnded);
+
+    return () => {
+      if (!audioRef?.current) return;
+      audioRef.current.removeEventListener("play", onPlay);
+      audioRef.current.removeEventListener("pause", onPause);
+      audioRef.current.removeEventListener("ended", onEnded);
+    };
+  }, [audioRef, streamUrl]);
+
+  const handleTogglePlay = async () => {
+    try {
+      const el = audioRef?.current;
+      if (!el) {
+        console.warn("audioRef not attached. Add <audio ref={playerRef} /> in App.jsx");
+        return;
+      }
+
+      if (el.paused) {
+        // iOS/Chrome mobile requires this to be user-initiated (this click is good)
+        await el.play();
+      } else {
+        el.pause();
+      }
+    } catch (e) {
+      console.error("Audio play/pause failed:", e);
+      setError("Tap again to start audio (browser blocked autoplay).");
+    }
+  };
 
   return (
-    <div className="tv-now-inner">
-      {/* LEFT: artwork area */}
-      <div className="tv-artwork-placeholder">
-        {art && (
-          <img
-            src={art}
-            alt={`${title} cover art`}
-            className="tv-artwork-img"
-            loading="lazy"
-          />
-        )}
-      </div>
-
-      {/* RIGHT: text/meta + optional history */}
-      <div className="tv-now-content">
-        <span className="tv-eyebrow">
-          {error ? "STREAM STATUS" : "NOW PLAYING"}
-        </span>
-
-        <h1 className="tv-song-title">{title}</h1>
-        <p className="tv-artist-name">{artist}</p>
-
-        <div className="tv-meta-row">
-          <span
-            className={
-              isLive && !error ? "tv-live-pill tv-live-pill-on" : "tv-live-pill"
-            }
-          >
-            {liveLabel}
-          </span>
-
-          {listeners != null && !Number.isNaN(listeners) && (
-            <span className="tv-listeners">{listeners} listening</span>
+    // ✅ THIS restores the “white card” background you’re missing locally
+    <div className="tv-now-playing">
+      <div className="tv-now-inner">
+        {/* LEFT: artwork */}
+        <div className="tv-artwork-placeholder">
+          {art && (
+            <img
+              src={art}
+              alt={`${title} cover art`}
+              className="tv-artwork-img"
+              loading="lazy"
+            />
           )}
         </div>
 
-        {showHistory && (
-          <div className="tv-history-block">
-            <h2 className="tv-history-heading">Recent Tracks</h2>
-            {history.length === 0 ? (
-              <p className="tv-history-empty">
-                History will appear here as tracks play.
-              </p>
-            ) : (
-              <ul className="tv-history-list">
-                {history.map((item, idx) => (
-                  <li
-                    key={
-                      item.id ||
-                      item.song_id ||
-                      item.played_at ||
-                      `${item.title}-${idx}`
-                    }
-                    className="tv-history-item"
-                  >
-                    {item.art && (
-                      <img
-                        src={item.art}
-                        alt={item.title || "Previous track"}
-                        className="tv-history-thumb"
-                        loading="lazy"
-                      />
-                    )}
-                    <div className="tv-history-text">
-                      <span className="tv-history-title">
-                        {item.title || "Unknown title"}
-                      </span>
-                      {item.artist && (
-                        <span className="tv-history-artist">
-                          {item.artist}
-                        </span>
-                      )}
-                    </div>
-                    {item.played_at && (
-                      <span className="tv-history-time">
-                        {formatTime(item.played_at)}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+        {/* RIGHT: text/meta + controls */}
+        <div className="tv-now-content">
+          <span className="tv-eyebrow">{error ? "STREAM STATUS" : "NOW PLAYING"}</span>
+
+          <h1 className="tv-song-title">{title}</h1>
+          <p className="tv-artist-name">{artist}</p>
+
+          {/* LIVE row */}
+          <div className="tv-player-bar">
+            <div className="tv-player-label">
+              <span
+                className={
+                  isPlaying && !error ? "tv-live-dot" : "tv-live-dot tv-live-dot-idle"
+                }
+                aria-hidden="true"
+              />
+              <span className="tv-player-title">TRUEVOICE RADIO</span>
+
+              <span className="tv-player-subtitle">{liveLabel}</span>
+
+              {listeners != null && !Number.isNaN(listeners) && (
+                <span className="tv-listeners">{listeners} listening</span>
+              )}
+            </div>
+
+            <div className="tv-player-controls">
+              <button
+                type="button"
+                className={`tv-btn ${isPlaying ? "tv-btn-primary" : "tv-btn-primary"}`}
+                onClick={handleTogglePlay}
+              >
+                {isPlaying ? "Pause" : "Listen Live"}
+              </button>
+
+              {/* ❌ Track History button removed on purpose */}
+            </div>
           </div>
-        )}
+
+          {/* Optional legacy block — not used now */}
+          {showHistory && null}
+        </div>
       </div>
     </div>
   );

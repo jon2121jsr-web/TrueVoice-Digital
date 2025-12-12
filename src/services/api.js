@@ -19,6 +19,8 @@ const STATION_SLUG =
  *   listeners,
  *   isLive,
  *   liveStreamer,
+ *   playlist,
+ *   next: { title, artist, art } | null,
  *   history: [ { title, artist, art, played_at }, ... ],
  *   recent_tracks: same as history
  * }
@@ -33,12 +35,16 @@ export async function fetchNowPlaying() {
 
   const payload = await res.json();
 
-  // Some AzuraCast installs return a single station object here,
-  // others wrap it under `now_playing`. Normalize it.
-  const root = payload && payload.now_playing ? payload : { now_playing: payload };
+  // Normalize shape in case it’s either the station object or just now_playing.
+  const root =
+    payload && payload.now_playing ? payload : { now_playing: payload };
 
   const np = root.now_playing || {};
   const song = np.song || {};
+
+  // Playing next
+  const playingNext = root.playing_next || null;
+  const nextSong = playingNext?.song || null;
 
   // Normalize history array
   const historySource = Array.isArray(root.song_history)
@@ -50,7 +56,7 @@ export async function fetchNowPlaying() {
   const history = historySource.map((item) => {
     const s = item.song || item;
     return {
-      id: item.id || item.song_id || undefined,
+      id: item.sh_id || item.id || item.song_id || undefined,
       title: s.title || item.title || "Unknown title",
       artist: s.artist || item.artist || "",
       art: s.art || item.art || null,
@@ -71,6 +77,14 @@ export async function fetchNowPlaying() {
       null,
     isLive: !!(root.live && root.live.is_live),
     liveStreamer: root.live?.streamer_name || null,
+    playlist: np.playlist || null,
+    next: nextSong
+      ? {
+          title: nextSong.title || "Unknown Title",
+          artist: nextSong.artist || "",
+          art: nextSong.art || null,
+        }
+      : null,
     history,
     recent_tracks: history,
   };
@@ -82,7 +96,7 @@ export async function fetchNowPlaying() {
  * Fetch a verse of the day.
  * If the external API fails for any reason, we fall back to a static verse.
  *
- * Shape expected by VerseOfTheDay.jsx (based on our earlier wiring):
+ * Shape expected by VerseOfTheDay.jsx:
  * {
  *   reference: "Psalm 27:13 (NIV)",
  *   text: "I remain confident of this: ...",
@@ -92,14 +106,13 @@ export async function fetchNowPlaying() {
 export async function fetchVerseOfTheDay() {
   try {
     // Example free verse-of-the-day API.
-    // If this ever fails (CORS / network), we catch and return a static verse.
     const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json");
     if (!res.ok) {
       throw new Error(`Verse API HTTP ${res.status}`);
     }
 
     const json = await res.json();
-    const item = json?.verse?.details || json?.verse?.details || json?.verse || {};
+    const item = json?.verse?.details || json?.verse || {};
 
     const text =
       item.text ||

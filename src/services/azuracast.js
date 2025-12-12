@@ -1,14 +1,13 @@
 // src/services/azuracast.js
 
-const BASE_URL = import.meta.env.VITE_AZURACAST_BASE_URL;
-const STATION_SLUG = import.meta.env.VITE_AZURACAST_STATION_SLUG;
+// Prefer env vars (Vercel / .env), but fall back to your live station
+// so local dev works even if .env is missing.
+const BASE_URL =
+  import.meta.env.VITE_AZURACAST_BASE_URL ||
+  "https://stream.truevoice.digital";
 
-if (!BASE_URL || !STATION_SLUG) {
-  console.warn(
-    "[AzuraCast] VITE_AZURACAST_BASE_URL or VITE_AZURACAST_STATION_SLUG is not set. " +
-      "fetchRawNowPlaying / fetchNowPlaying will throw until these are configured."
-  );
-}
+const STATION_SLUG =
+  import.meta.env.VITE_AZURACAST_STATION_SLUG || "truevoice_digital";
 
 /**
  * Internal helper: fetch the raw AzuraCast now-playing payload
@@ -17,7 +16,7 @@ if (!BASE_URL || !STATION_SLUG) {
 async function fetchAzuraRawNowPlaying() {
   if (!BASE_URL || !STATION_SLUG) {
     throw new Error(
-      "AzuraCast env vars are missing (BASE_URL or STATION_SLUG)."
+      "AzuraCast configuration is invalid; BASE_URL or STATION_SLUG is empty."
     );
   }
 
@@ -43,8 +42,6 @@ export async function fetchRawNowPlaying() {
  * our UI expects.
  */
 function normalizeNowPlaying(raw) {
-  // /api/nowplaying/{station} usually returns a single object with:
-  // { now_playing, live, listeners, playing_next, song_history, ... }
   const nowPlaying = raw.now_playing || raw;
 
   const song = nowPlaying.song || {};
@@ -68,7 +65,6 @@ function normalizeNowPlaying(raw) {
   });
 
   return {
-    // What NowPlayingPanel expects:
     song: {
       title: song.title || "Unknown Title",
       artist: song.artist || "Unknown Artist",
@@ -90,8 +86,6 @@ function normalizeNowPlaying(raw) {
  * BACK-COMPAT:
  * Fetch now-playing data from AzuraCast and normalize
  * into the shape NowPlayingPanel expects.
- *
- * This keeps the same behavior you had before.
  */
 export async function fetchNowPlaying() {
   const raw = await fetchAzuraRawNowPlaying();

@@ -1,6 +1,6 @@
 :root {
-  --tv-bg: #e7f0ff;
-  --tv-bg-alt: #f5f8ff;
+  --tv-bg: #d7e4ff;        /* was #e7f0ff – a bit darker */
+  --tv-bg-alt: #f0f4ff;    /* keep this light but slightly cooler */
   --tv-primary: #275fdb;
   --tv-primary-dark: #204bb0;
   --tv-text-main: #0e1b3a;
@@ -26,6 +26,14 @@ body {
   color: var(--tv-text-main);
 }
 
+/* Root app container for current App.jsx */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden; /* prevent horizontal scroll */
+}
+
 button {
   font-family: inherit;
   cursor: pointer;
@@ -33,7 +41,7 @@ button {
   background: none;
 }
 
-/* App shell */
+/* App shell (older tv-app wrapper – safe to keep) */
 
 .tv-app {
   min-height: 100vh;
@@ -443,7 +451,7 @@ button {
   flex-direction: column;
 }
 
-/* simple connect card styling */
+/* simple connect card styling – basic spacing */
 .tv-connect-card {
   align-items: flex-start;
   gap: 8px;
@@ -604,7 +612,7 @@ button {
   text-align: center;
 }
 
-/* Support / merch */
+/* Support / merch (older grid – safe to keep for now) */
 
 .tv-support-grid {
   display: grid;
@@ -615,7 +623,8 @@ button {
 .tv-support-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .tv-support-btn {
@@ -669,7 +678,7 @@ button {
   width: 100%;
 }
 
-/* FOOTER + ATTRIBUTION */
+/* FOOTER + ATTRIBUTION (older tv-footer, safe to keep) */
 
 .tv-footer {
   padding: 14px 12px 20px;
@@ -722,8 +731,17 @@ button {
     padding: 18px 14px;
   }
 
+  /* ✅ MOBILE ALBUM ART FIX (keeps art as a square tile) */
   .tv-now-inner {
-    grid-template-columns: 1fr;
+    grid-template-columns: 92px minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+  }
+
+  .tv-artwork-placeholder {
+    width: 92px;
+    height: 92px;
+    border-radius: 16px;
   }
 
   .tv-player-bar {
@@ -776,55 +794,421 @@ button {
 @media (max-width: 640px) {
   .tv-mini-player {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 10px 14px;
-    background: rgba(12, 24, 52, 0.96);
-    color: #f9fbff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    z-index: 40;
-    box-shadow: 0 -8px 25px rgba(6, 15, 40, 0.6);
+    right: 16px;
+    bottom: 12px;
+    left: auto;
+    transform: none;
+  }
+}
+
+/* === DONATION BUTTON LAYOUT & CLEANUP === */
+
+/* Make support link-buttons look like buttons, not underlined links */
+.tv-support-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-decoration: none !important;
+}
+
+.tv-support-btn .tv-support-subtext {
+  text-decoration: none !important;
+}
+
+/* Row that holds the two donate buttons side by side */
+.tv-donate-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* Each donate button should flex to the same width and not force full-width rows */
+.tv-donate-btn {
+  flex: 1 1 0;
+  min-width: 200px;
+  width: auto !important;
+}
+
+/* On very small screens, let them stack nicely */
+@media (max-width: 640px) {
+  .tv-donate-btn {
+    min-width: 100%;
+  }
+}
+
+/* ================================
+   TRUEVOICE CONNECT – HORIZONTAL SLIDER
+   ================================ */
+
+.tv-connect {
+  margin-top: 2rem;
+}
+
+.tv-connect-header h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.tv-connect-header p {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Horizontal scroll container */
+.tv-connect-scroller {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+  max-width: 100%;
+}
+
+/* Hide scrollbars in a soft way */
+.tv-connect-scroller::-webkit-scrollbar {
+  height: 6px;
+}
+.tv-connect-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tv-connect-scroller::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Each card behaves like a slide */
+.tv-connect-card {
+  scroll-snap-align: start;
+  flex: 0 0 clamp(240px, 30%, 320px); /* responsive width */
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  background: #ffffff;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  box-shadow: 0 18px 45px rgba(2, 10, 42, 0.06);
+  cursor: pointer;
+  text-align: left;
+}
+
+.tv-connect-card:focus-visible {
+  outline: 2px solid rgba(39, 95, 219, 0.6);
+  outline-offset: 2px;
+}
+
+.tv-connect-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #e7f0ff; /* matches your light blue */
+  flex-shrink: 0;
+}
+
+.tv-connect-play-icon {
+  font-size: 1rem;
+}
+
+.tv-connect-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.tv-connect-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.tv-connect-card-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.tv-connect-card-tag {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  background: #f0f4ff;
+  color: #275fdb;
+}
+
+.tv-connect-card-description {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* Mobile: make the cards a bit narrower so sliding feels natural */
+@media (max-width: 640px) {
+  .tv-connect-card {
+    flex: 0 0 240px;
+    padding: 0.85rem 1rem;
+  }
+}
+
+/* ================================
+   SUPPORT SECTION + FOOTER (NEW)
+   ================================ */
+
+.support-section {
+  max-width: 960px;
+  margin: 3rem auto 2rem;
+  padding: 2rem 1.5rem;
+  border-radius: 1.5rem;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(2, 10, 42, 0.06);
+}
+
+.support-section h2 {
+  font-size: 1.3rem;
+  margin-bottom: 0.25rem;
+}
+
+.support-section p {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.support-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.support-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.4rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Primary: Monthly */
+.support-btn.monthly {
+  background: #275fdb;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(39, 95, 219, 0.35);
+}
+
+/* Make One-time match Monthly (both blue with white text) */
+.support-btn.onetime {
+  background: #275fdb;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(39, 95, 219, 0.35);
+}
+
+/* Footer used by current App.jsx */
+.footer {
+  text-align: center;
+  padding: 1.5rem 1rem 3rem;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+/* TEMP: hide old inline history list in the Now Playing card */
+.tv-history-block {
+  display: none !important;
+}
+
+/* HEADER ACTIONS / GIVE BUTTON */
+.tv-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tv-header-give {
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: none;
+  background: #ffffff;
+  color: #275fdb;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 20px rgba(9, 33, 93, 0.25);
+  cursor: pointer;
+}
+
+.tv-header-give:hover {
+  background: #f5f7ff;
+  box-shadow: 0 10px 24px rgba(9, 33, 93, 0.32);
+  transform: translateY(-1px);
+}
+
+.tv-header-give:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 14px rgba(9, 33, 93, 0.22);
+}
+
+/* === RECENTLY PLAYED HORIZONTAL STRIP === */
+
+.tv-history-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 4px 8px;
+  margin-top: 4px;
+  scroll-snap-type: x mandatory;
+}
+
+.tv-history-strip::-webkit-scrollbar {
+  height: 6px;
+}
+.tv-history-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tv-history-strip::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.tv-history-chip {
+  scroll-snap-align: start;
+  flex: 0 0 210px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: var(--tv-bg-alt);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: 0 10px 24px rgba(2, 10, 42, 0.08);
+}
+
+.tv-history-chip-art {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.tv-history-chip-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-history-chip-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.tv-history-chip-artist {
+  font-size: 0.76rem;
+  color: var(--tv-text-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .tv-history-chip {
+    flex: 0 0 180px;
+  }
+}
+
+/* === NIGHT MODE (body.tv-night is toggled from App.jsx) === */
+
+body.tv-night {
+  background: #050816;
+}
+
+body.tv-night .tv-main {
+  background: #050816;
+}
+
+/* Optional: soften sections a bit at night without going full dark UI */
+body.tv-night .tv-section,
+body.tv-night .tv-verse-card {
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+}
+
+body.tv-night .tv-header {
+  background: linear-gradient(90deg, #243b8f, #4a6ce0);
+}
+
+/* =========================================================
+   MOBILE + SWIPE FIX PACK (append at very bottom)
+   ========================================================= */
+
+/* Make sure the app can shrink on mobile without forcing overflow */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Let main content actually be full-width on small screens */
+.tv-main {
+  width: 100%;
+  max-width: 1100px;
+}
+
+@media (max-width: 900px) {
+  .tv-main {
+    max-width: 100%;
   }
 
-  .tv-mini-player-main {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  /* Prevent any grid child from forcing width */
+  .tv-hero,
+  .tv-now-playing,
+  .tv-verse-card,
+  .tv-section {
+    min-width: 0;
   }
+}
 
-  .tv-mini-pill {
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
-  }
+/* Critical for swipe scrolling on mobile (iOS + Android) */
+.tv-connect-scroller,
+.tv-history-strip {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
 
-  .tv-mini-player-title {
-    font-size: 0.86rem;
-    font-weight: 500;
-  }
+  /* This tells mobile browsers “this area is meant to pan horizontally” */
+  touch-action: pan-x;
 
-  .tv-mini-player-btn {
-    padding: 8px 14px;
-    border-radius: 999px;
-    font-size: 0.86rem;
-    font-weight: 600;
-    border: none;
-    background: #ffffff;
-    color: #162143;
-    white-space: nowrap;
-    transition: transform 0.08s ease, box-shadow 0.16s ease;
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
-  }
+  /* Slightly nicer snap */
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 10px;
+  scroll-padding-right: 10px;
+}
 
-  .tv-mini-player-btn:active {
-    transform: scale(0.97);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+/* Make sure the items snap cleanly and don’t shrink weirdly */
+.tv-connect-card,
+.tv-history-chip {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* If any parent container is accidentally clipping, this prevents it */
+.tv-section {
+  overflow: visible;
+}
+
+/* Optional: if your small-screen layout still looks “desktop-ish”,
+   force the hero cards to stack earlier */
+@media (max-width: 760px) {
+  .tv-hero {
+    grid-template-columns: 1fr !important;
   }
 }

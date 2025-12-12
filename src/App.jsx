@@ -1,3 +1,4 @@
+// src/App.jsx
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
@@ -6,277 +7,193 @@ import { NowPlayingPanel } from "./components/NowPlayingPanel";
 import { VerseOfTheDay } from "./components/VerseOfTheDay";
 import PodcastList from "./components/PodcastList";
 import ReelsGrid from "./components/ReelsGrid";
+import { NowPlayingDebug } from "./components/NowPlayingDebug";
+import TrueVoiceConnect from "./components/TrueVoiceConnect.jsx";
+import RecentTracksBar from "./components/RecentTracksBar.jsx";
 
-// Stream + public page URLs
-// For Vercel, set:
-// VITE_TRUEVOICE_STREAM_URL
-// VITE_TRUEVOICE_PUBLIC_PAGE_URL
+// Stream URL (with env override for Vercel)
 const LIVE_STREAM_URL =
   import.meta.env.VITE_TRUEVOICE_STREAM_URL ||
   "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
-const PUBLIC_PAGE_URL =
-  import.meta.env.VITE_TRUEVOICE_PUBLIC_PAGE_URL ||
- "https://stream.truevoice.digital/public/truevoice_digital"
-
 function App() {
-  const audioRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  const playerRef = useRef(null);
+  const [currentStation, setCurrentStation] = useState("TrueVoice Radio");
+  const [showDebug, setShowDebug] = useState(false);
 
-  // Now-playing / LIVE status from AzuraCast
-  const [streamStatus, setStreamStatus] = useState({
-    isLive: false,
-    hasError: false,
-    isLoading: true,
-  });
-
-  // Mini-player visibility (mobile / tablet)
-  const [isMiniPlayerVisible, setIsMiniPlayerVisible] = useState(false);
-
-  const handlePlayToggle = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      if (!audio.src) {
-        audio.src = LIVE_STREAM_URL;
-      }
-      audio
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch((err) => {
-          console.error("Error playing stream:", err);
-          alert("Unable to start the stream. Check the stream URL or server.");
-        });
+  const handleStatusChange = (status) => {
+    if (status && status.station) {
+      setCurrentStation(status.station);
     }
   };
 
-  const handleToggleHistory = () => {
-    setShowHistory((prev) => !prev);
-  };
-
-  // Share stream without noisy alerts
-  const handleShare = () => {
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard
-        .writeText(PUBLIC_PAGE_URL)
-        .catch(() => {
-          window.open(PUBLIC_PAGE_URL, "_blank", "noopener,noreferrer");
-        });
-    } else {
-      window.open(PUBLIC_PAGE_URL, "_blank", "noopener,noreferrer");
-    }
-  };
-
-  // Show mini-player on mobile / tablet when user scrolls down,
-  // regardless of play/pause state (so you can resume from there).
   useEffect(() => {
-    const handleScrollOrResize = () => {
-      if (typeof window === "undefined") return;
-
-      const isNarrow = window.innerWidth <= 900; // phone + tablet
-      const scrolledPastHero = window.scrollY > 150; // slightly below hero
-
-      if (isNarrow && scrolledPastHero) {
-        setIsMiniPlayerVisible(true);
-      } else {
-        setIsMiniPlayerVisible(false);
+    function handleKeyDown(event) {
+      if (event.altKey && event.key.toLowerCase() === "d") {
+        setShowDebug((prev) => !prev);
       }
-    };
+    }
 
-    window.addEventListener("scroll", handleScrollOrResize);
-    window.addEventListener("resize", handleScrollOrResize);
-    handleScrollOrResize();
-
-    return () => {
-      window.removeEventListener("scroll", handleScrollOrResize);
-      window.removeEventListener("resize", handleScrollOrResize);
-    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // LIVE dot behavior:
-  // - Red: streamStatus.hasError
-  // - Pulsing: user is playing OR AzuraCast says isLive
-  // - Grey idle: not playing, no error
-  const isDotOffline = streamStatus.hasError;
-  const isDotActive =
-    (isPlaying || streamStatus.isLive) && !streamStatus.hasError;
+  const handleHeaderGiveClick = () => {
+    const el = document.getElementById("tv-support-section");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
-  const liveDotClass = isDotOffline
-    ? "tv-live-dot tv-live-dot-off"
-    : isDotActive
-    ? "tv-live-dot"
-    : "tv-live-dot tv-live-dot-idle";
+  // Auto night mode based on local time
+  useEffect(() => {
+    const updateTheme = () => {
+      const hour = new Date().getHours();
+      const isNight = hour >= 20 || hour < 6; // 8pm–6am
+      document.body.classList.toggle("tv-night", isNight);
+    };
 
-  const playerTitleText = streamStatus.hasError
-    ? "Stream Offline"
-    : streamStatus.isLive
-    ? "Live 24/7 Stream"
-    : "TrueVoice Radio";
+    updateTheme();
+    const id = window.setInterval(updateTheme, 15 * 60 * 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
-  const showNowStreamingLabel = isPlaying || streamStatus.isLive;
+  // PLACEHOLDER handlers for TrueVoice Connect buttons
+  const handleWatchLive = () => console.log("Watch Live clicked");
+  const handleListenAgain = () => console.log("Listen Again clicked");
+  const handleMusicAndTestimonies = () =>
+    console.log("Music & Testimonies clicked");
 
   return (
-    <div className="tv-app">
-      {/* hidden audio element for live stream */}
-      <audio ref={audioRef} hidden />
-
-      {/* Top band */}
+    <div className="app-container tv-app">
+      {/* TOP BAR / BRAND + GIVE BUTTON */}
       <header className="tv-header">
         <div className="tv-header-inner">
           <div className="tv-brand">TrueVoice.Digital</div>
+
+          <div className="tv-header-actions">
+            <button
+              type="button"
+              className="tv-header-give"
+              onClick={handleHeaderGiveClick}
+            >
+              Give
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Hero banner */}
+      {/* HERO BANNER */}
       <Hero />
+      <audio ref={playerRef} preload="none" />
 
       <main className="tv-main">
-        {/* HERO ROW – dynamic Now Playing + Verse of the Day */}
-        <section className="tv-hero">
-          {/* Left: live now playing info + controls */}
-          <div className="tv-now-playing">
-            <NowPlayingPanel
-              showHistory={showHistory}
-              onStatusChange={setStreamStatus}
-            />
+        {/* NOW PLAYING + VERSE OF THE DAY GRID */}
+        <div className="tv-hero">
+          <NowPlayingPanel
+            streamUrl={LIVE_STREAM_URL}
+            audioRef={playerRef}
+            showHistory={false} // ✅ disable internal recent tracks block
+            onStatusChange={handleStatusChange}
+          />
 
-            {/* Player bar with LIVE indicator + controls */}
-            <div className="tv-player-bar">
-              <div className="tv-player-label">
-                <span className={liveDotClass} />
-                <span className="tv-player-title">{playerTitleText}</span>
-                {showNowStreamingLabel && (
-                  <span className="tv-player-subtitle">Now Streaming</span>
-                )}
-              </div>
-
-              <div className="tv-player-controls">
-                <button
-                  className="tv-btn tv-btn-primary"
-                  onClick={handlePlayToggle}
-                >
-                  {isPlaying ? "Pause" : "Listen Live"}
-                </button>
-
-                <button
-                  className="tv-btn tv-btn-secondary"
-                  onClick={handleToggleHistory}
-                >
-                  {showHistory ? "Hide History" : "Track History"}
-                </button>
-
-                <button
-                  className="tv-icon-btn"
-                  title="Share stream"
-                  onClick={handleShare}
-                >
-                  ↗
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Verse of the Day card */}
-          <aside className="tv-verse-card">
+          {/* ✅ FORCE THE VERSE TO ALWAYS RENDER INSIDE A "CARD" */}
+          <div className="tv-verse-card">
             <VerseOfTheDay />
-          </aside>
-        </section>
-
-        {/* 1) TRUEVOICE CONNECT – directly under the player */}
-        <section className="tv-section tv-section--stacked">
-          <h2 className="tv-section-title">TrueVoice Connect</h2>
-          <div className="tv-card-grid">
-            <ConnectCard label="Watch Live" />
-            <ConnectCard label="Listen Again" />
-            <ConnectCard label="Stories & Testimonies" />
           </div>
+        </div>
+
+        {/* ✅ RECENTLY PLAYED BAR */}
+        <RecentTracksBar />
+
+        {/* TRUEVOICE CONNECT */}
+        <section className="tv-section tv-section--stacked">
+          <TrueVoiceConnect
+            onWatchLive={handleWatchLive}
+            onListenAgain={handleListenAgain}
+            onMusicAndTestimonies={handleMusicAndTestimonies}
+          />
         </section>
 
-        {/* 2) TRUEVOICE REELS – short-form clips */}
+        {/* REELS GRID */}
         <section className="tv-section tv-section--stacked">
           <ReelsGrid />
         </section>
 
-        {/* 3) TRUEVOICE NETWORK PODCASTS – below Reels */}
+        {/* PODCAST LIST */}
         <section className="tv-section tv-section--stacked">
           <PodcastList />
         </section>
 
-        {/* 4) SUPPORT / MERCH */}
-        <section className="tv-section tv-support-grid">
-          <div>
-            <h2 className="tv-section-title">Support the Mission</h2>
-            <div className="tv-support-actions">
-              <button className="tv-support-btn tv-support-btn-primary">
-                Prayer Request
-                <span className="tv-support-subtext">
-                  Share what we can pray for.
-                </span>
-              </button>
-              <button className="tv-support-btn tv-support-btn-outline">
-                Share an encouragement
-                <span className="tv-support-subtext">
-                  Share a testimony or story.
-                </span>
-              </button>
-            </div>
-          </div>
+        {/* SUPPORT / GIVING CARD */}
+        <section id="tv-support-section" className="tv-section">
+          <div className="tv-support-grid">
+            <div>
+              <h2>Support the Mission</h2>
+              <p className="tv-support-copy">
+                Your generosity helps keep TrueVoice Digital streaming worldwide.
+              </p>
 
-          <div>
-            <h2 className="tv-section-title">Shop & Give</h2>
-            <p className="tv-support-copy">
-              Keep TrueVoice streaming strong through your support.
-            </p>
-            <div className="tv-merch-grid">
-              <div className="tv-merch-item">Merch</div>
-              <div className="tv-merch-item">Merch</div>
-              <div className="tv-merch-item">Merch</div>
+              <div className="tv-support-actions">
+                <div className="tv-donate-row">
+                  <a
+                    href="https://buy.stripe.com/eVa14K5ATf1o60o8ww"
+                    className="tv-support-btn tv-support-btn-primary tv-donate-btn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span>Monthly Gift</span>
+                    <span className="tv-support-subtext">
+                      Become a monthly partner.
+                    </span>
+                  </a>
+
+                  <a
+                    href="https://buy.stripe.com/3cs8y88qbdzC0eIfZk"
+                    className="tv-support-btn tv-support-btn-primary tv-donate-btn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span>One-Time Gift</span>
+                    <span className="tv-support-subtext">
+                      Make a one-time donation.
+                    </span>
+                  </a>
+                </div>
+              </div>
             </div>
-            <button className="tv-btn tv-btn-primary tv-shop-btn">
-              Shop More
-            </button>
+
+            <div>
+              <div className="tv-merch-grid">
+                <div className="tv-merch-item">T-Shirts</div>
+                <div className="tv-merch-item">Hoodies</div>
+                <div className="tv-merch-item">Mugs</div>
+              </div>
+              <button className="tv-btn tv-btn-secondary tv-shop-btn" disabled>
+                Shop Merch (Coming Soon)
+              </button>
+            </div>
           </div>
         </section>
+
+        {/* FOOTER + ATTRIBUTION */}
+        <footer className="tv-footer">
+          <p>
+            © {new Date().getFullYear()} TrueVoice.Digital. All rights reserved.
+          </p>
+          <p className="tv-footer-attrib">POWERED BY OUTPUT DIGITAL</p>
+        </footer>
       </main>
 
-      {/* Mobile / tablet mini-player for when user scrolls away from the main hero */}
-      {isMiniPlayerVisible && (
-        <div className="tv-mini-player">
-          <div className="tv-mini-player-main">
-            <span className="tv-mini-pill">
-              {streamStatus.hasError ? "Offline" : "Now Streaming"}
-            </span>
-            <span className="tv-mini-player-title">
-              TrueVoice.Digital · Live
-            </span>
-          </div>
-          <button className="tv-mini-player-btn" onClick={handlePlayToggle}>
-            {isPlaying ? "Pause" : "Listen"}
-          </button>
-        </div>
+      {/* DEBUG PANEL (ALT+D) */}
+      {showDebug && (
+        <NowPlayingDebug
+          playerRef={playerRef}
+          currentStation={currentStation}
+          liveUrl={LIVE_STREAM_URL}
+        />
       )}
-
-      <footer className="tv-footer">
-        <p>
-          © {new Date().getFullYear()} TrueVoice.Digital · All rights reserved.
-        </p>
-        <p className="tv-footer-attrib">Powered by OUTPUT Digital</p>
-      </footer>
     </div>
-  );
-}
-
-function ConnectCard({ label }) {
-  return (
-    <article className="tv-card tv-connect-card">
-      <div className="tv-play-icon">▶</div>
-      <h3 className="tv-card-title">{label}</h3>
-    </article>
   );
 }
 
