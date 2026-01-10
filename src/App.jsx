@@ -246,7 +246,7 @@ function App() {
                   </a>
 
                   <a
-                    href="https://buy.stripe.com/dRm00l9ZfIXmdOAeCxds400"
+                    href="https://buy.stripe.com/dRm00l9ZffXmdOAeCxds400"
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
                     target="_blank"
                     rel="noopener noreferrer"
