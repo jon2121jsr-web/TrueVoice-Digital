@@ -79,7 +79,9 @@ function App() {
       // clean the URL after showing thanks
       params.delete("thanks");
       const newQs = params.toString();
-      const newUrl = newQs ? `${window.location.pathname}?${newQs}` : window.location.pathname;
+      const newUrl = newQs
+        ? `${window.location.pathname}?${newQs}`
+        : window.location.pathname;
       window.history.replaceState({}, "", newUrl);
 
       // auto-hide after a moment
@@ -132,8 +134,10 @@ function App() {
 
   // Handlers for TrueVoice Connect buttons (now real)
   const handleWatchLive = () => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE);
-  const handleListenAgain = () => openVideoForSection(VIDEO_SECTIONS.LISTEN_AGAIN);
-  const handleMusicAndTestimonies = () => openVideoForSection(VIDEO_SECTIONS.MUSIC_TESTIMONIES);
+  const handleListenAgain = () =>
+    openVideoForSection(VIDEO_SECTIONS.LISTEN_AGAIN);
+  const handleMusicAndTestimonies = () =>
+    openVideoForSection(VIDEO_SECTIONS.MUSIC_TESTIMONIES);
 
   const closeVideo = () => {
     setVideoOpen(false);
@@ -148,7 +152,11 @@ function App() {
           <div className="tv-brand">TrueVoice.Digital</div>
 
           <div className="tv-header-actions">
-            <button type="button" className="tv-header-give" onClick={handleHeaderGiveClick}>
+            <button
+              type="button"
+              className="tv-header-give"
+              onClick={handleHeaderGiveClick}
+            >
               Give
             </button>
           </div>
@@ -226,24 +234,27 @@ function App() {
               <div className="tv-support-actions">
                 <div className="tv-donate-row">
                   <a
-                    // Add ?thanks=1 so Stripe redirect can land cleanly back here later
-                    href="https://buy.stripe.com/eVa14K5ATf1o60o8ww"
+                    href="https://buy.stripe.com/cNi9AV6N326wdOA0LHds401"
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <span>Monthly Gift</span>
-                    <span className="tv-support-subtext">Become a monthly partner.</span>
+                    <span className="tv-support-subtext">
+                      Become a monthly partner.
+                    </span>
                   </a>
 
                   <a
-                    href="https://buy.stripe.com/3cs8y88qbdzC0eIfZk"
+                    href="https://buy.stripe.com/dRm00l9ZfIXmdOAeCxds400"
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <span>One-Time Gift</span>
-                    <span className="tv-support-subtext">Make a one-time donation.</span>
+                    <span className="tv-support-subtext">
+                      Make a one-time donation.
+                    </span>
                   </a>
                 </div>
               </div>
@@ -264,7 +275,9 @@ function App() {
 
         {/* FOOTER + ATTRIBUTION */}
         <footer className="tv-footer">
-          <p>© {new Date().getFullYear()} TrueVoice.Digital. All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()} TrueVoice.Digital. All rights reserved.
+          </p>
           <p className="tv-footer-attrib">POWERED BY OUTPUT DIGITAL</p>
         </footer>
       </main>
