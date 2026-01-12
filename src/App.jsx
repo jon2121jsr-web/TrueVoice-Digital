@@ -233,6 +233,7 @@ function App() {
 
               <div className="tv-support-actions">
                 <div className="tv-donate-row">
+                  {/* MONTHLY */}
                   <a
                     href="https://buy.stripe.com/cNi9AV6N326wdOA0LHds401"
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
@@ -245,16 +246,41 @@ function App() {
                     </span>
                   </a>
 
+                  {/* ONE-TIME TIERS */}
                   <a
-                    href="https://buy.stripe.com/dRm00l9ZffXmdOAeCxds400"
+                    href="https://buy.stripe.com/3cI14pb3j6mMdOA9idds404"
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label="One-Time Gift $10"
+                    title="One-Time Gift $10"
                   >
-                    <span>One-Time Gift</span>
-                    <span className="tv-support-subtext">
-                      Make a one-time donation.
-                    </span>
+                    <span>One-Time $10</span>
+                    <span className="tv-support-subtext">Seed Gift</span>
+                  </a>
+
+                  <a
+                    href="https://buy.stripe.com/3cI28t6N37qQbGsgKFds403"
+                    className="tv-support-btn tv-support-btn-primary tv-donate-btn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="One-Time Gift $25"
+                    title="One-Time Gift $25"
+                  >
+                    <span>One-Time $25</span>
+                    <span className="tv-support-subtext">Supporter Gift</span>
+                  </a>
+
+                  <a
+                    href="https://buy.stripe.com/dRmcN7dbrh1qcKw8e9ds402"
+                    className="tv-support-btn tv-support-btn-primary tv-donate-btn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="One-Time Gift $50"
+                    title="One-Time Gift $50"
+                  >
+                    <span>One-Time $50</span>
+                    <span className="tv-support-subtext">Impact Gift</span>
                   </a>
                 </div>
               </div>
