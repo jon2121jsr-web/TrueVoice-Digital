@@ -19,6 +19,21 @@ const LIVE_STREAM_URL =
   import.meta.env.VITE_TRUEVOICE_STREAM_URL ||
   "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
+// Social links (REPLACE X/Instagram with your real URLs)
+const SOCIAL = {
+  youtube: "https://www.youtube.com/channel/UCWpVof-rd5hs1xpchwj1MAQl",
+  x: "https://x.com/YOUR_HANDLE",
+  instagram: "https://www.instagram.com/YOUR_HANDLE",
+};
+
+// Stripe links (LOCKED)
+const STRIPE = {
+  monthly: "https://buy.stripe.com/cNi9AV6N326wdOA0LHds401",
+  oneTime10: "https://buy.stripe.com/3cI14pb3j6mMdOA9idds404",
+  oneTime25: "https://buy.stripe.com/3cI28t6N37qQbGsgKFds403",
+  oneTime50: "https://buy.stripe.com/dRmcN7dbrh1qcKw8e9ds402",
+};
+
 function App() {
   const playerRef = useRef(null);
   const [currentStation, setCurrentStation] = useState("TrueVoice Radio");
@@ -144,14 +159,68 @@ function App() {
     setActiveVideo(null);
   };
 
+  const SocialIconLink = ({ href, label, children }) => (
+    <a
+      className="tv-social-link"
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      title={label}
+    >
+      {children}
+    </a>
+  );
+
   return (
     <div className="app-container tv-app">
-      {/* TOP BAR / BRAND + GIVE BUTTON */}
+      {/* TOP BAR / BRAND + SOCIAL + GIVE BUTTON */}
       <header className="tv-header">
         <div className="tv-header-inner">
           <div className="tv-brand">TrueVoice.Digital</div>
 
           <div className="tv-header-actions">
+            <div className="tv-social-row" aria-label="TrueVoice social links">
+              <SocialIconLink href={SOCIAL.youtube} label="YouTube">
+                {/* YouTube icon */}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.5 12 4.5 12 4.5s-5.7 0-7.5.6A3 3 0 0 0 2.4 7.2 31.2 31.2 0 0 0 1.8 12c0 1.6.2 3.2.6 4.8a3 3 0 0 0 2.1 2.1c1.8.6 7.5.6 7.5.6s5.7 0 7.5-.6a3 3 0 0 0 2.1-2.1c.4-1.6.6-3.2.6-4.8s-.2-3.2-.6-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />
+                </svg>
+              </SocialIconLink>
+
+              <SocialIconLink href={SOCIAL.x} label="X">
+                {/* X icon */}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M18.9 2H22l-6.8 7.8L23 22h-6.8l-5.3-6.7L4.8 22H2l7.4-8.5L1 2h6.9l4.8 6.1L18.9 2Zm-1.2 18h1.7L7.2 3.9H5.4L17.7 20Z" />
+                </svg>
+              </SocialIconLink>
+
+              <SocialIconLink href={SOCIAL.instagram} label="Instagram">
+                {/* Instagram icon */}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5Zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5ZM18 6.8a1.2 1.2 0 1 1-1.2-1.2A1.2 1.2 0 0 1 18 6.8Z" />
+                </svg>
+              </SocialIconLink>
+            </div>
+
             <button
               type="button"
               className="tv-header-give"
@@ -235,7 +304,7 @@ function App() {
                 <div className="tv-donate-row">
                   {/* MONTHLY */}
                   <a
-                    href="https://buy.stripe.com/cNi9AV6N326wdOA0LHds401"
+                    href={STRIPE.monthly}
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -248,7 +317,7 @@ function App() {
 
                   {/* ONE-TIME TIERS */}
                   <a
-                    href="https://buy.stripe.com/3cI14pb3j6mMdOA9idds404"
+                    href={STRIPE.oneTime10}
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -260,7 +329,7 @@ function App() {
                   </a>
 
                   <a
-                    href="https://buy.stripe.com/3cI28t6N37qQbGsgKFds403"
+                    href={STRIPE.oneTime25}
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -272,7 +341,7 @@ function App() {
                   </a>
 
                   <a
-                    href="https://buy.stripe.com/dRmcN7dbrh1qcKw8e9ds402"
+                    href={STRIPE.oneTime50}
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -299,8 +368,49 @@ function App() {
           </div>
         </section>
 
-        {/* FOOTER + ATTRIBUTION */}
+        {/* FOOTER + ATTRIBUTION + SOCIAL */}
         <footer className="tv-footer">
+          <div className="tv-footer-social">
+            <span className="tv-footer-follow">Follow TrueVoice Digital</span>
+            <div className="tv-social-row" aria-label="TrueVoice social links">
+              <SocialIconLink href={SOCIAL.youtube} label="YouTube">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.5 12 4.5 12 4.5s-5.7 0-7.5.6A3 3 0 0 0 2.4 7.2 31.2 31.2 0 0 0 1.8 12c0 1.6.2 3.2.6 4.8a3 3 0 0 0 2.1 2.1c1.8.6 7.5.6 7.5.6s5.7 0 7.5-.6a3 3 0 0 0 2.1-2.1c.4-1.6.6-3.2.6-4.8s-.2-3.2-.6-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />
+                </svg>
+              </SocialIconLink>
+
+              <SocialIconLink href={SOCIAL.x} label="X">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M18.9 2H22l-6.8 7.8L23 22h-6.8l-5.3-6.7L4.8 22H2l7.4-8.5L1 2h6.9l4.8 6.1L18.9 2Zm-1.2 18h1.7L7.2 3.9H5.4L17.7 20Z" />
+                </svg>
+              </SocialIconLink>
+
+              <SocialIconLink href={SOCIAL.instagram} label="Instagram">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5Zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5ZM18 6.8a1.2 1.2 0 1 1-1.2-1.2A1.2 1.2 0 0 1 18 6.8Z" />
+                </svg>
+              </SocialIconLink>
+            </div>
+          </div>
+
           <p>
             © {new Date().getFullYear()} TrueVoice.Digital. All rights reserved.
           </p>

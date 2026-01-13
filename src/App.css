@@ -1212,3 +1212,55 @@ html, body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* =========================================================
+   NEW: SOCIAL ICONS (HEADER + FOOTER)
+   ========================================================= */
+
+.tv-social-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tv-social-link {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  text-decoration: none;
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.tv-social-link:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 10px 24px rgba(9, 33, 93, 0.18);
+}
+
+.tv-social-link:active {
+  transform: translateY(0);
+}
+
+.tv-social-link svg {
+  display: block;
+}
+
+.tv-footer-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.tv-footer-follow {
+  font-weight: 700;
+  opacity: 0.9;
+}

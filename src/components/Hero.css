@@ -33,6 +33,52 @@
   mix-blend-mode: screen;
 }
 
+/* --- HERO OVERLAY TEXT (EDGE PLACEMENT) --- */
+.hero-overlay {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+  text-align: left;
+}
+
+/* ✅ Pin to a clean edge: top-right with safe padding */
+.hero-overlay--edge {
+  top: 18px;
+  right: 18px;
+  left: auto;
+  transform: none;
+
+  display: inline-flex;
+  flex-direction: column;
+
+  /* ✅ Center "Coming Soon" under the pill */
+  align-items: center;
+  text-align: center;
+
+  gap: 8px;
+}
+
+.hero-live-pill {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: #ffffff;
+  background: rgba(255, 0, 255, 0.14);
+  border: 1px solid rgba(255, 0, 255, 0.22);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.hero-live-line {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+}
+
 /* --- RESPONSIVE TWEAKS --- */
 
 /* Tablets / small laptops */
@@ -43,6 +89,11 @@
     background-size: auto 80%;
     background-position: center 55%;
   }
+
+  .hero-overlay--edge {
+    top: 14px;
+    right: 14px;
+  }
 }
 
 /* Standard mobile */
@@ -52,6 +103,15 @@
     background-size: auto 85%;       /* a bit larger but still fully visible */
     background-position: center 55%;
   }
+
+  .hero-overlay--edge {
+    top: 12px;
+    right: 12px;
+  }
+
+  .hero-live-line {
+    font-size: 0.9rem;
+  }
 }
 
 /* Small phones */
@@ -60,5 +120,19 @@
     height: 300px;
     background-size: auto 90%;
     background-position: center 52%;
+  }
+
+  .hero-overlay--edge {
+    top: 10px;
+    right: 10px;
+  }
+
+  .hero-live-pill {
+    font-size: 0.7rem;
+    padding: 5px 10px;
+  }
+
+  .hero-live-line {
+    font-size: 0.85rem;
   }
 }
