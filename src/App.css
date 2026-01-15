@@ -1264,3 +1264,52 @@ html, body {
   font-weight: 700;
   opacity: 0.9;
 }
+
+/* =========================================================
+   NEW: MOBILE HEADER SAFE LAYOUT (NO DESKTOP IMPACT)
+   ========================================================= */
+
+@media (max-width: 640px) {
+  /* Reduce padding so we don't burn 64px on tiny screens */
+  .tv-header {
+    padding: 12px 14px;
+  }
+
+  /* Stack brand + actions to prevent overflow and keep brand centered */
+  .tv-header-inner {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .tv-brand {
+    text-align: center;
+  }
+
+  /* Center the icons + Give, allow wrapping if needed (no bleed) */
+  .tv-header-actions {
+    width: 100%;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .tv-social-row {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* Slightly tighten the tap targets while keeping them real icons */
+  .tv-social-link {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Give button: a touch tighter so it never forces overflow */
+  .tv-header-give {
+    padding: 6px 14px;
+    font-size: 0.82rem;
+  }
+}
