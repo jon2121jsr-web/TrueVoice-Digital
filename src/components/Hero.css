@@ -1,25 +1,23 @@
-/* STATIC HERO WITH PARALLAX – FINAL TUNED VERSION */
+/* HERO SLIDER – 3 SLIDES (legacy hero + COMING + LIVE) */
 
 .hero-section {
   position: relative;
   width: 100%;
-  height: 420px;                 /* keep this – window height is good */
-
-  background-image: url("/images/truevoice-hero.jpg");
-  background-repeat: no-repeat;
-
-  /* KEY: scale by HEIGHT so the whole image fits inside the hero */
-  background-size: auto 80%;     /* image is ~80% of hero height (no cropping) */
-  background-position: center -15%; /* nudge down so wave is fully visible */
-
+  height: 420px;
   background-color: #050816;
-  overflow: hidden;
 
-  /* Parallax on desktop */
-  background-attachment: fixed;
+  /* Keep hero as a hard viewport so nothing bleeds into the page */
+  overflow: hidden;
 }
 
-/* Subtle glow behind circle logo */
+/* ✅ Desktop: give banners the vertical room they need (prevents bottom shave) */
+@media (min-width: 1025px) {
+  .hero-section {
+    height: 520px;
+  }
+}
+
+/* Subtle glow behind hero area */
 .hero-section::before {
   content: "";
   position: absolute;
@@ -31,86 +29,194 @@
   );
   pointer-events: none;
   mix-blend-mode: screen;
-}
-
-/* --- HERO OVERLAY TEXT (EDGE PLACEMENT) --- */
-.hero-overlay {
-  position: absolute;
-  pointer-events: none;
   z-index: 2;
-  text-align: left;
 }
 
-/* ✅ Pin to a clean edge: top-right with safe padding */
-.hero-overlay--edge {
-  top: 18px;
-  right: 18px;
-  left: auto;
+.hero-slider {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Slide layers */
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
   transform: none;
+  transition: opacity 450ms ease;
+  z-index: 1;
 
-  display: inline-flex;
-  flex-direction: column;
-
-  /* ✅ Center "Coming Soon" under the pill */
+  display: flex;
   align-items: center;
-  text-align: center;
+  justify-content: center;
+}
 
+.hero-slide.is-active {
+  opacity: 1;
+}
+
+/* Media stage */
+.hero-media {
+  display: grid;
+  place-items: center;
+}
+
+/* -----------------------------------------
+   ✅ FRAME NORMALIZATION (KEY FIX)
+   - Legacy must also be a rounded frame
+   - Rounded corners must own overflow:hidden
+   - Reserve dot space consistently
+------------------------------------------ */
+
+/* Legacy slide uses the full hero viewport but we reserve space for dots */
+.hero-slide[data-kind="legacy"] .hero-media {
+  width: 100%;
+  height: 100%;
+
+  /* Make legacy behave like a framed banner (prevents squared bottom corners) */
+  width: min(1120px, 96%);
+  height: 96%;
+
+  border-radius: 22px;
+  overflow: hidden;
+
+  /* Reserve space at the bottom so the image never gets shaved by dot area */
+  padding-bottom: 44px;
+  box-sizing: border-box;
+
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgba(255, 0, 255, 0.08),
+    rgba(0, 0, 0, 0.08) 55%,
+    rgba(0, 0, 0, 0.18)
+  );
+
+  box-shadow:
+    0 18px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Poster slides: increase usable height + reserve dot space */
+.hero-slide[data-kind="poster"] .hero-media {
+  width: min(1120px, 96%);
+
+  /* Was 92% — gives the image room to fully show */
+  height: 96%;
+
+  border-radius: 22px;
+  overflow: hidden;
+
+  /* Reserve dot space so we don’t cut off bottom content (sound bar / text) */
+  padding-bottom: 44px;
+  box-sizing: border-box;
+
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgba(255, 0, 255, 0.08),
+    rgba(0, 0, 0, 0.08) 55%,
+    rgba(0, 0, 0, 0.18)
+  );
+
+  box-shadow:
+    0 18px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Base image rules */
+.hero-slide-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Always contain. No crop. */
+.hero-slide[data-kind="legacy"] .hero-slide-img,
+.hero-slide[data-kind="poster"] .hero-slide-img {
+  object-fit: contain;
+  object-position: center;
+  clip-path: none;
+}
+
+/* Dots */
+.hero-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: inline-flex;
   gap: 8px;
-}
-
-.hero-live-pill {
-  display: inline-block;
-  padding: 6px 12px;
+  padding: 8px 10px;
   border-radius: 999px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  color: #ffffff;
-  background: rgba(255, 0, 255, 0.14);
-  border: 1px solid rgba(255, 0, 255, 0.22);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 3;
 }
 
-.hero-live-line {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.94);
-  text-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+.hero-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  padding: 0;
 }
 
-/* --- RESPONSIVE TWEAKS --- */
+.hero-dot.is-active {
+  background: rgba(255, 0, 255, 0.85);
+  border-color: rgba(255, 0, 255, 0.95);
+  box-shadow: 0 0 0 4px rgba(255, 0, 255, 0.14);
+}
 
-/* Tablets / small laptops */
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide {
+    transition: none;
+  }
+}
+
+/* Tablets */
 @media (max-width: 1024px) {
   .hero-section {
     height: 380px;
-    background-attachment: scroll;   /* disable parallax on smaller devices */
-    background-size: auto 80%;
-    background-position: center 55%;
   }
 
-  .hero-overlay--edge {
-    top: 14px;
-    right: 14px;
+  .hero-slide[data-kind="poster"] .hero-media {
+    height: 96%;
+    width: 96%;
+    padding-bottom: 40px;
+  }
+
+  .hero-slide[data-kind="legacy"] .hero-media {
+    height: 96%;
+    width: 96%;
+    padding-bottom: 40px;
   }
 }
 
-/* Standard mobile */
+/* Mobile */
 @media (max-width: 768px) {
   .hero-section {
     height: 320px;
-    background-size: auto 85%;       /* a bit larger but still fully visible */
-    background-position: center 55%;
   }
 
-  .hero-overlay--edge {
-    top: 12px;
-    right: 12px;
+  .hero-slide[data-kind="poster"] .hero-media {
+    width: 96%;
+    height: 94%;
+    border-radius: 18px;
+    padding-bottom: 36px;
   }
 
-  .hero-live-line {
-    font-size: 0.9rem;
+  .hero-slide[data-kind="legacy"] .hero-media {
+    width: 96%;
+    height: 94%;
+    border-radius: 18px;
+    padding-bottom: 36px;
+  }
+
+  .hero-dots {
+    bottom: 10px;
   }
 }
 
@@ -118,21 +224,19 @@
 @media (max-width: 480px) {
   .hero-section {
     height: 300px;
-    background-size: auto 90%;
-    background-position: center 52%;
   }
 
-  .hero-overlay--edge {
-    top: 10px;
-    right: 10px;
+  .hero-slide[data-kind="poster"] .hero-media {
+    width: 96%;
+    height: 94%;
+    border-radius: 16px;
+    padding-bottom: 34px;
   }
 
-  .hero-live-pill {
-    font-size: 0.7rem;
-    padding: 5px 10px;
-  }
-
-  .hero-live-line {
-    font-size: 0.85rem;
+  .hero-slide[data-kind="legacy"] .hero-media {
+    width: 96%;
+    height: 94%;
+    border-radius: 16px;
+    padding-bottom: 34px;
   }
 }
