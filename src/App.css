@@ -1265,6 +1265,39 @@ html, body {
   opacity: 0.9;
 }
 
+/* ✅ Footer icons: visible on light background */
+.tv-footer .tv-social-link {
+  color: var(--tv-primary-dark);
+  background: rgba(39, 95, 219, 0.10);
+  border: 1px solid rgba(39, 95, 219, 0.18);
+}
+
+.tv-footer .tv-social-link:hover {
+  transform: translateY(-1px);
+  background: rgba(39, 95, 219, 0.16);
+  box-shadow: 0 10px 24px rgba(9, 33, 93, 0.12);
+}
+
+.tv-footer .tv-social-link:active {
+  transform: translateY(0);
+}
+
+.tv-footer .tv-social-link:focus-visible {
+  outline: 2px solid rgba(39, 95, 219, 0.7);
+  outline-offset: 2px;
+}
+
+/* Night mode footer retains white icons */
+body.tv-night .tv-footer .tv-social-link {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+body.tv-night .tv-footer .tv-social-link:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
 /* =========================================================
    NEW: MOBILE HEADER SAFE LAYOUT (NO DESKTOP IMPACT)
    ========================================================= */
@@ -1312,4 +1345,164 @@ html, body {
     padding: 6px 14px;
     font-size: 0.82rem;
   }
+}
+
+/* =========================================================
+   FLOATING / DETACHING PLAYER
+   ========================================================= */
+
+.tv-player-dock {
+  position: relative;
+  min-width: 0;
+}
+
+.tv-player-sentinel {
+  height: 1px;
+  width: 1px;
+}
+
+.tv-player-spacer {
+  width: 100%;
+}
+
+.tv-player-dock.is-floating .tv-player-surface .tv-now-playing {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: auto;
+
+  width: 420px;
+  max-width: calc(100vw - 32px);
+
+  z-index: 9999;
+
+  /* ✅ Critical: never stretch tall when fixed */
+  height: auto !important;
+}
+
+.tv-player-dock.is-floating .tv-now-playing {
+  padding: 14px;
+  border-radius: 16px;
+  box-shadow: 0 18px 45px rgba(2, 10, 42, 0.18);
+
+  /* ✅ Critical: ensure compact */
+  height: auto !important;
+}
+
+.tv-player-dock.is-floating .tv-now-inner {
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.tv-player-dock.is-floating .tv-artwork-placeholder {
+  height: 72px;
+  border-radius: 14px;
+}
+
+.tv-player-dock.is-floating .tv-song-title {
+  font-size: 1.05rem;
+  line-height: 1.2;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tv-player-dock.is-floating .tv-artist-name {
+  margin: 4px 0 8px;
+  font-size: 0.85rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tv-player-dock.is-floating .tv-eyebrow {
+  display: none;
+}
+
+.tv-player-dock.is-floating .tv-player-bar {
+  gap: 10px;
+}
+
+.tv-player-dock.is-floating .tv-player-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+}
+
+.tv-player-dock.is-floating .tv-player-subtitle {
+  font-size: 0.62rem;
+  padding: 2px 6px;
+}
+
+.tv-player-dock.is-floating .tv-btn {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .tv-player-dock.is-floating .tv-player-surface .tv-now-playing {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    max-width: none;
+  }
+
+  .tv-main--player-floating {
+    padding-bottom: 150px;
+  }
+
+  .tv-player-dock.is-floating .tv-now-inner {
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+  }
+
+  .tv-player-dock.is-floating .tv-artwork-placeholder {
+    width: 60px;
+    height: 60px;
+  }
+
+  .tv-player-dock.is-floating .tv-player-bar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .tv-player-dock.is-floating .tv-player-controls {
+    width: auto;
+  }
+}
+
+/* Desktop floating button bleed fix */
+.tv-player-dock.is-floating .tv-player-bar {
+  min-width: 0;
+}
+
+.tv-player-dock.is-floating .tv-player-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.tv-player-dock.is-floating .tv-player-controls {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+.tv-player-dock.is-floating .tv-player-title,
+.tv-player-dock.is-floating .tv-player-subtitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tv-player-dock.is-floating .tv-btn {
+  white-space: nowrap;
+}
+
+.tv-player-dock.is-floating .tv-listeners {
+  display: none;
 }

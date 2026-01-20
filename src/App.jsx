@@ -19,11 +19,15 @@ const LIVE_STREAM_URL =
   import.meta.env.VITE_TRUEVOICE_STREAM_URL ||
   "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
-// Social links (REPLACE X/Instagram with your real URLs)
+// Social links (ENV-FIRST; safe fallbacks)
 const SOCIAL = {
-  youtube: "https://www.youtube.com/channel/UCWpVof-rd5hs1xpchwj1MAQl",
-  x: "https://x.com/YOUR_HANDLE",
-  instagram: "https://www.instagram.com/YOUR_HANDLE",
+  youtube:
+    import.meta.env.VITE_TRUEVOICE_YOUTUBE_URL ||
+    "https://www.youtube.com/channel/UCWpVof-rd5hs1xpchwj1MAQl",
+  x: import.meta.env.VITE_TRUEVOICE_X_URL || "https://x.com/YOUR_HANDLE",
+  instagram:
+    import.meta.env.VITE_TRUEVOICE_INSTAGRAM_URL ||
+    "https://www.instagram.com/YOUR_HANDLE",
 };
 
 // Stripe links (LOCKED)
@@ -45,6 +49,12 @@ function App() {
 
   // Give thanks banner (Stripe redirect)
   const [showThanks, setShowThanks] = useState(false);
+
+  // --- Floating player state (Task 1) ---
+  const sentinelRef = useRef(null);
+  const surfaceRef = useRef(null);
+  const [isFloatingPlayer, setIsFloatingPlayer] = useState(false);
+  const [dockHeight, setDockHeight] = useState(0);
 
   const handleStatusChange = (status) => {
     if (status && status.station) {
@@ -172,6 +182,44 @@ function App() {
     </a>
   );
 
+  // Keep dockHeight accurate (spacer avoids layout jump)
+  useEffect(() => {
+    const el = surfaceRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      const h = entry?.contentRect?.height || 0;
+      setDockHeight(h);
+    });
+
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Detect when the player scrolls out of view (then float it)
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver === "undefined") return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        // When sentinel is NOT visible, user has scrolled past the player region
+        setIsFloatingPlayer(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        threshold: 0,
+        // Trigger a little earlier so it feels natural, not "late"
+        rootMargin: "-12px 0px 0px 0px",
+      }
+    );
+
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div className="app-container tv-app">
       {/* TOP BAR / BRAND + SOCIAL + GIVE BUTTON */}
@@ -236,7 +284,11 @@ function App() {
       <Hero />
       <audio ref={playerRef} preload="none" />
 
-      <main className="tv-main">
+      <main
+        className={`tv-main ${
+          isFloatingPlayer ? "tv-main--player-floating" : ""
+        }`}
+      >
         {/* Lightweight "Thank you" banner */}
         {showThanks && (
           <div
@@ -256,20 +308,38 @@ function App() {
 
         {/* NOW PLAYING + VERSE OF THE DAY GRID */}
         <div className="tv-hero">
-          <NowPlayingPanel
-            streamUrl={LIVE_STREAM_URL}
-            audioRef={playerRef}
-            showHistory={false} // ✅ disable internal recent tracks block
-            onStatusChange={handleStatusChange}
-          />
+          {/* Floating player dock (same component, no duplication) */}
+          <div className={`tv-player-dock ${isFloatingPlayer ? "is-floating" : ""}`}>
+            {/* Sentinel must remain in flow so we know when user passed this region */}
+            <div ref={sentinelRef} className="tv-player-sentinel" aria-hidden="true" />
 
-          {/* ✅ FORCE THE VERSE TO ALWAYS RENDER INSIDE A "CARD" */}
+            {/* Spacer prevents layout jump when the card becomes fixed */}
+            {isFloatingPlayer && (
+              <div
+                className="tv-player-spacer"
+                style={{ height: dockHeight || 0 }}
+                aria-hidden="true"
+              />
+            )}
+
+            {/* Surface is what we actually "fix" when floating */}
+            <div ref={surfaceRef} className="tv-player-surface">
+              <NowPlayingPanel
+                streamUrl={LIVE_STREAM_URL}
+                audioRef={playerRef}
+                showHistory={false}
+                onStatusChange={handleStatusChange}
+              />
+            </div>
+          </div>
+
+          {/* Verse card */}
           <div className="tv-verse-card">
             <VerseOfTheDay />
           </div>
         </div>
 
-        {/* ✅ RECENTLY PLAYED BAR */}
+        {/* Recently Played */}
         <RecentTracksBar />
 
         {/* TRUEVOICE CONNECT */}
@@ -302,7 +372,6 @@ function App() {
 
               <div className="tv-support-actions">
                 <div className="tv-donate-row">
-                  {/* MONTHLY */}
                   <a
                     href={STRIPE.monthly}
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
@@ -315,7 +384,6 @@ function App() {
                     </span>
                   </a>
 
-                  {/* ONE-TIME TIERS */}
                   <a
                     href={STRIPE.oneTime10}
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
