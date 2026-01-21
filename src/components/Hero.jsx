@@ -6,26 +6,33 @@ export default function Hero() {
   const slides = useMemo(
     () => [
       {
-        // Legacy hero banner (your original)
+        // 1️⃣ Legacy hero banner
         src: "/images/truevoice-hero.jpg",
         alt: "TrueVoice Digital hero",
         fit: "contain",
-        // IMPORTANT: stop pushing the image down (this can cause bottom clipping)
         position: "center",
         kind: "legacy",
       },
       {
-        // New Coming hero (perfect in your screenshot)
-        src: "/images/hero-coming.png",
-        alt: "He is coming back. Let's get ready.",
+        // 2️⃣ TrueVoice LIVE hero
+        src: "/images/hero-truevoice-live.png",
+        alt: "TrueVoice LIVE — Where Truth and Faith Come Together",
         fit: "contain",
         position: "center",
         kind: "poster",
       },
       {
-        // New TrueVoice LIVE hero (was clipping at bottom)
-        src: "/images/hero-truevoice-live.png",
-        alt: "TrueVoice LIVE — Where Truth and Faith Come Together",
+        // 3️⃣ Public / Feature slide
+        src: "/images/hero-slide-4.png",
+        alt: "TrueVoice Digital — Featured",
+        fit: "contain",
+        position: "center",
+        kind: "poster",
+      },
+      {
+        // 4️⃣ Coming slide (now last)
+        src: "/images/hero-coming.png",
+        alt: "He is coming back. Let's get ready.",
         fit: "contain",
         position: "center",
         kind: "poster",

@@ -82,6 +82,9 @@ button {
   grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.2fr);
   gap: 24px;
   margin-bottom: 30px;
+
+  /* ✅ KEY: force both columns to stretch to same height */
+  align-items: stretch;
 }
 
 .tv-now-playing {
@@ -394,6 +397,9 @@ button {
   flex-direction: column;
   justify-content: center;
   box-shadow: var(--tv-shadow-soft);
+
+  /* ✅ allow stretching to match Now Playing height */
+  height: 100%;
 }
 
 .tv-verse-label {
@@ -1505,4 +1511,27 @@ body.tv-night .tv-footer .tv-social-link:hover {
 
 .tv-player-dock.is-floating .tv-listeners {
   display: none;
+}
+
+/* =========================================================
+   ✅ NEW: EQUAL HEIGHT PLAYER + VERSE (NON-FLOATING ONLY)
+   - keeps desktop cards uniform
+   - does NOT affect the floating mini-player
+   ========================================================= */
+
+.tv-player-dock:not(.is-floating) {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+}
+
+.tv-player-dock:not(.is-floating) .tv-player-surface {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.tv-player-dock:not(.is-floating) .tv-player-surface .tv-now-playing {
+  height: 100%;
 }

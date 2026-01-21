@@ -64,25 +64,21 @@
 
 /* -----------------------------------------
    ✅ FRAME NORMALIZATION (KEY FIX)
-   - Legacy must also be a rounded frame
-   - Rounded corners must own overflow:hidden
-   - Reserve dot space consistently
+   - Legacy is framed like posters
+   - Rounded corners own overflow:hidden
 ------------------------------------------ */
 
-/* Legacy slide uses the full hero viewport but we reserve space for dots */
+/* ✅ Legacy slide: allow it to grow larger on big screens */
 .hero-slide[data-kind="legacy"] .hero-media {
-  width: 100%;
-  height: 100%;
-
-  /* Make legacy behave like a framed banner (prevents squared bottom corners) */
-  width: min(1120px, 96%);
-  height: 96%;
+  /* Was 1120px/96% */
+  width: min(1280px, 98%);
+  height: 98%;
 
   border-radius: 22px;
   overflow: hidden;
 
-  /* Reserve space at the bottom so the image never gets shaved by dot area */
-  padding-bottom: 44px;
+  /* ✅ Remove legacy bottom padding so the image uses the full frame */
+  padding-bottom: 0;
   box-sizing: border-box;
 
   background: radial-gradient(
@@ -97,17 +93,16 @@
     0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* Poster slides: increase usable height + reserve dot space */
+/* Poster slides: slightly wider on large screens (safe) */
 .hero-slide[data-kind="poster"] .hero-media {
-  width: min(1120px, 96%);
-
-  /* Was 92% — gives the image room to fully show */
+  /* Was 1120px/96% */
+  width: min(1280px, 98%);
   height: 96%;
 
   border-radius: 22px;
   overflow: hidden;
 
-  /* Reserve dot space so we don’t cut off bottom content (sound bar / text) */
+  /* Reserve dot space so we don’t cut off bottom content */
   padding-bottom: 44px;
   box-sizing: border-box;
 
@@ -191,28 +186,27 @@
   .hero-slide[data-kind="legacy"] .hero-media {
     height: 96%;
     width: 96%;
-    padding-bottom: 40px;
+    padding-bottom: 0;
   }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
   .hero-section {
-    height: 320px;
+    height: 240px;
   }
 
-  .hero-slide[data-kind="poster"] .hero-media {
-    width: 96%;
-    height: 94%;
-    border-radius: 18px;
-    padding-bottom: 36px;
-  }
-
+  /* Force the frame to match banner aspect ratio so the image fills the frame (still contain, no crop) */
+  .hero-slide[data-kind="poster"] .hero-media,
   .hero-slide[data-kind="legacy"] .hero-media {
     width: 96%;
-    height: 94%;
+    height: auto;
+    aspect-ratio: 2500 / 900;
     border-radius: 18px;
-    padding-bottom: 36px;
+
+    /* use margin space for dots instead of inflating the frame */
+    padding-bottom: 0;
+    margin-bottom: 42px;
   }
 
   .hero-dots {
@@ -223,20 +217,13 @@
 /* Small phones */
 @media (max-width: 480px) {
   .hero-section {
-    height: 300px;
+    height: 220px;
   }
 
-  .hero-slide[data-kind="poster"] .hero-media {
-    width: 96%;
-    height: 94%;
-    border-radius: 16px;
-    padding-bottom: 34px;
-  }
-
+  .hero-slide[data-kind="poster"] .hero-media,
   .hero-slide[data-kind="legacy"] .hero-media {
     width: 96%;
-    height: 94%;
     border-radius: 16px;
-    padding-bottom: 34px;
+    margin-bottom: 40px;
   }
 }
