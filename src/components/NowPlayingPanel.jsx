@@ -13,18 +13,28 @@ function detectIOS() {
   return iOSDevice || iPadOS;
 }
 
-// Tiny silent WAV (very short). Used only to “unlock” iOS audio on first gesture.
-const SILENT_WAV =
-  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+function isStandalonePWA() {
+  // iOS Safari exposes navigator.standalone; other browsers may use display-mode
+  const nav = window.navigator;
+  const iOSStandalone = typeof nav.standalone === "boolean" && nav.standalone;
+  const displayModeStandalone =
+    window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+  return iOSStandalone || displayModeStandalone;
+}
 
 export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onStatusChange }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [playState, setPlayState] = useState("idle"); // idle | starting | playing | stopping
-  const isIOSRef = useRef(false);
-  const primedRef = useRef(false);
+  // idle | starting | playing
+  const [playState, setPlayState] = useState("idle");
+
+  const iosRef = useRef(false);
+  const pwaRef = useRef(false);
+
+  // Track the current start attempt so we can cancel/reset cleanly
+  const startTokenRef = useRef(0);
 
   // Poll now-playing endpoint
   useEffect(() => {
@@ -81,20 +91,20 @@ export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onSt
       hasError: !!error,
       isLoading: !!loading,
       station: "TrueVoice Digital",
-      now_playing: {
-        song: { title, artist, album, art, raw: song || null },
-      },
+      now_playing: { song: { title, artist, album, art, raw: song || null } },
       listeners: listeners ?? null,
     });
   }, [isPlaying, error, loading, onStatusChange, title, artist, album, art, listeners, song]);
 
-  // Wire audio element events + iOS flags
+  // Wire audio element
   useEffect(() => {
     const el = audioRef?.current;
     if (!el) return;
 
-    isIOSRef.current = detectIOS();
+    iosRef.current = detectIOS();
+    pwaRef.current = isStandalonePWA();
 
+    // iOS inline playback flags
     try {
       el.setAttribute("playsinline", "");
       el.setAttribute("webkit-playsinline", "");
@@ -105,51 +115,38 @@ export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onSt
 
     el.preload = "none";
 
-    // Keep src set
-    if (streamUrl && (!el.src || el.src !== streamUrl)) {
-      el.src = streamUrl;
-    }
-
+    // Keep state synced to real events
     const onPlaying = () => setPlayState("playing");
-    const onPlay = () => setPlayState("playing");
     const onPause = () => setPlayState("idle");
     const onEnded = () => setPlayState("idle");
-    const onErr = () => setPlayState("idle");
 
     el.addEventListener("playing", onPlaying);
-    el.addEventListener("play", onPlay);
     el.addEventListener("pause", onPause);
     el.addEventListener("ended", onEnded);
-    el.addEventListener("error", onErr);
 
     return () => {
       el.removeEventListener("playing", onPlaying);
-      el.removeEventListener("play", onPlay);
       el.removeEventListener("pause", onPause);
       el.removeEventListener("ended", onEnded);
-      el.removeEventListener("error", onErr);
     };
-  }, [audioRef, streamUrl]);
+  }, [audioRef]);
 
-  // ✅ iOS priming: unlock audio on first user gesture
-  const primeIOSAudioOnce = async () => {
-    if (!isIOSRef.current) return;
-    if (primedRef.current) return;
-
+  const hardReset = () => {
+    const el = audioRef?.current;
+    if (!el) return;
     try {
-      // Use a separate tiny silent audio element just to unlock the gesture pipeline
-      const a = new Audio(SILENT_WAV);
-      a.volume = 0;
-      a.muted = true;
-      a.playsInline = true;
-
-      await a.play();
-      a.pause();
-      primedRef.current = true;
-    } catch (e) {
-      // Even if this fails, we still try to play the stream.
-      console.warn("iOS audio prime failed (will still attempt stream play):", e);
+      el.pause();
+    } catch {
+      // ignore
     }
+    // In PWA/iOS we do NOT clear src permanently, but we do reset playback state
+    setPlayState("idle");
+  };
+
+  const makeFreshStreamUrl = () => {
+    if (!streamUrl) return "";
+    const sep = streamUrl.includes("?") ? "&" : "?";
+    return `${streamUrl}${sep}v=${Date.now()}`;
   };
 
   const startPlayback = async () => {
@@ -162,17 +159,27 @@ export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onSt
       setError("Stream URL not configured.");
       return;
     }
-    if (playState === "starting" || playState === "stopping") return;
+
+    // If we’re already starting and you tap again, treat it as reset (prevents “stuck on WORKING”)
+    if (playState === "starting") {
+      startTokenRef.current += 1; // invalidate current attempt
+      hardReset();
+      return;
+    }
 
     setError(null);
     setPlayState("starting");
 
+    const myToken = ++startTokenRef.current;
+
     try {
-      // ✅ Prime first so the same tap counts on iPhone
-      await primeIOSAudioOnce();
+      // ✅ iPhone PWA reliability: always use a fresh URL to avoid “dead connection”
+      const urlToPlay = iosRef.current && pwaRef.current ? makeFreshStreamUrl() : streamUrl;
 
-      if (!el.src || el.src !== streamUrl) el.src = streamUrl;
+      // Ensure src
+      if (!el.src || el.src !== urlToPlay) el.src = urlToPlay;
 
+      // Ensure audible
       try {
         el.muted = false;
         el.volume = 1;
@@ -180,8 +187,8 @@ export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onSt
         // ignore
       }
 
-      // Avoid load() right before play on iOS
-      if (!isIOSRef.current) {
+      // For live streams, load() can help outside iOS PWA
+      if (!(iosRef.current && pwaRef.current)) {
         try {
           el.load();
         } catch {
@@ -189,22 +196,56 @@ export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onSt
         }
       }
 
-      await el.play();
-      // events flip playState -> playing
+      // Start playing
+      const playPromise = el.play();
+
+      // Timeout if iOS never transitions to "playing" (common in PWA when blocked)
+      const timeoutMs = 2500;
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("PLAY_TIMEOUT")), timeoutMs)
+      );
+
+      await Promise.race([playPromise, timeoutPromise]);
+
+      // If another attempt started, stop this one
+      if (startTokenRef.current !== myToken) {
+        try {
+          el.pause();
+        } catch {
+          // ignore
+        }
+        setPlayState("idle");
+        return;
+      }
+
+      // If it actually plays, "playing" event will flip state to playing.
+      // If it doesn’t, we’ll still guard after a short delay:
+      setTimeout(() => {
+        if (startTokenRef.current !== myToken) return;
+        if (audioRef?.current?.paused) {
+          setPlayState("idle");
+          setError("Tap Listen Live once more to enable audio in iPhone Home Screen mode.");
+        }
+      }, 300);
     } catch (e) {
       console.error("play() failed:", e);
       setPlayState("idle");
-      setError("Playback was blocked. Tap Listen Live again.");
+
+      // Don’t show scary red text for a normal iPhone PWA restriction — be explicit.
+      if (String(e?.message || "").includes("PLAY_TIMEOUT")) {
+        setError("iPhone blocked audio start. Tap Listen Live once more.");
+      } else {
+        setError("Playback was blocked. Tap Listen Live again.");
+      }
     }
   };
 
-  const stopPlayback = async () => {
+  const stopPlayback = () => {
     const el = audioRef?.current;
     if (!el) return;
-    if (playState === "starting" || playState === "stopping") return;
 
     setError(null);
-    setPlayState("stopping");
+    startTokenRef.current += 1; // cancel any pending start attempt
 
     try {
       el.pause();
@@ -216,14 +257,12 @@ export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onSt
   };
 
   const handleToggle = async () => {
-    if (playState === "playing") {
-      await stopPlayback();
-    } else {
-      await startPlayback();
-    }
+    if (isPlaying) stopPlayback();
+    else await startPlayback();
   };
 
-  const buttonDisabled = playState === "starting" || playState === "stopping";
+  const buttonLabel = isPlaying ? "Pause" : "Listen Live";
+  const subtitle = playState === "starting" ? "WORKING…" : liveLabel;
 
   return (
     <div className="tv-now-playing">
@@ -253,7 +292,7 @@ export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onSt
                 aria-hidden="true"
               />
               <span className="tv-player-title">TRUEVOICE DIGITAL</span>
-              <span className="tv-player-subtitle">{buttonDisabled ? "WORKING…" : liveLabel}</span>
+              <span className="tv-player-subtitle">{subtitle}</span>
 
               {listeners != null && !Number.isNaN(listeners) && (
                 <span className="tv-listeners">{listeners} listening</span>
@@ -261,13 +300,8 @@ export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onSt
             </div>
 
             <div className="tv-player-controls">
-              <button
-                type="button"
-                className="tv-btn tv-btn-primary"
-                onClick={handleToggle}
-                disabled={buttonDisabled}
-              >
-                {isPlaying ? "Pause" : "Listen Live"}
+              <button type="button" className="tv-btn tv-btn-primary" onClick={handleToggle}>
+                {buttonLabel}
               </button>
             </div>
           </div>
