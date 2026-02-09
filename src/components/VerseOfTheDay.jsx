@@ -20,7 +20,7 @@ export function VerseOfTheDay() {
         }
       } catch (err) {
         if (isMounted) {
-          setError(err.message || "Failed to load Verse of the Day.");
+          setError(err?.message || "Failed to load Verse of the Day.");
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -36,6 +36,12 @@ export function VerseOfTheDay() {
     };
   }, []);
 
+  // ---- normalize version display ----
+  const version =
+    verse?.version && typeof verse.version === "string" && verse.version.trim()
+      ? verse.version.trim()
+      : "NIV"; // default fallback (change if desired)
+
   return (
     <section className="votd card">
       <h3>Verse of the Day</h3>
@@ -44,7 +50,8 @@ export function VerseOfTheDay() {
 
       {error && (
         <p className="error">
-          Could not load verse. <br />
+          Could not load verse.
+          <br />
           <small>{error}</small>
         </p>
       )}
@@ -54,7 +61,7 @@ export function VerseOfTheDay() {
           <p className="votd-text">&ldquo;{verse.text}&rdquo;</p>
           <p className="votd-ref">
             {verse.reference}{" "}
-            <span className="votd-version">({verse.version})</span>
+            <span className="votd-version">({version})</span>
           </p>
         </>
       )}
