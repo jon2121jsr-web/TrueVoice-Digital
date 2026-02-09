@@ -1,5 +1,5 @@
 // src/components/NowPlayingPanel.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api"; // keep your current source
 
 function safeText(v) {
@@ -17,6 +17,9 @@ export function NowPlayingPanel({
   const [error, setError] = useState(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
+
+  // Prevent play/pause race conditions (multiple rapid taps)
+  const actionIdRef = useRef(0);
 
   // Poll now-playing endpoint
   useEffect(() => {
@@ -59,7 +62,6 @@ export function NowPlayingPanel({
   const art = safeText(song?.art) || null;
   const listeners = data?.listeners ?? null;
 
-  // “isLive” can be flaky depending on source; we’ll show streaming UI based on play state
   const liveLabel = useMemo(() => {
     if (error) return "OFF AIR";
     return isPlaying ? "NOW STREAMING" : "READY";
@@ -87,12 +89,11 @@ export function NowPlayingPanel({
     });
   }, [isPlaying, error, loading, onStatusChange, title, artist, album, art, listeners, song]);
 
-  // Make sure the audio element exists and is wired
+  // Wire audio element events
   useEffect(() => {
     const el = audioRef?.current;
     if (!el) return;
 
-    // Keep preload minimal (mobile-friendly)
     el.preload = "none";
 
     const onPlay = () => setIsPlaying(true);
@@ -110,39 +111,77 @@ export function NowPlayingPanel({
     };
   }, [audioRef]);
 
+  // Hard-stop helper (kills the stream so it can’t “ghost resume”)
+  const hardStop = (el) => {
+    try {
+      el.pause();
+    } catch {
+      // ignore
+    }
+
+    // ✅ Clearing src + load() forces the stream connection to close
+    try {
+      el.removeAttribute("src");
+      el.load();
+    } catch {
+      // ignore
+    }
+  };
+
   const handleTogglePlay = async () => {
     const el = audioRef?.current;
     if (!el) {
-      console.warn("audioRef not attached. Add <audio ref={playerRef} /> in App.jsx");
+      console.warn(
+        "audioRef not attached. Add <audio ref={playerRef} /> in App.jsx"
+      );
       setError("Audio player not ready. Refresh and try again.");
       return;
     }
 
+    // Every click invalidates prior async play() calls
+    const myActionId = ++actionIdRef.current;
+
     try {
       setError(null);
 
-      // ✅ Always ensure the stream URL is set at click time (most reliable on iOS)
-      if (streamUrl && el.src !== streamUrl) {
+      // Determine “intend to play” based on actual paused state
+      const wantPlay = el.paused;
+
+      if (!wantPlay) {
+        // ✅ HARD STOP (prevents queued play() promises from bringing audio back)
+        hardStop(el);
+        return;
+      }
+
+      // PLAY path (re-attach src each time, because pause clears it)
+      if (!streamUrl) {
+        setError("Stream URL not configured.");
+        return;
+      }
+
+      // Always set src fresh for reliability
+      if (el.src !== streamUrl) {
         el.src = streamUrl;
       }
 
-      // ✅ Force load before play (helps Safari/iOS)
+      // Helps Safari/iOS in some cases
       try {
         el.load();
       } catch {
         // ignore
       }
 
-      if (el.paused) {
-        await el.play(); // must be user-initiated (this click is)
-      } else {
-        el.pause();
+      // Attempt play (user-initiated)
+      await el.play();
+
+      // If another click happened while play() was awaiting, stop immediately
+      if (actionIdRef.current !== myActionId) {
+        hardStop(el);
       }
     } catch (e) {
       console.error("Audio play/pause failed:", e);
-      // Surface a real message to the user
       setError(
-        "Playback was blocked. Tap again. If still blocked, open in Safari/Chrome and ensure sound is allowed."
+        "Playback was blocked. Tap again. If it persists, open in Safari/Chrome and allow audio."
       );
     }
   };
@@ -169,7 +208,6 @@ export function NowPlayingPanel({
           <h1 className="tv-song-title">{title}</h1>
           <p className="tv-artist-name">{artist}</p>
 
-          {/* ✅ Make failures visible so it never looks like "nothing happens" */}
           {error && (
             <p style={{ marginTop: 8, color: "#b91c1c", fontWeight: 600 }}>
               {error}
