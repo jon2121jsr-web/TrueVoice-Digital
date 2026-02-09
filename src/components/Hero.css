@@ -70,14 +70,12 @@
 
 /* ✅ Legacy slide: allow it to grow larger on big screens */
 .hero-slide[data-kind="legacy"] .hero-media {
-  /* Was 1120px/96% */
   width: min(1280px, 98%);
   height: 98%;
 
   border-radius: 22px;
   overflow: hidden;
 
-  /* ✅ Remove legacy bottom padding so the image uses the full frame */
   padding-bottom: 0;
   box-sizing: border-box;
 
@@ -95,7 +93,6 @@
 
 /* Poster slides: slightly wider on large screens (safe) */
 .hero-slide[data-kind="poster"] .hero-media {
-  /* Was 1120px/96% */
   width: min(1280px, 98%);
   height: 96%;
 
@@ -205,18 +202,27 @@
     border-radius: 18px;
     overflow: hidden;
 
-    /* ✅ Stop stealing vertical space on mobile */
     padding-bottom: 0;
     margin-bottom: 0;
   }
 
-  /* ✅ Make the image read larger on mobile (hero window unchanged)
-     This will crop slightly on the sides — that's the point for mobile legibility. */
+  /* ✅ Default mobile behavior (works for the other slides) */
   .hero-slide[data-kind="poster"] .hero-slide-img,
   .hero-slide[data-kind="legacy"] .hero-slide-img {
     object-fit: cover;
     object-position: center;
     transform: scale(1.06);
+  }
+
+  /* ✅ Targeted boosts: ONLY these two slides get bigger on mobile */
+  .hero-slide-img[src*="truevoice-hero"] {
+    transform: scale(1.14);
+    object-position: center;
+  }
+
+  .hero-slide-img[src*="hero-coming"] {
+    transform: scale(1.16);
+    object-position: center;
   }
 
   .hero-dots {
@@ -235,9 +241,18 @@
     border-radius: 16px;
   }
 
-  /* Slightly stronger scale for very small screens */
+  /* Default small-phone scale */
   .hero-slide[data-kind="poster"] .hero-slide-img,
   .hero-slide[data-kind="legacy"] .hero-slide-img {
     transform: scale(1.08);
+  }
+
+  /* ✅ Small-phone targeted boosts */
+  .hero-slide-img[src*="truevoice-hero"] {
+    transform: scale(1.18);
+  }
+
+  .hero-slide-img[src*="hero-coming"] {
+    transform: scale(1.20);
   }
 }
