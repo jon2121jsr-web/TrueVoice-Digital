@@ -1,6 +1,6 @@
 // src/components/NowPlayingPanel.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchNowPlaying } from "../services/api"; // keep your current source
+import { fetchNowPlaying } from "../services/api";
 
 function safeText(v) {
   return (v ?? "").toString().trim();
@@ -13,19 +13,18 @@ function detectIOS() {
   return iOSDevice || iPadOS;
 }
 
-export function NowPlayingPanel({
-  streamUrl,
-  audioRef,
-  showHistory = false,
-  onStatusChange,
-}) {
+// Tiny silent WAV (very short). Used only to “unlock” iOS audio on first gesture.
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+
+export function NowPlayingPanel({ streamUrl, audioRef, showHistory = false, onStatusChange }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Single source of truth for UI + intent
   const [playState, setPlayState] = useState("idle"); // idle | starting | playing | stopping
   const isIOSRef = useRef(false);
+  const primedRef = useRef(false);
 
   // Poll now-playing endpoint
   useEffect(() => {
@@ -60,16 +59,14 @@ export function NowPlayingPanel({
 
   // ---- derive display values ----
   const song = data?.song;
-
-  const title =
-    safeText(song?.title) || (loading ? "Loading current track…" : "Live Stream");
+  const title = safeText(song?.title) || (loading ? "Loading current track…" : "Live Stream");
   const artist = safeText(song?.artist) || "TrueVoice Digital";
   const album = safeText(song?.album) || "";
   const art = safeText(song?.art) || null;
-
   const listeners = data?.listeners ?? null;
 
   const isPlaying = playState === "playing";
+
   const liveLabel = useMemo(() => {
     if (error) return "OFF AIR";
     return isPlaying ? "NOW STREAMING" : "READY";
@@ -85,26 +82,19 @@ export function NowPlayingPanel({
       isLoading: !!loading,
       station: "TrueVoice Digital",
       now_playing: {
-        song: {
-          title,
-          artist,
-          album,
-          art,
-          raw: song || null,
-        },
+        song: { title, artist, album, art, raw: song || null },
       },
       listeners: listeners ?? null,
     });
   }, [isPlaying, error, loading, onStatusChange, title, artist, album, art, listeners, song]);
 
-  // Wire audio element and keep playState synced to REAL audio events
+  // Wire audio element events + iOS flags
   useEffect(() => {
     const el = audioRef?.current;
     if (!el) return;
 
     isIOSRef.current = detectIOS();
 
-    // iOS inline playback flags
     try {
       el.setAttribute("playsinline", "");
       el.setAttribute("webkit-playsinline", "");
@@ -115,7 +105,7 @@ export function NowPlayingPanel({
 
     el.preload = "none";
 
-    // Set src once (don’t churn it repeatedly on iOS)
+    // Keep src set
     if (streamUrl && (!el.src || el.src !== streamUrl)) {
       el.src = streamUrl;
     }
@@ -124,22 +114,43 @@ export function NowPlayingPanel({
     const onPlay = () => setPlayState("playing");
     const onPause = () => setPlayState("idle");
     const onEnded = () => setPlayState("idle");
-    const onError = () => setPlayState("idle");
+    const onErr = () => setPlayState("idle");
 
     el.addEventListener("playing", onPlaying);
     el.addEventListener("play", onPlay);
     el.addEventListener("pause", onPause);
     el.addEventListener("ended", onEnded);
-    el.addEventListener("error", onError);
+    el.addEventListener("error", onErr);
 
     return () => {
       el.removeEventListener("playing", onPlaying);
       el.removeEventListener("play", onPlay);
       el.removeEventListener("pause", onPause);
       el.removeEventListener("ended", onEnded);
-      el.removeEventListener("error", onError);
+      el.removeEventListener("error", onErr);
     };
   }, [audioRef, streamUrl]);
+
+  // ✅ iOS priming: unlock audio on first user gesture
+  const primeIOSAudioOnce = async () => {
+    if (!isIOSRef.current) return;
+    if (primedRef.current) return;
+
+    try {
+      // Use a separate tiny silent audio element just to unlock the gesture pipeline
+      const a = new Audio(SILENT_WAV);
+      a.volume = 0;
+      a.muted = true;
+      a.playsInline = true;
+
+      await a.play();
+      a.pause();
+      primedRef.current = true;
+    } catch (e) {
+      // Even if this fails, we still try to play the stream.
+      console.warn("iOS audio prime failed (will still attempt stream play):", e);
+    }
+  };
 
   const startPlayback = async () => {
     const el = audioRef?.current;
@@ -147,23 +158,21 @@ export function NowPlayingPanel({
       setError("Audio player not ready. Refresh and try again.");
       return;
     }
-
     if (!streamUrl) {
       setError("Stream URL not configured.");
       return;
     }
-
-    // Guard: only one start at a time
     if (playState === "starting" || playState === "stopping") return;
 
     setError(null);
     setPlayState("starting");
 
     try {
-      // Ensure src is set (but don’t thrash it)
+      // ✅ Prime first so the same tap counts on iPhone
+      await primeIOSAudioOnce();
+
       if (!el.src || el.src !== streamUrl) el.src = streamUrl;
 
-      // Ensure not muted
       try {
         el.muted = false;
         el.volume = 1;
@@ -171,7 +180,7 @@ export function NowPlayingPanel({
         // ignore
       }
 
-      // Avoid load() right before play on iOS (increases blocked attempts)
+      // Avoid load() right before play on iOS
       if (!isIOSRef.current) {
         try {
           el.load();
@@ -181,21 +190,17 @@ export function NowPlayingPanel({
       }
 
       await el.play();
-      // events will set playState => playing
+      // events flip playState -> playing
     } catch (e) {
       console.error("play() failed:", e);
       setPlayState("idle");
-      setError(
-        "Playback was blocked on iPhone. Tap Listen Live again. If you’re using the Home Screen app, try opening in Safari first."
-      );
+      setError("Playback was blocked. Tap Listen Live again.");
     }
   };
 
   const stopPlayback = async () => {
     const el = audioRef?.current;
     if (!el) return;
-
-    // Guard: only one stop at a time
     if (playState === "starting" || playState === "stopping") return;
 
     setError(null);
@@ -206,13 +211,11 @@ export function NowPlayingPanel({
     } catch (e) {
       console.error("pause() failed:", e);
     } finally {
-      // iOS-friendly: do NOT clear src (it causes the next play to get blocked more often)
       setPlayState("idle");
     }
   };
 
   const handleToggle = async () => {
-    // Deterministic: if we *think* we’re playing, we STOP. Otherwise we START.
     if (playState === "playing") {
       await stopPlayback();
     } else {
@@ -225,19 +228,12 @@ export function NowPlayingPanel({
   return (
     <div className="tv-now-playing">
       <div className="tv-now-inner">
-        {/* LEFT: artwork */}
         <div className="tv-artwork-placeholder">
           {art && (
-            <img
-              src={art}
-              alt={`${title} cover art`}
-              className="tv-artwork-img"
-              loading="lazy"
-            />
+            <img src={art} alt={`${title} cover art`} className="tv-artwork-img" loading="lazy" />
           )}
         </div>
 
-        {/* RIGHT: text/meta + controls */}
         <div className="tv-now-content">
           <span className="tv-eyebrow">{error ? "STREAM STATUS" : "NOW PLAYING"}</span>
 
@@ -253,15 +249,11 @@ export function NowPlayingPanel({
           <div className="tv-player-bar">
             <div className="tv-player-label">
               <span
-                className={
-                  isPlaying && !error ? "tv-live-dot" : "tv-live-dot tv-live-dot-idle"
-                }
+                className={isPlaying && !error ? "tv-live-dot" : "tv-live-dot tv-live-dot-idle"}
                 aria-hidden="true"
               />
               <span className="tv-player-title">TRUEVOICE DIGITAL</span>
-              <span className="tv-player-subtitle">
-                {buttonDisabled ? "WORKING…" : liveLabel}
-              </span>
+              <span className="tv-player-subtitle">{buttonDisabled ? "WORKING…" : liveLabel}</span>
 
               {listeners != null && !Number.isNaN(listeners) && (
                 <span className="tv-listeners">{listeners} listening</span>
