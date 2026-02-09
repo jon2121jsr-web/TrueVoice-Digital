@@ -38,10 +38,112 @@ const STRIPE = {
   oneTime50: "https://buy.stripe.com/dRmcN7dbrh1qcKw8e9ds402",
 };
 
+// --- Media Session helpers (lock screen + car metadata) ---
+const DEFAULT_MEDIA_TITLE = "TrueVoice Digital";
+const DEFAULT_MEDIA_ART = "/truevoice-favicon.png"; // assumes this exists in /public
+
+function safeText(v) {
+  return (v ?? "").toString().trim();
+}
+
+function buildArtworkList(src) {
+  const url = safeText(src) || DEFAULT_MEDIA_ART;
+  // iOS/Android are happier with multiple sizes; type is best-effort
+  return [
+    { src: url, sizes: "512x512", type: "image/png" },
+    { src: url, sizes: "256x256", type: "image/png" },
+    { src: url, sizes: "128x128", type: "image/png" },
+    { src: url, sizes: "96x96", type: "image/png" },
+  ];
+}
+
+function setMediaSessionMetadata({ title, artist, album, artUrl }) {
+  if (!("mediaSession" in navigator) || !("MediaMetadata" in window)) return;
+
+  const t = safeText(title) || DEFAULT_MEDIA_TITLE;
+  const a = safeText(artist) || "Now Playing";
+  const al = safeText(album) || DEFAULT_MEDIA_TITLE;
+
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: t,
+    artist: a,
+    album: al,
+    artwork: buildArtworkList(artUrl),
+  });
+}
+
+function wireMediaSessionControls(audioEl) {
+  if (!audioEl || !("mediaSession" in navigator)) return;
+
+  // Play/pause handlers help Android + many car head units
+  try {
+    navigator.mediaSession.setActionHandler("play", async () => {
+      try {
+        // Ensure src exists in case something cleared it
+        if (!audioEl.src) audioEl.src = LIVE_STREAM_URL;
+        await audioEl.play();
+      } catch {
+        // ignore
+      }
+    });
+
+    navigator.mediaSession.setActionHandler("pause", () => {
+      try {
+        audioEl.pause();
+      } catch {
+        // ignore
+      }
+    });
+
+    // If you don't support these, disable to avoid "broken" controls
+    ["previoustrack", "nexttrack", "seekbackward", "seekforward", "seekto"].forEach(
+      (action) => {
+        try {
+          navigator.mediaSession.setActionHandler(action, null);
+        } catch {
+          // ignore
+        }
+      }
+    );
+  } catch {
+    // ignore
+  }
+
+  const syncPlaybackState = () => {
+    try {
+      navigator.mediaSession.playbackState = audioEl.paused ? "paused" : "playing";
+    } catch {
+      // ignore
+    }
+  };
+
+  audioEl.addEventListener("play", syncPlaybackState);
+  audioEl.addEventListener("pause", syncPlaybackState);
+  audioEl.addEventListener("ended", syncPlaybackState);
+
+  syncPlaybackState();
+
+  return () => {
+    audioEl.removeEventListener("play", syncPlaybackState);
+    audioEl.removeEventListener("pause", syncPlaybackState);
+    audioEl.removeEventListener("ended", syncPlaybackState);
+  };
+}
+
 function App() {
   const playerRef = useRef(null);
-  const [currentStation, setCurrentStation] = useState("TrueVoice Radio");
+
+  // Station label (shown in debug, etc.)
+  const [currentStation, setCurrentStation] = useState("TrueVoice Digital");
   const [showDebug, setShowDebug] = useState(false);
+
+  // Now Playing state for Media Session + (optional future UI use)
+  const [nowPlaying, setNowPlaying] = useState({
+    title: "",
+    artist: "",
+    album: "",
+    artUrl: "",
+  });
 
   // Video modal state
   const [videoOpen, setVideoOpen] = useState(false);
@@ -57,8 +159,35 @@ function App() {
   const [dockHeight, setDockHeight] = useState(0);
 
   const handleStatusChange = (status) => {
-    if (status && status.station) {
-      setCurrentStation(status.station);
+    if (!status) return;
+
+    // Keep station label updated (best effort)
+    if (status.station) setCurrentStation(status.station);
+    if (status?.station?.name) setCurrentStation(status.station.name);
+
+    // --- Robust extraction of "now playing" from whatever shape NowPlayingPanel emits ---
+    // Common shapes:
+    // 1) status.now_playing.song.{title,artist,album,art}
+    // 2) status.nowPlaying.song.{...}
+    // 3) status.song.{...}
+    const s =
+      status?.now_playing?.song ||
+      status?.nowPlaying?.song ||
+      status?.song ||
+      status?.now_playing ||
+      status?.nowPlaying ||
+      null;
+
+    if (s) {
+      const title = safeText(s.title) || safeText(s.text) || "";
+      const artist = safeText(s.artist) || "";
+      const album = safeText(s.album) || "";
+      const artUrl = safeText(s.art) || safeText(s.artUrl) || "";
+
+      // Update only if we got something meaningful
+      if (title || artist || album || artUrl) {
+        setNowPlaying({ title, artist, album, artUrl });
+      }
     }
   };
 
@@ -114,6 +243,32 @@ function App() {
       return () => window.clearTimeout(t);
     }
   }, []);
+
+  // --- Media Session: wire controls once the audio element exists ---
+  useEffect(() => {
+    const audioEl = playerRef.current;
+    if (!audioEl) return;
+
+    // Some browsers need the element to have a src early
+    // (NowPlayingPanel likely sets it, but this helps fallback handlers)
+    if (!audioEl.src) {
+      audioEl.src = LIVE_STREAM_URL;
+    }
+
+    const cleanup = wireMediaSessionControls(audioEl);
+    return () => cleanup?.();
+  }, []);
+
+  // --- Media Session: update metadata whenever Now Playing changes ---
+  useEffect(() => {
+    // Always set something so lock screen shows station even before first track fetch
+    const title = nowPlaying.title || DEFAULT_MEDIA_TITLE;
+    const artist = nowPlaying.artist || "Streaming";
+    const album = nowPlaying.album || DEFAULT_MEDIA_TITLE;
+    const artUrl = nowPlaying.artUrl || DEFAULT_MEDIA_ART;
+
+    setMediaSessionMetadata({ title, artist, album, artUrl });
+  }, [nowPlaying]);
 
   // --- Video feed helpers ---
   const feedBySection = useMemo(() => {
@@ -345,9 +500,11 @@ function App() {
         {/* TRUEVOICE CONNECT */}
         <section className="tv-section tv-section--stacked">
           <TrueVoiceConnect
-            onWatchLive={handleWatchLive}
-            onListenAgain={handleListenAgain}
-            onMusicAndTestimonies={handleMusicAndTestimonies}
+            onWatchLive={() => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
+            onListenAgain={() => openVideoForSection(VIDEO_SECTIONS.LISTEN_AGAIN)}
+            onMusicAndTestimonies={() =>
+              openVideoForSection(VIDEO_SECTIONS.MUSIC_TESTIMONIES)
+            }
           />
         </section>
 
@@ -479,9 +636,7 @@ function App() {
             </div>
           </div>
 
-          <p>
-            © {new Date().getFullYear()} TrueVoice.Digital. All rights reserved.
-          </p>
+          <p>© {new Date().getFullYear()} TrueVoice.Digital. All rights reserved.</p>
           <p className="tv-footer-attrib">POWERED BY OUTPUT DIGITAL</p>
         </footer>
       </main>
