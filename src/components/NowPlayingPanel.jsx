@@ -2,6 +2,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchNowPlaying } from "../services/api"; // keep your current source
 
+function safeText(v) {
+  return (v ?? "").toString().trim();
+}
+
 export function NowPlayingPanel({
   streamUrl,
   audioRef,
@@ -47,10 +51,12 @@ export function NowPlayingPanel({
 
   // ---- derive display values ----
   const song = data?.song;
-  const title =
-    song?.title || (loading ? "Loading current track…" : "Live Stream");
-  const artist = song?.artist || "TrueVoice Digital";
-  const art = song?.art || null;
+
+  const title = safeText(song?.title) || (loading ? "Loading current track…" : "Live Stream");
+  const artist = safeText(song?.artist) || "TrueVoice Digital";
+  const album = safeText(song?.album) || "";
+  const art = safeText(song?.art) || null;
+
   const listeners = data?.listeners ?? null;
 
   // “isLive” can be flaky depending on source; we’ll show streaming UI based on play state
@@ -59,21 +65,39 @@ export function NowPlayingPanel({
     return isPlaying ? "NOW STREAMING" : "READY";
   }, [error, isPlaying]);
 
-  // Keep App informed (LIVE dot / status)
+  // Keep App informed (LIVE dot / status + NOW PLAYING metadata)
   useEffect(() => {
-    if (typeof onStatusChange === "function") {
-      onStatusChange({
-        isLive: !!isPlaying && !error,
-        hasError: !!error,
-        isLoading: !!loading,
-        station: "TrueVoice Radio",
-      });
-    }
-  }, [isPlaying, error, loading, onStatusChange]);
+    if (typeof onStatusChange !== "function") return;
+
+    onStatusChange({
+      isLive: !!isPlaying && !error,
+      hasError: !!error,
+      isLoading: !!loading,
+
+      // ✅ Use your real station name (not "Radio")
+      station: "TrueVoice Digital",
+
+      // ✅ Pass through the now playing payload so App can set Media Session metadata
+      now_playing: {
+        song: {
+          title,
+          artist,
+          album,
+          art,
+          // Include raw too (helps future debugging / expansion)
+          raw: song || null,
+        },
+      },
+
+      // Optional helpful fields (safe to ignore upstream)
+      listeners: listeners ?? null,
+    });
+  }, [isPlaying, error, loading, onStatusChange, title, artist, album, art, listeners, song]);
 
   // Make sure the audio element exists and is wired
   useEffect(() => {
     if (!audioRef?.current) return;
+
     if (streamUrl && audioRef.current.src !== streamUrl) {
       audioRef.current.src = streamUrl;
     }
@@ -99,7 +123,9 @@ export function NowPlayingPanel({
     try {
       const el = audioRef?.current;
       if (!el) {
-        console.warn("audioRef not attached. Add <audio ref={playerRef} /> in App.jsx");
+        console.warn(
+          "audioRef not attached. Add <audio ref={playerRef} /> in App.jsx"
+        );
         return;
       }
 
@@ -133,7 +159,9 @@ export function NowPlayingPanel({
 
         {/* RIGHT: text/meta + controls */}
         <div className="tv-now-content">
-          <span className="tv-eyebrow">{error ? "STREAM STATUS" : "NOW PLAYING"}</span>
+          <span className="tv-eyebrow">
+            {error ? "STREAM STATUS" : "NOW PLAYING"}
+          </span>
 
           <h1 className="tv-song-title">{title}</h1>
           <p className="tv-artist-name">{artist}</p>
@@ -143,11 +171,13 @@ export function NowPlayingPanel({
             <div className="tv-player-label">
               <span
                 className={
-                  isPlaying && !error ? "tv-live-dot" : "tv-live-dot tv-live-dot-idle"
+                  isPlaying && !error
+                    ? "tv-live-dot"
+                    : "tv-live-dot tv-live-dot-idle"
                 }
                 aria-hidden="true"
               />
-              <span className="tv-player-title">TRUEVOICE RADIO</span>
+              <span className="tv-player-title">TRUEVOICE DIGITAL</span>
 
               <span className="tv-player-subtitle">{liveLabel}</span>
 
@@ -164,8 +194,6 @@ export function NowPlayingPanel({
               >
                 {isPlaying ? "Pause" : "Listen Live"}
               </button>
-
-              {/* ❌ Track History button removed on purpose */}
             </div>
           </div>
 
