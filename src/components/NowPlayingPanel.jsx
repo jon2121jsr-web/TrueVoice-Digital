@@ -6,8 +6,7 @@ function safeText(v) {
   return (v ?? "").toString().trim();
 }
 
-function isIOS() {
-  // Covers iPhone/iPad + iPadOS “MacIntel” touch
+function detectIOS() {
   const ua = navigator.userAgent || "";
   const iOSDevice = /iPad|iPhone|iPod/.test(ua);
   const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
@@ -24,12 +23,9 @@ export function NowPlayingPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  // Prevent race conditions / queued play promises
-  const actionIdRef = useRef(0);
-  const busyRef = useRef(false);
-  const iOSRef = useRef(false);
+  // Single source of truth for UI + intent
+  const [playState, setPlayState] = useState("idle"); // idle | starting | playing | stopping
+  const isIOSRef = useRef(false);
 
   // Poll now-playing endpoint
   useEffect(() => {
@@ -70,8 +66,10 @@ export function NowPlayingPanel({
   const artist = safeText(song?.artist) || "TrueVoice Digital";
   const album = safeText(song?.album) || "";
   const art = safeText(song?.art) || null;
+
   const listeners = data?.listeners ?? null;
 
+  const isPlaying = playState === "playing";
   const liveLabel = useMemo(() => {
     if (error) return "OFF AIR";
     return isPlaying ? "NOW STREAMING" : "READY";
@@ -82,7 +80,7 @@ export function NowPlayingPanel({
     if (typeof onStatusChange !== "function") return;
 
     onStatusChange({
-      isLive: !!isPlaying && !error,
+      isLive: isPlaying && !error,
       hasError: !!error,
       isLoading: !!loading,
       station: "TrueVoice Digital",
@@ -97,31 +95,19 @@ export function NowPlayingPanel({
       },
       listeners: listeners ?? null,
     });
-  }, [
-    isPlaying,
-    error,
-    loading,
-    onStatusChange,
-    title,
-    artist,
-    album,
-    art,
-    listeners,
-    song,
-  ]);
+  }, [isPlaying, error, loading, onStatusChange, title, artist, album, art, listeners, song]);
 
-  // Wire audio element: playsinline + events
+  // Wire audio element and keep playState synced to REAL audio events
   useEffect(() => {
     const el = audioRef?.current;
     if (!el) return;
 
-    iOSRef.current = isIOS();
+    isIOSRef.current = detectIOS();
 
-    // iOS needs inline flags or it acts weird
+    // iOS inline playback flags
     try {
       el.setAttribute("playsinline", "");
       el.setAttribute("webkit-playsinline", "");
-      // property is also helpful
       el.playsInline = true;
     } catch {
       // ignore
@@ -129,97 +115,64 @@ export function NowPlayingPanel({
 
     el.preload = "none";
 
-    // Important: set src ONCE early (prevents iOS “first tap blocked” patterns)
-    if (streamUrl && !el.src) {
-      el.src = streamUrl;
-    } else if (streamUrl && el.src !== streamUrl) {
+    // Set src once (don’t churn it repeatedly on iOS)
+    if (streamUrl && (!el.src || el.src !== streamUrl)) {
       el.src = streamUrl;
     }
 
-    const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
-    const onEnded = () => setIsPlaying(false);
+    const onPlaying = () => setPlayState("playing");
+    const onPlay = () => setPlayState("playing");
+    const onPause = () => setPlayState("idle");
+    const onEnded = () => setPlayState("idle");
+    const onError = () => setPlayState("idle");
 
+    el.addEventListener("playing", onPlaying);
     el.addEventListener("play", onPlay);
     el.addEventListener("pause", onPause);
     el.addEventListener("ended", onEnded);
+    el.addEventListener("error", onError);
 
     return () => {
+      el.removeEventListener("playing", onPlaying);
       el.removeEventListener("play", onPlay);
       el.removeEventListener("pause", onPause);
       el.removeEventListener("ended", onEnded);
+      el.removeEventListener("error", onError);
     };
   }, [audioRef, streamUrl]);
 
-  // Desktop/Android hard stop helper
-  const hardStopNonIOS = (el) => {
-    try {
-      el.pause();
-    } catch {
-      // ignore
-    }
-    // Clearing src kills the network stream. Great for desktop, but can cause iOS “blocked” next play.
-    try {
-      el.removeAttribute("src");
-      el.load();
-    } catch {
-      // ignore
-    }
-    // restore src so next play is a normal resume path (still user initiated)
-    try {
-      if (streamUrl) el.src = streamUrl;
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleTogglePlay = async () => {
+  const startPlayback = async () => {
     const el = audioRef?.current;
     if (!el) {
       setError("Audio player not ready. Refresh and try again.");
       return;
     }
 
-    // Block spamming taps (this is a huge part of your issue)
-    if (busyRef.current) return;
+    if (!streamUrl) {
+      setError("Stream URL not configured.");
+      return;
+    }
 
-    busyRef.current = true;
-    const myActionId = ++actionIdRef.current;
+    // Guard: only one start at a time
+    if (playState === "starting" || playState === "stopping") return;
+
+    setError(null);
+    setPlayState("starting");
 
     try {
-      setError(null);
+      // Ensure src is set (but don’t thrash it)
+      if (!el.src || el.src !== streamUrl) el.src = streamUrl;
 
-      const wantPlay = el.paused;
-
-      if (!wantPlay) {
-        // PAUSE / STOP
-        if (iOSRef.current) {
-          // ✅ iOS: SOFT STOP ONLY (avoids “Playback was blocked” on next play)
-          try {
-            el.pause();
-          } catch {
-            // ignore
-          }
-        } else {
-          // ✅ Non-iOS: HARD STOP to prevent ghost-resume
-          hardStopNonIOS(el);
-        }
-        return;
+      // Ensure not muted
+      try {
+        el.muted = false;
+        el.volume = 1;
+      } catch {
+        // ignore
       }
 
-      // PLAY
-      if (!streamUrl) {
-        setError("Stream URL not configured.");
-        return;
-      }
-
-      // Ensure src is correct (don’t churn it every time)
-      if (!el.src || el.src !== streamUrl) {
-        el.src = streamUrl;
-      }
-
-      // Don’t call load() on iOS right before play (often increases NotAllowed errors)
-      if (!iOSRef.current) {
+      // Avoid load() right before play on iOS (increases blocked attempts)
+      if (!isIOSRef.current) {
         try {
           el.load();
         } catch {
@@ -227,32 +180,47 @@ export function NowPlayingPanel({
         }
       }
 
-      // Must be user initiated — this click is
       await el.play();
-
-      // If another click happened while play() awaited, stop immediately
-      if (actionIdRef.current !== myActionId) {
-        try {
-          el.pause();
-        } catch {
-          // ignore
-        }
-      }
+      // events will set playState => playing
     } catch (e) {
-      console.error("Audio play/pause failed:", e);
-
-      // On iOS, the most common failure is NotAllowedError on the first attempt.
-      // The key is: don’t clear src and don’t churn load(). We already fixed that.
+      console.error("play() failed:", e);
+      setPlayState("idle");
       setError(
-        "Playback was blocked. If you're in Low Power Mode or Silent Mode, try turning it off and tap Listen Live again."
+        "Playback was blocked on iPhone. Tap Listen Live again. If you’re using the Home Screen app, try opening in Safari first."
       );
-    } finally {
-      // Small delay prevents double-tap from queuing a second play immediately
-      window.setTimeout(() => {
-        busyRef.current = false;
-      }, 250);
     }
   };
+
+  const stopPlayback = async () => {
+    const el = audioRef?.current;
+    if (!el) return;
+
+    // Guard: only one stop at a time
+    if (playState === "starting" || playState === "stopping") return;
+
+    setError(null);
+    setPlayState("stopping");
+
+    try {
+      el.pause();
+    } catch (e) {
+      console.error("pause() failed:", e);
+    } finally {
+      // iOS-friendly: do NOT clear src (it causes the next play to get blocked more often)
+      setPlayState("idle");
+    }
+  };
+
+  const handleToggle = async () => {
+    // Deterministic: if we *think* we’re playing, we STOP. Otherwise we START.
+    if (playState === "playing") {
+      await stopPlayback();
+    } else {
+      await startPlayback();
+    }
+  };
+
+  const buttonDisabled = playState === "starting" || playState === "stopping";
 
   return (
     <div className="tv-now-playing">
@@ -291,7 +259,9 @@ export function NowPlayingPanel({
                 aria-hidden="true"
               />
               <span className="tv-player-title">TRUEVOICE DIGITAL</span>
-              <span className="tv-player-subtitle">{liveLabel}</span>
+              <span className="tv-player-subtitle">
+                {buttonDisabled ? "WORKING…" : liveLabel}
+              </span>
 
               {listeners != null && !Number.isNaN(listeners) && (
                 <span className="tv-listeners">{listeners} listening</span>
@@ -302,7 +272,8 @@ export function NowPlayingPanel({
               <button
                 type="button"
                 className="tv-btn tv-btn-primary"
-                onClick={handleTogglePlay}
+                onClick={handleToggle}
+                disabled={buttonDisabled}
               >
                 {isPlaying ? "Pause" : "Listen Live"}
               </button>
