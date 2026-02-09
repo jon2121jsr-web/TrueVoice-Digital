@@ -1,20 +1,21 @@
 // src/components/NowPlayingPanel.jsx
 import { useEffect, useMemo, useState } from "react";
-import { fetchNowPlaying } from "../services/api"; // keep your current source
+import { fetchNowPlaying } from "../services/api";
 
 export function NowPlayingPanel({
   streamUrl,
   audioRef,
-  showHistory = false, // we’re not using “Track History” button anymore
+  showHistory = false,
   onStatusChange,
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Poll now-playing endpoint
+  /* ----------------------------------------
+     Poll AzuraCast Now Playing
+  ---------------------------------------- */
   useEffect(() => {
     let isMounted = true;
 
@@ -45,7 +46,9 @@ export function NowPlayingPanel({
     };
   }, []);
 
-  // ---- derive display values ----
+  /* ----------------------------------------
+     Derived display values
+  ---------------------------------------- */
   const song = data?.song;
   const title =
     song?.title || (loading ? "Loading current track…" : "Live Stream");
@@ -53,13 +56,14 @@ export function NowPlayingPanel({
   const art = song?.art || null;
   const listeners = data?.listeners ?? null;
 
-  // “isLive” can be flaky depending on source; we’ll show streaming UI based on play state
   const liveLabel = useMemo(() => {
     if (error) return "OFF AIR";
     return isPlaying ? "NOW STREAMING" : "READY";
   }, [error, isPlaying]);
 
-  // Keep App informed (LIVE dot / status)
+  /* ----------------------------------------
+     Inform App of status (LIVE dot, etc.)
+  ---------------------------------------- */
   useEffect(() => {
     if (typeof onStatusChange === "function") {
       onStatusChange({
@@ -71,52 +75,61 @@ export function NowPlayingPanel({
     }
   }, [isPlaying, error, loading, onStatusChange]);
 
-  // Make sure the audio element exists and is wired
+  /* ----------------------------------------
+     Wire audio element (events only)
+  ---------------------------------------- */
   useEffect(() => {
-    if (!audioRef?.current) return;
-    if (streamUrl && audioRef.current.src !== streamUrl) {
-      audioRef.current.src = streamUrl;
-    }
-    audioRef.current.preload = "none";
+    const el = audioRef?.current;
+    if (!el) return;
+
+    el.preload = "none";
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
     const onEnded = () => setIsPlaying(false);
 
-    audioRef.current.addEventListener("play", onPlay);
-    audioRef.current.addEventListener("pause", onPause);
-    audioRef.current.addEventListener("ended", onEnded);
+    el.addEventListener("play", onPlay);
+    el.addEventListener("pause", onPause);
+    el.addEventListener("ended", onEnded);
 
     return () => {
-      if (!audioRef?.current) return;
-      audioRef.current.removeEventListener("play", onPlay);
-      audioRef.current.removeEventListener("pause", onPause);
-      audioRef.current.removeEventListener("ended", onEnded);
+      el.removeEventListener("play", onPlay);
+      el.removeEventListener("pause", onPause);
+      el.removeEventListener("ended", onEnded);
     };
-  }, [audioRef, streamUrl]);
+  }, [audioRef]);
 
+  /* ----------------------------------------
+     LIVE RADIO TOGGLE (STOP / START)
+     - Pause = STOP (kill stream)
+     - Play = START fresh (new connection)
+  ---------------------------------------- */
   const handleTogglePlay = async () => {
-    try {
-      const el = audioRef?.current;
-      if (!el) {
-        console.warn("audioRef not attached. Add <audio ref={playerRef} /> in App.jsx");
-        return;
-      }
+    const el = audioRef?.current;
+    if (!el) return;
 
-      if (el.paused) {
-        // iOS/Chrome mobile requires this to be user-initiated (this click is good)
+    try {
+      if (!isPlaying) {
+        // START: fresh live connection
+        setError(null);
+        el.src = streamUrl;
+        el.load(); // flush old buffers
         await el.play();
+        setIsPlaying(true);
       } else {
+        // STOP: kill stream completely
         el.pause();
+        el.removeAttribute("src");
+        el.load(); // fully reset decoder
+        setIsPlaying(false);
       }
-    } catch (e) {
-      console.error("Audio play/pause failed:", e);
-      setError("Tap again to start audio (browser blocked autoplay).");
+    } catch (err) {
+      console.error("Live stream toggle failed:", err);
+      setError("Tap again to start audio.");
     }
   };
 
   return (
-    // ✅ THIS restores the “white card” background you’re missing locally
     <div className="tv-now-playing">
       <div className="tv-now-inner">
         {/* LEFT: artwork */}
@@ -133,22 +146,24 @@ export function NowPlayingPanel({
 
         {/* RIGHT: text/meta + controls */}
         <div className="tv-now-content">
-          <span className="tv-eyebrow">{error ? "STREAM STATUS" : "NOW PLAYING"}</span>
+          <span className="tv-eyebrow">
+            {error ? "STREAM STATUS" : "NOW PLAYING"}
+          </span>
 
           <h1 className="tv-song-title">{title}</h1>
           <p className="tv-artist-name">{artist}</p>
 
-          {/* LIVE row */}
           <div className="tv-player-bar">
             <div className="tv-player-label">
               <span
                 className={
-                  isPlaying && !error ? "tv-live-dot" : "tv-live-dot tv-live-dot-idle"
+                  isPlaying && !error
+                    ? "tv-live-dot"
+                    : "tv-live-dot tv-live-dot-idle"
                 }
                 aria-hidden="true"
               />
               <span className="tv-player-title">TRUEVOICE RADIO</span>
-
               <span className="tv-player-subtitle">{liveLabel}</span>
 
               {listeners != null && !Number.isNaN(listeners) && (
@@ -159,17 +174,14 @@ export function NowPlayingPanel({
             <div className="tv-player-controls">
               <button
                 type="button"
-                className={`tv-btn ${isPlaying ? "tv-btn-primary" : "tv-btn-primary"}`}
+                className="tv-btn tv-btn-primary"
                 onClick={handleTogglePlay}
               >
-                {isPlaying ? "Pause" : "Listen Live"}
+                {isPlaying ? "Stop" : "Listen Live"}
               </button>
-
-              {/* ❌ Track History button removed on purpose */}
             </div>
           </div>
 
-          {/* Optional legacy block — not used now */}
           {showHistory && null}
         </div>
       </div>
