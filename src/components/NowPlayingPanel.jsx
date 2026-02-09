@@ -52,11 +52,11 @@ export function NowPlayingPanel({
   // ---- derive display values ----
   const song = data?.song;
 
-  const title = safeText(song?.title) || (loading ? "Loading current track…" : "Live Stream");
+  const title =
+    safeText(song?.title) || (loading ? "Loading current track…" : "Live Stream");
   const artist = safeText(song?.artist) || "TrueVoice Digital";
   const album = safeText(song?.album) || "";
   const art = safeText(song?.art) || null;
-
   const listeners = data?.listeners ?? null;
 
   // “isLive” can be flaky depending on source; we’ll show streaming UI based on play state
@@ -73,76 +73,81 @@ export function NowPlayingPanel({
       isLive: !!isPlaying && !error,
       hasError: !!error,
       isLoading: !!loading,
-
-      // ✅ Use your real station name (not "Radio")
       station: "TrueVoice Digital",
-
-      // ✅ Pass through the now playing payload so App can set Media Session metadata
       now_playing: {
         song: {
           title,
           artist,
           album,
           art,
-          // Include raw too (helps future debugging / expansion)
           raw: song || null,
         },
       },
-
-      // Optional helpful fields (safe to ignore upstream)
       listeners: listeners ?? null,
     });
   }, [isPlaying, error, loading, onStatusChange, title, artist, album, art, listeners, song]);
 
   // Make sure the audio element exists and is wired
   useEffect(() => {
-    if (!audioRef?.current) return;
+    const el = audioRef?.current;
+    if (!el) return;
 
-    if (streamUrl && audioRef.current.src !== streamUrl) {
-      audioRef.current.src = streamUrl;
-    }
-    audioRef.current.preload = "none";
+    // Keep preload minimal (mobile-friendly)
+    el.preload = "none";
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
     const onEnded = () => setIsPlaying(false);
 
-    audioRef.current.addEventListener("play", onPlay);
-    audioRef.current.addEventListener("pause", onPause);
-    audioRef.current.addEventListener("ended", onEnded);
+    el.addEventListener("play", onPlay);
+    el.addEventListener("pause", onPause);
+    el.addEventListener("ended", onEnded);
 
     return () => {
-      if (!audioRef?.current) return;
-      audioRef.current.removeEventListener("play", onPlay);
-      audioRef.current.removeEventListener("pause", onPause);
-      audioRef.current.removeEventListener("ended", onEnded);
+      el.removeEventListener("play", onPlay);
+      el.removeEventListener("pause", onPause);
+      el.removeEventListener("ended", onEnded);
     };
-  }, [audioRef, streamUrl]);
+  }, [audioRef]);
 
   const handleTogglePlay = async () => {
+    const el = audioRef?.current;
+    if (!el) {
+      console.warn("audioRef not attached. Add <audio ref={playerRef} /> in App.jsx");
+      setError("Audio player not ready. Refresh and try again.");
+      return;
+    }
+
     try {
-      const el = audioRef?.current;
-      if (!el) {
-        console.warn(
-          "audioRef not attached. Add <audio ref={playerRef} /> in App.jsx"
-        );
-        return;
+      setError(null);
+
+      // ✅ Always ensure the stream URL is set at click time (most reliable on iOS)
+      if (streamUrl && el.src !== streamUrl) {
+        el.src = streamUrl;
+      }
+
+      // ✅ Force load before play (helps Safari/iOS)
+      try {
+        el.load();
+      } catch {
+        // ignore
       }
 
       if (el.paused) {
-        // iOS/Chrome mobile requires this to be user-initiated (this click is good)
-        await el.play();
+        await el.play(); // must be user-initiated (this click is)
       } else {
         el.pause();
       }
     } catch (e) {
       console.error("Audio play/pause failed:", e);
-      setError("Tap again to start audio (browser blocked autoplay).");
+      // Surface a real message to the user
+      setError(
+        "Playback was blocked. Tap again. If still blocked, open in Safari/Chrome and ensure sound is allowed."
+      );
     }
   };
 
   return (
-    // ✅ THIS restores the “white card” background you’re missing locally
     <div className="tv-now-playing">
       <div className="tv-now-inner">
         {/* LEFT: artwork */}
@@ -159,21 +164,24 @@ export function NowPlayingPanel({
 
         {/* RIGHT: text/meta + controls */}
         <div className="tv-now-content">
-          <span className="tv-eyebrow">
-            {error ? "STREAM STATUS" : "NOW PLAYING"}
-          </span>
+          <span className="tv-eyebrow">{error ? "STREAM STATUS" : "NOW PLAYING"}</span>
 
           <h1 className="tv-song-title">{title}</h1>
           <p className="tv-artist-name">{artist}</p>
+
+          {/* ✅ Make failures visible so it never looks like "nothing happens" */}
+          {error && (
+            <p style={{ marginTop: 8, color: "#b91c1c", fontWeight: 600 }}>
+              {error}
+            </p>
+          )}
 
           {/* LIVE row */}
           <div className="tv-player-bar">
             <div className="tv-player-label">
               <span
                 className={
-                  isPlaying && !error
-                    ? "tv-live-dot"
-                    : "tv-live-dot tv-live-dot-idle"
+                  isPlaying && !error ? "tv-live-dot" : "tv-live-dot tv-live-dot-idle"
                 }
                 aria-hidden="true"
               />
@@ -189,7 +197,7 @@ export function NowPlayingPanel({
             <div className="tv-player-controls">
               <button
                 type="button"
-                className={`tv-btn ${isPlaying ? "tv-btn-primary" : "tv-btn-primary"}`}
+                className="tv-btn tv-btn-primary"
                 onClick={handleTogglePlay}
               >
                 {isPlaying ? "Pause" : "Listen Live"}
@@ -197,7 +205,6 @@ export function NowPlayingPanel({
             </div>
           </div>
 
-          {/* Optional legacy block — not used now */}
           {showHistory && null}
         </div>
       </div>
