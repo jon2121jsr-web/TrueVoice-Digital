@@ -1,17 +1,17 @@
 <!doctype html>
 <html lang="en">
-   <head>
+  <head>
     <meta charset="UTF-8" />
 
     <!-- Basic page setup -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>TrueVoice Digital — 24/7 Music • Faith • Hope</title>
 
     <!-- Primary SEO Meta Tags -->
-    <meta
-      name="title"
-      content="TrueVoice Digital — 24/7 Music • Faith • Hope"
-    />
+    <meta name="title" content="TrueVoice Digital — 24/7 Music • Faith • Hope" />
     <meta
       name="description"
       content="TrueVoice Digital streams uplifting Christian music, daily encouragement, and powerful biblical truth — all day, every day. Listen live and stay encouraged."
@@ -34,7 +34,10 @@
       property="og:description"
       content="Streaming hope, worship, and encouragement 24/7. Listen live on TrueVoice Digital."
     />
-    <meta property="og:image" content="https://truevoice.digital/og-truevoice.jpg" />
+    <meta
+      property="og:image"
+      content="https://truevoice.digital/og-truevoice.jpg"
+    />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -52,15 +55,39 @@
       content="https://truevoice.digital/og-truevoice.jpg"
     />
 
-    <!-- Favicon (you can swap this later) -->
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="/truevoice-favicon.png" />
-
-    <!-- Theme color for mobile browser chrome -->
-    <meta name="theme-color" content="#275FDB" />
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://truevoice.digital/" />
+
+    <!-- Theme color for mobile browser chrome -->
+    <meta name="theme-color" content="#050816" />
+
+    <!-- ✅ iOS Home Screen Icon Support -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link
+      rel="apple-touch-icon"
+      sizes="167x167"
+      href="/apple-touch-icon-167.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/apple-touch-icon-152.png"
+    />
+
+    <!-- ✅ PWA Manifest (also helps some iOS behaviors) -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- ✅ iOS Standalone Mode (Add to Home Screen launches like an app) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
