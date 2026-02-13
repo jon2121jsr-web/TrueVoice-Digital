@@ -14,10 +14,15 @@ import VideoModal from "./components/VideoModal.jsx";
 
 import { videoFeed, VIDEO_SECTIONS } from "./data/videoFeed";
 
-// Stream URL (with env override for Vercel)
-const LIVE_STREAM_URL =
-  import.meta.env.VITE_TRUEVOICE_STREAM_URL ||
+// Stream URL (ENV-FIRST; safe fallback)
+// ✅ Primary: Live365 public stream endpoint (licensed)
+// ✅ Fallback: your legacy AzuraCast public stream (kept for safety)
+const LIVE365_STREAM_URL = "https://streaming.live365.com/a61535";
+const AZURACAST_FALLBACK_URL =
   "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
+
+const LIVE_STREAM_URL =
+  import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL;
 
 // Social links (ENV-FIRST; safe fallbacks)
 const SOCIAL = {
@@ -166,10 +171,6 @@ function App() {
     if (status?.station?.name) setCurrentStation(status.station.name);
 
     // --- Robust extraction of "now playing" from whatever shape NowPlayingPanel emits ---
-    // Common shapes:
-    // 1) status.now_playing.song.{title,artist,album,art}
-    // 2) status.nowPlaying.song.{...}
-    // 3) status.song.{...}
     const s =
       status?.now_playing?.song ||
       status?.nowPlaying?.song ||
@@ -184,7 +185,6 @@ function App() {
       const album = safeText(s.album) || "";
       const artUrl = safeText(s.art) || safeText(s.artUrl) || "";
 
-      // Update only if we got something meaningful
       if (title || artist || album || artUrl) {
         setNowPlaying({ title, artist, album, artUrl });
       }
@@ -249,19 +249,36 @@ function App() {
     const audioEl = playerRef.current;
     if (!audioEl) return;
 
-    // Some browsers need the element to have a src early
-    // (NowPlayingPanel likely sets it, but this helps fallback handlers)
+    // Ensure src exists early
     if (!audioEl.src) {
       audioEl.src = LIVE_STREAM_URL;
     }
 
+    // ✅ Safety: if Live365 ever fails to load, fall back to AzuraCast
+    const handleAudioError = () => {
+      try {
+        // Only fall back if we're not already on the fallback
+        const current = (audioEl.currentSrc || audioEl.src || "").toString();
+        if (current.includes("streaming.live365.com")) {
+          audioEl.src = AZURACAST_FALLBACK_URL;
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    audioEl.addEventListener("error", handleAudioError);
+
     const cleanup = wireMediaSessionControls(audioEl);
-    return () => cleanup?.();
+
+    return () => {
+      audioEl.removeEventListener("error", handleAudioError);
+      cleanup?.();
+    };
   }, []);
 
   // --- Media Session: update metadata whenever Now Playing changes ---
   useEffect(() => {
-    // Always set something so lock screen shows station even before first track fetch
     const title = nowPlaying.title || DEFAULT_MEDIA_TITLE;
     const artist = nowPlaying.artist || "Streaming";
     const album = nowPlaying.album || DEFAULT_MEDIA_TITLE;
@@ -312,13 +329,6 @@ function App() {
     setVideoOpen(true);
   };
 
-  // Handlers for TrueVoice Connect buttons (now real)
-  const handleWatchLive = () => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE);
-  const handleListenAgain = () =>
-    openVideoForSection(VIDEO_SECTIONS.LISTEN_AGAIN);
-  const handleMusicAndTestimonies = () =>
-    openVideoForSection(VIDEO_SECTIONS.MUSIC_TESTIMONIES);
-
   const closeVideo = () => {
     setVideoOpen(false);
     setActiveVideo(null);
@@ -360,13 +370,11 @@ function App() {
     const io = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        // When sentinel is NOT visible, user has scrolled past the player region
         setIsFloatingPlayer(!entry.isIntersecting);
       },
       {
         root: null,
         threshold: 0,
-        // Trigger a little earlier so it feels natural, not "late"
         rootMargin: "-12px 0px 0px 0px",
       }
     );
@@ -385,7 +393,6 @@ function App() {
           <div className="tv-header-actions">
             <div className="tv-social-row" aria-label="TrueVoice social links">
               <SocialIconLink href={SOCIAL.youtube} label="YouTube">
-                {/* YouTube icon */}
                 <svg
                   width="18"
                   height="18"
@@ -398,7 +405,6 @@ function App() {
               </SocialIconLink>
 
               <SocialIconLink href={SOCIAL.x} label="X">
-                {/* X icon */}
                 <svg
                   width="18"
                   height="18"
@@ -411,7 +417,6 @@ function App() {
               </SocialIconLink>
 
               <SocialIconLink href={SOCIAL.instagram} label="Instagram">
-                {/* Instagram icon */}
                 <svg
                   width="18"
                   height="18"
@@ -440,11 +445,8 @@ function App() {
       <audio ref={playerRef} preload="none" />
 
       <main
-        className={`tv-main ${
-          isFloatingPlayer ? "tv-main--player-floating" : ""
-        }`}
+        className={`tv-main ${isFloatingPlayer ? "tv-main--player-floating" : ""}`}
       >
-        {/* Lightweight "Thank you" banner */}
         {showThanks && (
           <div
             style={{
@@ -461,14 +463,10 @@ function App() {
           </div>
         )}
 
-        {/* NOW PLAYING + VERSE OF THE DAY GRID */}
         <div className="tv-hero">
-          {/* Floating player dock (same component, no duplication) */}
           <div className={`tv-player-dock ${isFloatingPlayer ? "is-floating" : ""}`}>
-            {/* Sentinel must remain in flow so we know when user passed this region */}
             <div ref={sentinelRef} className="tv-player-sentinel" aria-hidden="true" />
 
-            {/* Spacer prevents layout jump when the card becomes fixed */}
             {isFloatingPlayer && (
               <div
                 className="tv-player-spacer"
@@ -477,7 +475,6 @@ function App() {
               />
             )}
 
-            {/* Surface is what we actually "fix" when floating */}
             <div ref={surfaceRef} className="tv-player-surface">
               <NowPlayingPanel
                 streamUrl={LIVE_STREAM_URL}
@@ -488,16 +485,13 @@ function App() {
             </div>
           </div>
 
-          {/* Verse card */}
           <div className="tv-verse-card">
             <VerseOfTheDay />
           </div>
         </div>
 
-        {/* Recently Played */}
         <RecentTracksBar />
 
-        {/* TRUEVOICE CONNECT */}
         <section className="tv-section tv-section--stacked">
           <TrueVoiceConnect
             onWatchLive={() => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
@@ -508,17 +502,14 @@ function App() {
           />
         </section>
 
-        {/* REELS GRID */}
         <section className="tv-section tv-section--stacked">
           <ReelsGrid />
         </section>
 
-        {/* PODCAST LIST */}
         <section className="tv-section tv-section--stacked">
           <PodcastList />
         </section>
 
-        {/* SUPPORT / GIVING CARD */}
         <section id="tv-support-section" className="tv-section">
           <div className="tv-support-grid">
             <div>
@@ -593,7 +584,6 @@ function App() {
           </div>
         </section>
 
-        {/* FOOTER + ATTRIBUTION + SOCIAL */}
         <footer className="tv-footer">
           <div className="tv-footer-social">
             <span className="tv-footer-follow">Follow TrueVoice Digital</span>
@@ -641,7 +631,6 @@ function App() {
         </footer>
       </main>
 
-      {/* DEBUG PANEL (ALT+D) */}
       {showDebug && (
         <NowPlayingDebug
           playerRef={playerRef}
@@ -650,7 +639,6 @@ function App() {
         />
       )}
 
-      {/* VIDEO MODAL */}
       <VideoModal open={videoOpen} onClose={closeVideo} video={activeVideo} />
     </div>
   );

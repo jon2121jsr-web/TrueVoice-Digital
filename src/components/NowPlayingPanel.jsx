@@ -13,6 +13,10 @@ export function NowPlayingPanel({
   const [error, setError] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Safety fallback (keeps you from going dark if Live365 is temporarily flaky)
+  const AZURACAST_FALLBACK_URL =
+    "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
+
   /* ----------------------------------------
      Poll AzuraCast Now Playing
   ---------------------------------------- */
@@ -49,10 +53,11 @@ export function NowPlayingPanel({
   /* ----------------------------------------
      Derived display values
   ---------------------------------------- */
-  const song = data?.song;
+  const song = data?.song || null;
   const title =
     song?.title || (loading ? "Loading current track…" : "Live Stream");
   const artist = song?.artist || "TrueVoice Digital";
+  const album = song?.album || "TrueVoice Digital";
   const art = song?.art || null;
   const listeners = data?.listeners ?? null;
 
@@ -62,7 +67,8 @@ export function NowPlayingPanel({
   }, [error, isPlaying]);
 
   /* ----------------------------------------
-     Inform App of status (LIVE dot, etc.)
+     Inform App of status (MediaSession, LIVE dot, etc.)
+     ✅ Include song details so App can populate lock screen metadata
   ---------------------------------------- */
   useEffect(() => {
     if (typeof onStatusChange === "function") {
@@ -71,9 +77,19 @@ export function NowPlayingPanel({
         hasError: !!error,
         isLoading: !!loading,
         station: "TrueVoice Radio",
+        // Pass through a shape App already knows how to read
+        now_playing: {
+          song: {
+            title,
+            artist,
+            album,
+            art,
+          },
+        },
+        listeners: listeners ?? undefined,
       });
     }
-  }, [isPlaying, error, loading, onStatusChange]);
+  }, [isPlaying, error, loading, onStatusChange, title, artist, album, art, listeners]);
 
   /* ----------------------------------------
      Wire audio element (events only)
@@ -103,6 +119,7 @@ export function NowPlayingPanel({
      LIVE RADIO TOGGLE (STOP / START)
      - Pause = STOP (kill stream)
      - Play = START fresh (new connection)
+     ✅ Adds safe fallback to AzuraCast if primary stream fails
   ---------------------------------------- */
   const handleTogglePlay = async () => {
     const el = audioRef?.current;
@@ -112,20 +129,34 @@ export function NowPlayingPanel({
       if (!isPlaying) {
         // START: fresh live connection
         setError(null);
+
+        // Primary
         el.src = streamUrl;
-        el.load(); // flush old buffers
+        el.load();
+        try {
+          await el.play();
+          setIsPlaying(true);
+          return;
+        } catch (primaryErr) {
+          console.warn("Primary stream failed, trying fallback…", primaryErr);
+        }
+
+        // Fallback (AzuraCast)
+        el.src = AZURACAST_FALLBACK_URL;
+        el.load();
         await el.play();
         setIsPlaying(true);
       } else {
         // STOP: kill stream completely
         el.pause();
         el.removeAttribute("src");
-        el.load(); // fully reset decoder
+        el.load();
         setIsPlaying(false);
       }
     } catch (err) {
       console.error("Live stream toggle failed:", err);
       setError("Tap again to start audio.");
+      setIsPlaying(false);
     }
   };
 
