@@ -3,25 +3,24 @@
 // ------- AZURACAST NOW-PLAYING -------
 
 const BASE_URL =
-  import.meta.env.VITE_AZURACAST_BASE_URL ||
-  "https://stream.truevoice.digital";
+  import.meta.env.VITE_AZURACAST_BASE_URL || "https://stream.truevoice.digital";
 
 const STATION_SLUG =
-  import.meta.env.VITE_AZURACAST_STATION_SLUG ||
-  "truevoice_digital";
+  import.meta.env.VITE_AZURACAST_STATION_SLUG || "truevoice_digital";
 
 /**
  * Fetch now-playing data directly from AzuraCast and normalize it
  * into the shape NowPlayingPanel expects:
  *
  * {
- *   song: { title, artist, art },
+ *   song: { title, artist, album, art },
+ *   timing: { played_at, duration, elapsed },
  *   listeners,
  *   isLive,
  *   liveStreamer,
  *   playlist,
- *   next: { title, artist, art } | null,
- *   history: [ { title, artist, art, played_at }, ... ],
+ *   next: { title, artist, album, art } | null,
+ *   history: [ { title, artist, album, art, played_at }, ... ],
  *   recent_tracks: same as history
  * }
  */
@@ -42,6 +41,11 @@ export async function fetchNowPlaying() {
   const np = root.now_playing || {};
   const song = np.song || {};
 
+  // Timing fields (AzuraCast typically provides these under now_playing)
+  const played_at = np.played_at ?? np?.played_at ?? null;
+  const duration = np.duration ?? null;
+  const elapsed = np.elapsed ?? null;
+
   // Playing next
   const playingNext = root.playing_next || null;
   const nextSong = playingNext?.song || null;
@@ -59,6 +63,7 @@ export async function fetchNowPlaying() {
       id: item.sh_id || item.id || item.song_id || undefined,
       title: s.title || item.title || "Unknown title",
       artist: s.artist || item.artist || "",
+      album: s.album || item.album || "",
       art: s.art || item.art || null,
       played_at: item.played_at || item.timestamp || null,
     };
@@ -68,7 +73,13 @@ export async function fetchNowPlaying() {
     song: {
       title: song.title || "Unknown Title",
       artist: song.artist || "Unknown Artist",
+      album: song.album || "TrueVoice Digital",
       art: song.art || null,
+    },
+    timing: {
+      played_at,
+      duration,
+      elapsed,
     },
     listeners:
       root.listeners?.total ??
@@ -82,6 +93,7 @@ export async function fetchNowPlaying() {
       ? {
           title: nextSong.title || "Unknown Title",
           artist: nextSong.artist || "",
+          album: nextSong.album || "",
           art: nextSong.art || null,
         }
       : null,
@@ -92,20 +104,8 @@ export async function fetchNowPlaying() {
 
 // ------- VERSE OF THE DAY -------
 
-/**
- * Fetch a verse of the day.
- * If the external API fails for any reason, we fall back to a static verse.
- *
- * Shape expected by VerseOfTheDay.jsx:
- * {
- *   reference: "Psalm 27:13 (NIV)",
- *   text: "I remain confident of this: ...",
- *   translation: "NIV"
- * }
- */
 export async function fetchVerseOfTheDay() {
   try {
-    // Example free verse-of-the-day API.
     const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json");
     if (!res.ok) {
       throw new Error(`Verse API HTTP ${res.status}`);
@@ -123,7 +123,6 @@ export async function fetchVerseOfTheDay() {
     return { text, reference, translation };
   } catch (err) {
     console.error("fetchVerseOfTheDay failed, using fallback:", err);
-    // Fallback static verse so the UI always has something meaningful
     return {
       text:
         "I remain confident of this: I will see the goodness of the Lord in the land of the living.",

@@ -1,6 +1,11 @@
 // src/components/NowPlayingPanel.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
+
+function toInt(v, fallback) {
+  const n = Number.parseInt(String(v ?? ""), 10);
+  return Number.isFinite(n) ? n : fallback;
+}
 
 export function NowPlayingPanel({
   streamUrl,
@@ -8,36 +13,56 @@ export function NowPlayingPanel({
   showHistory = false,
   onStatusChange,
 }) {
-  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Safety fallback (keeps you from going dark if Live365 is temporarily flaky)
+  // ✅ This is now a true "delay by N seconds" using a local buffer.
+  // Start with what you're observing: ~35–45 seconds.
+  const METADATA_DELAY_SEC = toInt(
+    import.meta.env.VITE_STREAM_METADATA_DELAY_SEC,
+    40
+  );
+
+  // Buffer of snapshots: [{ tsMs, payload }]
+  const samplesRef = useRef([]);
+  const [samplesVersion, setSamplesVersion] = useState(0);
+
+  // Safety fallback if Live365 fails temporarily
   const AZURACAST_FALLBACK_URL =
     "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
   /* ----------------------------------------
-     Poll AzuraCast Now Playing
+     Poll AzuraCast Now Playing (source of truth)
   ---------------------------------------- */
   useEffect(() => {
-    let isMounted = true;
+    let alive = true;
 
     async function load() {
       try {
         setLoading(true);
         const result = await fetchNowPlaying();
-        if (isMounted) {
-          setData(result || null);
-          setError(null);
+        if (!alive) return;
+
+        const tsMs = Date.now();
+
+        // push snapshot to buffer
+        samplesRef.current.push({ tsMs, payload: result || null });
+
+        // keep buffer bounded (e.g., last 10 minutes @ 15s polling ~ 40 samples)
+        const MAX_SAMPLES = 80;
+        if (samplesRef.current.length > MAX_SAMPLES) {
+          samplesRef.current.splice(0, samplesRef.current.length - MAX_SAMPLES);
         }
+
+        setError(null);
+        setSamplesVersion((v) => v + 1);
       } catch (err) {
-        if (isMounted) {
-          console.error("NowPlaying error:", err);
-          setError(err?.message || "Failed to load now playing.");
-        }
+        if (!alive) return;
+        console.error("NowPlaying error:", err);
+        setError(err?.message || "Failed to load now playing.");
       } finally {
-        if (isMounted) setLoading(false);
+        if (alive) setLoading(false);
       }
     }
 
@@ -45,21 +70,66 @@ export function NowPlayingPanel({
     const id = window.setInterval(load, 15_000);
 
     return () => {
-      isMounted = false;
+      alive = false;
       window.clearInterval(id);
     };
   }, []);
 
   /* ----------------------------------------
+     Tick: re-evaluate which buffered snapshot to show
+     (so the delay "slides" smoothly between polls)
+  ---------------------------------------- */
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      // only tick when we actually have data; cheap
+      if (samplesRef.current.length) {
+        setSamplesVersion((v) => v + 1);
+      }
+    }, 1000);
+
+    return () => window.clearInterval(id);
+  }, []);
+
+  /* ----------------------------------------
+     Choose the snapshot from N seconds ago
+  ---------------------------------------- */
+  const display = useMemo(() => {
+    const samples = samplesRef.current;
+    if (!samples || samples.length === 0) {
+      return {
+        song: null,
+        listeners: null,
+      };
+    }
+
+    // Target time = now - delay
+    const targetMs = Date.now() - METADATA_DELAY_SEC * 1000;
+
+    // Find the latest sample whose tsMs <= targetMs
+    // If none (delay larger than buffer), fall back to oldest
+    let chosen = samples[0];
+    for (let i = 0; i < samples.length; i++) {
+      if (samples[i].tsMs <= targetMs) chosen = samples[i];
+      else break;
+    }
+
+    const payload = chosen?.payload || null;
+
+    return {
+      song: payload?.song || null,
+      listeners: payload?.listeners ?? null,
+    };
+  }, [samplesVersion, METADATA_DELAY_SEC]);
+
+  /* ----------------------------------------
      Derived display values
   ---------------------------------------- */
-  const song = data?.song || null;
   const title =
-    song?.title || (loading ? "Loading current track…" : "Live Stream");
-  const artist = song?.artist || "TrueVoice Digital";
-  const album = song?.album || "TrueVoice Digital";
-  const art = song?.art || null;
-  const listeners = data?.listeners ?? null;
+    display.song?.title || (loading ? "Loading current track…" : "Live Stream");
+  const artist = display.song?.artist || "TrueVoice Digital";
+  const album = display.song?.album || "TrueVoice Digital";
+  const art = display.song?.art || null;
+  const listeners = display.listeners;
 
   const liveLabel = useMemo(() => {
     if (error) return "OFF AIR";
@@ -67,8 +137,7 @@ export function NowPlayingPanel({
   }, [error, isPlaying]);
 
   /* ----------------------------------------
-     Inform App of status (MediaSession, LIVE dot, etc.)
-     ✅ Include song details so App can populate lock screen metadata
+     Inform App (lock screen / MediaSession) using the DELAYED song
   ---------------------------------------- */
   useEffect(() => {
     if (typeof onStatusChange === "function") {
@@ -77,14 +146,8 @@ export function NowPlayingPanel({
         hasError: !!error,
         isLoading: !!loading,
         station: "TrueVoice Radio",
-        // Pass through a shape App already knows how to read
         now_playing: {
-          song: {
-            title,
-            artist,
-            album,
-            art,
-          },
+          song: { title, artist, album, art },
         },
         listeners: listeners ?? undefined,
       });
@@ -116,38 +179,45 @@ export function NowPlayingPanel({
   }, [audioRef]);
 
   /* ----------------------------------------
-     LIVE RADIO TOGGLE (STOP / START)
-     - Pause = STOP (kill stream)
-     - Play = START fresh (new connection)
-     ✅ Adds safe fallback to AzuraCast if primary stream fails
+     iPhone "double tap" fix:
+     - Call play() synchronously (no await)
+     - Use onPointerUp so iOS treats it as a direct gesture
   ---------------------------------------- */
-  const handleTogglePlay = async () => {
+  const startStream = (el, url) => {
+    el.src = url;
+    el.load();
+    const p = el.play(); // don't await
+    if (p && typeof p.catch === "function") {
+      p.catch((e) => {
+        console.error("play() failed:", e);
+        setError("Tap again to start audio.");
+        setIsPlaying(false);
+      });
+    }
+  };
+
+  const handleTogglePlay = () => {
     const el = audioRef?.current;
     if (!el) return;
 
     try {
       if (!isPlaying) {
-        // START: fresh live connection
         setError(null);
 
         // Primary
-        el.src = streamUrl;
-        el.load();
-        try {
-          await el.play();
-          setIsPlaying(true);
-          return;
-        } catch (primaryErr) {
-          console.warn("Primary stream failed, trying fallback…", primaryErr);
-        }
+        startStream(el, streamUrl);
 
-        // Fallback (AzuraCast)
-        el.src = AZURACAST_FALLBACK_URL;
-        el.load();
-        await el.play();
+        // quick fallback if primary doesn't start
+        window.setTimeout(() => {
+          try {
+            if (el.paused) startStream(el, AZURACAST_FALLBACK_URL);
+          } catch {
+            // ignore
+          }
+        }, 600);
+
         setIsPlaying(true);
       } else {
-        // STOP: kill stream completely
         el.pause();
         el.removeAttribute("src");
         el.load();
@@ -163,7 +233,6 @@ export function NowPlayingPanel({
   return (
     <div className="tv-now-playing">
       <div className="tv-now-inner">
-        {/* LEFT: artwork */}
         <div className="tv-artwork-placeholder">
           {art && (
             <img
@@ -175,7 +244,6 @@ export function NowPlayingPanel({
           )}
         </div>
 
-        {/* RIGHT: text/meta + controls */}
         <div className="tv-now-content">
           <span className="tv-eyebrow">
             {error ? "STREAM STATUS" : "NOW PLAYING"}
@@ -206,7 +274,8 @@ export function NowPlayingPanel({
               <button
                 type="button"
                 className="tv-btn tv-btn-primary"
-                onClick={handleTogglePlay}
+                onPointerUp={handleTogglePlay}
+                onClick={(e) => e.preventDefault()}
               >
                 {isPlaying ? "Stop" : "Listen Live"}
               </button>

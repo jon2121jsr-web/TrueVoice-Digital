@@ -442,7 +442,7 @@ function App() {
 
       {/* HERO BANNER */}
       <Hero />
-      <audio ref={playerRef} preload="none" />
+      <audio ref={playerRef} preload="none" playsInline />
 
       <main
         className={`tv-main ${isFloatingPlayer ? "tv-main--player-floating" : ""}`}
