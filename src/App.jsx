@@ -53,7 +53,6 @@ function safeText(v) {
 
 function buildArtworkList(src) {
   const url = safeText(src) || DEFAULT_MEDIA_ART;
-  // iOS/Android are happier with multiple sizes; type is best-effort
   return [
     { src: url, sizes: "512x512", type: "image/png" },
     { src: url, sizes: "256x256", type: "image/png" },
@@ -80,11 +79,9 @@ function setMediaSessionMetadata({ title, artist, album, artUrl }) {
 function wireMediaSessionControls(audioEl) {
   if (!audioEl || !("mediaSession" in navigator)) return;
 
-  // Play/pause handlers help Android + many car head units
   try {
     navigator.mediaSession.setActionHandler("play", async () => {
       try {
-        // Ensure src exists in case something cleared it
         if (!audioEl.src) audioEl.src = LIVE_STREAM_URL;
         await audioEl.play();
       } catch {
@@ -100,7 +97,6 @@ function wireMediaSessionControls(audioEl) {
       }
     });
 
-    // If you don't support these, disable to avoid "broken" controls
     ["previoustrack", "nexttrack", "seekbackward", "seekforward", "seekto"].forEach(
       (action) => {
         try {
@@ -135,6 +131,20 @@ function wireMediaSessionControls(audioEl) {
   };
 }
 
+// Robust external opener (covers weird click/tap behavior)
+function openExternal(url) {
+  const u = safeText(url);
+  if (!u) return;
+
+  try {
+    const win = window.open(u, "_blank", "noopener,noreferrer");
+    if (win) win.opener = null;
+    else window.location.href = u; // popup-blocker fallback
+  } catch {
+    window.location.href = u;
+  }
+}
+
 function App() {
   const playerRef = useRef(null);
 
@@ -157,7 +167,7 @@ function App() {
   // Give thanks banner (Stripe redirect)
   const [showThanks, setShowThanks] = useState(false);
 
-  // --- Floating player state (Task 1) ---
+  // --- Floating player state ---
   const sentinelRef = useRef(null);
   const surfaceRef = useRef(null);
   const [isFloatingPlayer, setIsFloatingPlayer] = useState(false);
@@ -166,11 +176,9 @@ function App() {
   const handleStatusChange = (status) => {
     if (!status) return;
 
-    // Keep station label updated (best effort)
     if (status.station) setCurrentStation(status.station);
     if (status?.station?.name) setCurrentStation(status.station.name);
 
-    // --- Robust extraction of "now playing" from whatever shape NowPlayingPanel emits ---
     const s =
       status?.now_playing?.song ||
       status?.nowPlaying?.song ||
@@ -213,7 +221,7 @@ function App() {
   useEffect(() => {
     const updateTheme = () => {
       const hour = new Date().getHours();
-      const isNight = hour >= 20 || hour < 6; // 8pm–6am
+      const isNight = hour >= 20 || hour < 6;
       document.body.classList.toggle("tv-night", isNight);
     };
 
@@ -222,7 +230,7 @@ function App() {
     return () => window.clearInterval(id);
   }, []);
 
-  // Show a "Thank you" confirmation if Stripe redirects back with ?thanks=1
+  // Stripe thanks param
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const thanks = params.get("thanks");
@@ -230,7 +238,6 @@ function App() {
     if (thanks) {
       setShowThanks(true);
 
-      // clean the URL after showing thanks
       params.delete("thanks");
       const newQs = params.toString();
       const newUrl = newQs
@@ -238,7 +245,6 @@ function App() {
         : window.location.pathname;
       window.history.replaceState({}, "", newUrl);
 
-      // auto-hide after a moment
       const t = window.setTimeout(() => setShowThanks(false), 9000);
       return () => window.clearTimeout(t);
     }
@@ -249,15 +255,12 @@ function App() {
     const audioEl = playerRef.current;
     if (!audioEl) return;
 
-    // Ensure src exists early
     if (!audioEl.src) {
       audioEl.src = LIVE_STREAM_URL;
     }
 
-    // ✅ Safety: if Live365 ever fails to load, fall back to AzuraCast
     const handleAudioError = () => {
       try {
-        // Only fall back if we're not already on the fallback
         const current = (audioEl.currentSrc || audioEl.src || "").toString();
         if (current.includes("streaming.live365.com")) {
           audioEl.src = AZURACAST_FALLBACK_URL;
@@ -300,7 +303,6 @@ function App() {
       if (grouped[item.section]) grouped[item.section].push(item);
     }
 
-    // featured first, then newest
     for (const k of Object.keys(grouped)) {
       grouped[k].sort((a, b) => {
         const af = a.featured ? 1 : 0;
@@ -334,20 +336,54 @@ function App() {
     setActiveVideo(null);
   };
 
-  const SocialIconLink = ({ href, label, children }) => (
-    <a
-      className="tv-social-link"
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      title={label}
-    >
-      {children}
-    </a>
-  );
+  /**
+   * SOCIAL LINK COMPONENT (HARDENED)
+   * - Forces pointer events ON (in case CSS disabled them)
+   * - Forces a high z-index (in case an overlay is sitting above)
+   * - Uses window.open fallback so it always navigates when clicked
+   */
+  const SocialIconLink = ({ href, label, children }) => {
+    const url = safeText(href);
+    return (
+      <a
+        className="tv-social-link"
+        href={url || "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        title={label}
+        style={{
+          pointerEvents: "auto",
+          position: "relative",
+          zIndex: 50,
+          cursor: "pointer",
+          WebkitTapHighlightColor: "transparent",
+          touchAction: "manipulation",
+        }}
+        onClick={(e) => {
+          // If href is blank, don't jump top
+          if (!url) {
+            e.preventDefault();
+            return;
+          }
+          // Ensure navigation still happens even if something intercepts anchors
+          // (we keep default behavior too; this is belt-and-suspenders)
+          try {
+            // Some overlays swallow default navigation but still trigger click;
+            // forcing openExternal makes it consistent.
+            e.preventDefault();
+            openExternal(url);
+          } catch {
+            // ignore
+          }
+        }}
+      >
+        {children}
+      </a>
+    );
+  };
 
-  // Keep dockHeight accurate (spacer avoids layout jump)
+  // Keep dockHeight accurate
   useEffect(() => {
     const el = surfaceRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -391,7 +427,15 @@ function App() {
           <div className="tv-brand">TrueVoice.Digital</div>
 
           <div className="tv-header-actions">
-            <div className="tv-social-row" aria-label="TrueVoice social links">
+            <div
+              className="tv-social-row"
+              aria-label="TrueVoice social links"
+              style={{
+                pointerEvents: "auto",
+                position: "relative",
+                zIndex: 50,
+              }}
+            >
               <SocialIconLink href={SOCIAL.youtube} label="YouTube">
                 <svg
                   width="18"
@@ -399,6 +443,7 @@ function App() {
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   aria-hidden="true"
+                  style={{ pointerEvents: "none" }}
                 >
                   <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.5 12 4.5 12 4.5s-5.7 0-7.5.6A3 3 0 0 0 2.4 7.2 31.2 31.2 0 0 0 1.8 12c0 1.6.2 3.2.6 4.8a3 3 0 0 0 2.1 2.1c1.8.6 7.5.6 7.5.6s5.7 0 7.5-.6a3 3 0 0 0 2.1-2.1c.4-1.6.6-3.2.6-4.8s-.2-3.2-.6-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />
                 </svg>
@@ -411,6 +456,7 @@ function App() {
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   aria-hidden="true"
+                  style={{ pointerEvents: "none" }}
                 >
                   <path d="M18.9 2H22l-6.8 7.8L23 22h-6.8l-5.3-6.7L4.8 22H2l7.4-8.5L1 2h6.9l4.8 6.1L18.9 2Zm-1.2 18h1.7L7.2 3.9H5.4L17.7 20Z" />
                 </svg>
@@ -423,6 +469,7 @@ function App() {
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   aria-hidden="true"
+                  style={{ pointerEvents: "none" }}
                 >
                   <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5Zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5ZM18 6.8a1.2 1.2 0 1 1-1.2-1.2A1.2 1.2 0 0 1 18 6.8Z" />
                 </svg>
@@ -433,6 +480,7 @@ function App() {
               type="button"
               className="tv-header-give"
               onClick={handleHeaderGiveClick}
+              style={{ touchAction: "manipulation" }}
             >
               Give
             </button>
@@ -587,7 +635,15 @@ function App() {
         <footer className="tv-footer">
           <div className="tv-footer-social">
             <span className="tv-footer-follow">Follow TrueVoice Digital</span>
-            <div className="tv-social-row" aria-label="TrueVoice social links">
+            <div
+              className="tv-social-row"
+              aria-label="TrueVoice social links"
+              style={{
+                pointerEvents: "auto",
+                position: "relative",
+                zIndex: 50,
+              }}
+            >
               <SocialIconLink href={SOCIAL.youtube} label="YouTube">
                 <svg
                   width="18"
@@ -595,6 +651,7 @@ function App() {
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   aria-hidden="true"
+                  style={{ pointerEvents: "none" }}
                 >
                   <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.5 12 4.5 12 4.5s-5.7 0-7.5.6A3 3 0 0 0 2.4 7.2 31.2 31.2 0 0 0 1.8 12c0 1.6.2 3.2.6 4.8a3 3 0 0 0 2.1 2.1c1.8.6 7.5.6 7.5.6s5.7 0 7.5-.6a3 3 0 0 0 2.1-2.1c.4-1.6.6-3.2.6-4.8s-.2-3.2-.6-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />
                 </svg>
@@ -607,6 +664,7 @@ function App() {
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   aria-hidden="true"
+                  style={{ pointerEvents: "none" }}
                 >
                   <path d="M18.9 2H22l-6.8 7.8L23 22h-6.8l-5.3-6.7L4.8 22H2l7.4-8.5L1 2h6.9l4.8 6.1L18.9 2Zm-1.2 18h1.7L7.2 3.9H5.4L17.7 20Z" />
                 </svg>
@@ -619,6 +677,7 @@ function App() {
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   aria-hidden="true"
+                  style={{ pointerEvents: "none" }}
                 >
                   <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5Zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5ZM18 6.8a1.2 1.2 0 1 1-1.2-1.2A1.2 1.2 0 0 1 18 6.8Z" />
                 </svg>

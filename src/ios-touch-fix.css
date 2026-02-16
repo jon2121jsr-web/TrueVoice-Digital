@@ -1,0 +1,46 @@
+/* src/ios-touch-fix.css
+   Fix iOS "double tap to activate" behavior and ensure icon links remain clickable.
+*/
+
+/* Always: make interactive elements responsive */
+a,
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure icon links are actually clickable (desktop + mobile) */
+.tv-social-row,
+.tv-social-link,
+.tv-header-actions {
+  pointer-events: auto !important;
+}
+
+/* On touch devices: disable hover-only animation traps that cause "tap to focus" first */
+@media (hover: none) and (pointer: coarse) {
+  a:hover,
+  button:hover,
+  [role="button"]:hover {
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* If you have hover animations in these classes, neutralize them on iPhone */
+  .tv-btn:hover,
+  .tv-support-btn:hover,
+  .tv-social-link:hover,
+  .tv-header-give:hover {
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* IMPORTANT:
+   DO NOT set svg { pointer-events:none } globally.
+   That can make desktop icon links feel dead depending on layout/CSS.
+*/
