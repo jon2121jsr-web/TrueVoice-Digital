@@ -1,8 +1,9 @@
 /* src/ios-touch-fix.css
    Fix iOS "double tap to activate" behavior and ensure icon links remain clickable.
+   v2 — Removed !important overrides that conflicted with modal/overlay pointer-events
 */
 
-/* Always: make interactive elements responsive */
+/* Always: make interactive elements responsive on touch */
 a,
 button,
 [role="button"],
@@ -12,35 +13,54 @@ input[type="submit"] {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Ensure icon links are actually clickable (desktop + mobile) */
-.tv-social-row,
-.tv-social-link,
-.tv-header-actions {
-  pointer-events: auto !important;
+/* Ensure social row and links are always interactive */
+.tv-social-row {
+  pointer-events: auto;
+  position: relative;
+  z-index: 50;
 }
 
-/* On touch devices: disable hover-only animation traps that cause "tap to focus" first */
+.tv-social-link {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Minimum 44x44 touch target per Apple HIG */
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.tv-header-actions {
+  pointer-events: auto;
+}
+
+/* On touch devices: disable hover-only animations that cause
+   "tap to focus first" behavior before activating */
 @media (hover: none) and (pointer: coarse) {
   a:hover,
   button:hover,
   [role="button"]:hover {
-    filter: none !important;
-    transform: none !important;
-    box-shadow: none !important;
+    filter: none;
+    transform: none;
+    box-shadow: none;
   }
 
-  /* If you have hover animations in these classes, neutralize them on iPhone */
   .tv-btn:hover,
   .tv-support-btn:hover,
   .tv-social-link:hover,
   .tv-header-give:hover {
-    filter: none !important;
-    transform: none !important;
-    box-shadow: none !important;
+    filter: none;
+    transform: none;
+    box-shadow: none;
   }
 }
 
-/* IMPORTANT:
-   DO NOT set svg { pointer-events:none } globally.
-   That can make desktop icon links feel dead depending on layout/CSS.
-*/
+/* iOS PWA standalone: ensure external links open properly
+   by making the touch target generous and obvious */
+@media (display-mode: standalone) {
+  .tv-social-link {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 6px;
+  }
+}
