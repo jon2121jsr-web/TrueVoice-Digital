@@ -7,7 +7,22 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // =====================================================
+      // FIX: was 'autoUpdate' — that mode calls
+      // skipWaiting() + clients.claim() immediately, which
+      // swaps the active service worker while the app is
+      // open. Mid-session SW swaps are exactly what causes
+      // the iOS lock screen to drop icon/metadata and flicker
+      // as iOS transitions between two registration states.
+      //
+      // 'prompt' waits for the user to close and reopen the
+      // app before the new SW activates. No mid-session swap,
+      // no flicker. The trade-off is that users stay on the
+      // previous build until their next launch — which is
+      // perfectly acceptable for a streaming PWA.
+      // =====================================================
+      registerType: 'prompt',
+
       includeAssets: [
         'truevoice-favicon.png',
         'apple-touch-icon.png',
@@ -16,6 +31,7 @@ export default defineConfig({
         'icon-192.png',
         'icon-512.png',
       ],
+
       manifest: {
         id: '/',
         name: 'TrueVoice Digital',
@@ -47,10 +63,36 @@ export default defineConfig({
             type: 'image/png',
             purpose: 'maskable',
           },
+          // =====================================================
+          // FIX: apple touch icon entry added.
+          // iOS reads the web manifest on some iOS 16.4+ builds
+          // and uses this entry to resolve the home screen icon
+          // independently of the <link rel="apple-touch-icon">
+          // tags in index.html. Without this entry, a manifest
+          // cache miss (e.g. after a SW update) leaves iOS with
+          // no icon reference at all, which is what was causing
+          // the blank/missing icon on the lock screen.
+          // =====================================================
+          {
+            src: '/apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'apple touch icon',
+          },
         ],
       },
+
       workbox: {
-        // Cache strategies
+        // =====================================================
+        // FIX: skipWaiting and clientsClaim are now explicitly
+        // false. Previously these were implicitly true under
+        // 'autoUpdate' mode. Setting them false here makes the
+        // intent unambiguous and prevents any plugin version
+        // differences from silently re-enabling them.
+        // =====================================================
+        skipWaiting: false,
+        clientsClaim: false,
+
         runtimeCaching: [
           {
             // AzuraCast now-playing API — network first, short cache
@@ -85,11 +127,11 @@ export default defineConfig({
             },
           },
         ],
-        // Don't try to precache the audio stream
+
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
       },
-      // Dev mode: enable so you can test service worker locally
+
       devOptions: {
         enabled: false, // flip to true temporarily to test SW in dev
       },

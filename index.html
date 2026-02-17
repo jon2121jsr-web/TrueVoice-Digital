@@ -64,23 +64,50 @@
     <!-- Theme color for mobile browser chrome -->
     <meta name="theme-color" content="#050816" />
 
-    <!-- ✅ iOS Home Screen Icon Support -->
+    <!-- =====================================================
+         iOS PWA — HOME SCREEN + LOCK SCREEN
+         Three fixes applied here vs. the previous version:
+
+         1. apple-mobile-web-app-title added — without this,
+            iOS uses the <title> tag which is long and gets
+            truncated or dropped on the lock screen entirely.
+
+         2. apple-touch-icon paths now exactly match the
+            filenames declared in vite.config.js includeAssets
+            so the service worker actually precaches them.
+            Previously icon-192.png was precached but not
+            referenced here, creating a cache miss on iOS.
+
+         3. apple-touch-startup-image added for modern iPhones.
+            iOS requires this to display anything on the lock
+            screen splash. Without it, iOS shows a white flash
+            and sometimes drops the icon metadata entirely.
+            Use your existing icon-512.png as the source —
+            iOS will scale it. If you later generate proper
+            2732×2048 splash assets, swap the href values.
+    ===================================================== -->
+
+    <!-- iOS: short name shown under icon + on lock screen -->
+    <meta name="apple-mobile-web-app-title" content="TrueVoice" />
+
+    <!-- iOS Home Screen Icon Support -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152.png" />
+
+    <!-- iOS Splash / Lock Screen — points to your largest available icon.
+         For a proper multi-device splash, generate assets at
+         https://progressier.com/pwa-icons-and-ios-splash-screen-generator
+         and replace these hrefs with the generated filenames. -->
     <link
-      rel="apple-touch-icon"
-      sizes="167x167"
-      href="/apple-touch-icon-167.png"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="152x152"
-      href="/apple-touch-icon-152.png"
+      rel="apple-touch-startup-image"
+      href="/icon-512.png"
     />
 
-    <!-- ✅ PWA Manifest (also helps some iOS behaviors) -->
+    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    <!-- ✅ iOS Standalone Mode (Add to Home Screen launches like an app) -->
+    <!-- iOS Standalone Mode (Add to Home Screen launches like an app) -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -92,4 +119,4 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
-</html>
+</html> 

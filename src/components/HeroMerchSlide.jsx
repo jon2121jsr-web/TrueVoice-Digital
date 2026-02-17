@@ -7,17 +7,23 @@ import "./HeroMerchSlide.css";
 
 export default function HeroMerchSlide({ onShopClick }) {
   const handleClick = () => {
-    if (typeof onShopClick === "function") {
-      onShopClick();
-      return;
-    }
-    
-    // Fallback: scroll to merch section
+    // Always scroll to the section directly — don't delegate to onShopClick,
+    // which doesn't guarantee a scroll and silently swallows the event.
     const merchSection = document.querySelector(".tv-gear-section");
+
     if (merchSection) {
-      const yOffset = -20; // 20px from top
-      const y = merchSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: y, behavior: "smooth" });
+      // getBoundingClientRect() is relative to the viewport at call time.
+      // Adding window.pageYOffset converts it to an absolute page position.
+      // The 80px offset clears a typical fixed nav bar — adjust if yours differs.
+      const top =
+        merchSection.getBoundingClientRect().top + window.pageYOffset - 80;
+
+      window.scrollTo({ top, behavior: "smooth" });
+    } else {
+      // Section not found — fire the prop as a last resort so parent can handle it.
+      if (typeof onShopClick === "function") {
+        onShopClick();
+      }
     }
   };
 

@@ -1,5 +1,5 @@
-// src/App.jsx  — v2  (iOS PWA social-link fix + PWA-safe navigation)
-import { useEffect, useMemo, useRef, useState } from "react";
+// src/App.jsx  — v3  (infinite loop fix + donation grid desktop width fix)
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 
 import Hero from "./components/Hero";
@@ -16,26 +16,26 @@ import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
 
 import { videoFeed, VIDEO_SECTIONS } from "./data/videoFeed";
 
-// ─── Stream URLs ────────────────────────────────────────────────────────────
-const LIVE365_STREAM_URL = "https://streaming.live365.com/a61535";
+// ─── Stream URLs ─────────────────────────────────────────────────────────────
+const LIVE365_STREAM_URL =
+  "https://streaming.live365.com/a61535";
 const AZURACAST_FALLBACK_URL =
   "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
 const LIVE_STREAM_URL =
   import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL;
 
-// ─── Social links ────────────────────────────────────────────────────────────
-// ⚠️  REPLACE YOUR_HANDLE below with your real handles, or set env vars
+// ─── Social links ─────────────────────────────────────────────────────────────
 const SOCIAL = {
   youtube:
     import.meta.env.VITE_TRUEVOICE_YOUTUBE_URL ||
     "https://www.youtube.com/channel/UCWpVof-rd5hs1xpchwj1MAQl",
   x:
     import.meta.env.VITE_TRUEVOICE_X_URL ||
-    "https://x.com/YOUR_HANDLE",         // ← update this
+    "https://x.com/YOUR_HANDLE",
   instagram:
     import.meta.env.VITE_TRUEVOICE_INSTAGRAM_URL ||
-    "https://www.instagram.com/YOUR_HANDLE", // ← update this
+    "https://www.instagram.com/YOUR_HANDLE",
 };
 
 // ─── Stripe links ─────────────────────────────────────────────────────────────
@@ -102,15 +102,15 @@ function wireMediaSessionControls(audioEl) {
     } catch { /* ignore */ }
   };
 
-  audioEl.addEventListener("play",   syncPlaybackState);
-  audioEl.addEventListener("pause",  syncPlaybackState);
-  audioEl.addEventListener("ended",  syncPlaybackState);
+  audioEl.addEventListener("play",  syncPlaybackState);
+  audioEl.addEventListener("pause", syncPlaybackState);
+  audioEl.addEventListener("ended", syncPlaybackState);
   syncPlaybackState();
 
   return () => {
-    audioEl.removeEventListener("play",   syncPlaybackState);
-    audioEl.removeEventListener("pause",  syncPlaybackState);
-    audioEl.removeEventListener("ended",  syncPlaybackState);
+    audioEl.removeEventListener("play",  syncPlaybackState);
+    audioEl.removeEventListener("pause", syncPlaybackState);
+    audioEl.removeEventListener("ended", syncPlaybackState);
   };
 }
 
@@ -122,13 +122,7 @@ function isRunningAsIOSPWA() {
   );
 }
 
-// ─── SocialIconLink — iOS PWA-safe ────────────────────────────────────────────
-//
-//  THE FIX:
-//  Old code called e.preventDefault() then window.open(), which iOS PWA always
-//  blocks. New code lets the <a href> work naturally in all non-PWA contexts,
-//  and uses navigator.share() in iOS PWA standalone mode (always permitted).
-//
+// ─── SocialIconLink — iOS PWA-safe ───────────────────────────────────────────
 function SocialIconLink({ href, label, children }) {
   const url = safeText(href);
 
@@ -139,17 +133,13 @@ function SocialIconLink({ href, label, children }) {
     }
 
     if (isRunningAsIOSPWA() && navigator.share) {
-      // iOS PWA: use native share sheet — window.open is blocked here
       e.preventDefault();
       navigator.share({ url }).catch(() => {
-        // Dismissed or failed — fallback navigate within the PWA
         window.location.href = url;
       });
       return;
     }
-
     // All other contexts: let the <a> tag handle it naturally.
-    // DO NOT call e.preventDefault() here.
   };
 
   return (
@@ -180,6 +170,25 @@ function SocialIconLink({ href, label, children }) {
   );
 }
 
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
+const YoutubeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ pointerEvents: "none" }}>
+    <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.5 12 4.5 12 4.5s-5.7 0-7.5.6A3 3 0 0 0 2.4 7.2 31.2 31.2 0 0 0 1.8 12c0 1.6.2 3.2.6 4.8a3 3 0 0 0 2.1 2.1c1.8.6 7.5.6 7.5.6s5.7 0 7.5-.6a3 3 0 0 0 2.1-2.1c.4-1.6.6-3.2.6-4.8s-.2-3.2-.6-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ pointerEvents: "none" }}>
+    <path d="M18.9 2H22l-6.8 7.8L23 22h-6.8l-5.3-6.7L4.8 22H2l7.4-8.5L1 2h6.9l4.8 6.1L18.9 2Zm-1.2 18h1.7L7.2 3.9H5.4L17.7 20Z" />
+  </svg>
+);
+
+const InstagramIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ pointerEvents: "none" }}>
+    <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5Zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5ZM18 6.8a1.2 1.2 0 1 1-1.2-1.2A1.2 1.2 0 0 1 18 6.8Z" />
+  </svg>
+);
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 function App() {
   const playerRef = useRef(null);
@@ -201,10 +210,26 @@ function App() {
   const [isFloatingPlayer, setIsFloatingPlayer] = useState(false);
   const [dockHeight,       setDockHeight]       = useState(0);
 
-  const handleStatusChange = (status) => {
+  // ─── FIX: useCallback gives handleStatusChange a stable reference.
+  //
+  //     The infinite loop was caused by passing a plain inline arrow function
+  //     as the onStatusChange prop. NowPlayingPanel listed it in a useEffect
+  //     dependency array — so every time App re-rendered (e.g. from setNowPlaying),
+  //     the Panel saw a "new" function, fired the effect, called onStatusChange,
+  //     which called setNowPlaying again, which re-rendered App... endlessly.
+  //
+  //     useCallback memoises the function so its reference only changes when
+  //     its own dependencies change. Since this function has no dependencies
+  //     that change after mount, the empty array [] makes it permanently stable.
+  // ─────────────────────────────────────────────────────────────────────────────
+  const handleStatusChange = useCallback((status) => {
     if (!status) return;
-    if (status.station)       setCurrentStation(status.station);
-    if (status?.station?.name) setCurrentStation(status.station.name);
+
+    if (status?.station?.name) {
+      setCurrentStation(status.station.name);
+    } else if (typeof status.station === "string" && status.station) {
+      setCurrentStation(status.station);
+    }
 
     const s =
       status?.now_playing?.song  ||
@@ -219,11 +244,28 @@ function App() {
       const artist = safeText(s.artist) || "";
       const album  = safeText(s.album)  || "";
       const artUrl = safeText(s.art)    || safeText(s.artUrl) || "";
-      if (title || artist || album || artUrl) {
-        setNowPlaying({ title, artist, album, artUrl });
-      }
+
+      // ─── FIX: only call setNowPlaying when values actually changed.
+      //
+      //     Even with a stable callback, calling setState unconditionally
+      //     on every poll would still trigger re-renders. This functional
+      //     update compares incoming values to current state and bails out
+      //     (returns the same object reference) if nothing changed, so React
+      //     skips the re-render entirely.
+      // ─────────────────────────────────────────────────────────────────────
+      setNowPlaying((prev) => {
+        if (
+          prev.title  === title  &&
+          prev.artist === artist &&
+          prev.album  === album  &&
+          prev.artUrl === artUrl
+        ) {
+          return prev; // same reference → React bails out, no re-render
+        }
+        return { title, artist, album, artUrl };
+      });
     }
-  };
+  }, []); // empty deps — this function never needs to change
 
   // Alt+D debug toggle
   useEffect(() => {
@@ -258,7 +300,9 @@ function App() {
     setShowThanks(true);
     params.delete("thanks");
     const qs     = params.toString();
-    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    const newUrl = qs
+      ? `${window.location.pathname}?${qs}`
+      : window.location.pathname;
     window.history.replaceState({}, "", newUrl);
 
     const t = window.setTimeout(() => setShowThanks(false), 9000);
@@ -303,9 +347,9 @@ function App() {
   const feedBySection = useMemo(() => {
     const active  = (videoFeed || []).filter((v) => v?.active);
     const grouped = {
-      [VIDEO_SECTIONS.WATCH_LIVE]:           [],
-      [VIDEO_SECTIONS.LISTEN_AGAIN]:         [],
-      [VIDEO_SECTIONS.MUSIC_TESTIMONIES]:    [],
+      [VIDEO_SECTIONS.WATCH_LIVE]:        [],
+      [VIDEO_SECTIONS.LISTEN_AGAIN]:      [],
+      [VIDEO_SECTIONS.MUSIC_TESTIMONIES]: [],
     };
 
     for (const item of active) {
@@ -334,7 +378,10 @@ function App() {
     setVideoOpen(true);
   };
 
-  const closeVideo = () => { setVideoOpen(false); setActiveVideo(null); };
+  const closeVideo = () => {
+    setVideoOpen(false);
+    setActiveVideo(null);
+  };
 
   // Dock height observer
   useEffect(() => {
@@ -358,25 +405,6 @@ function App() {
     io.observe(sentinel);
     return () => io.disconnect();
   }, []);
-
-  // ─── Reusable YouTube / X / Instagram SVG icons ──────────────────────────
-  const YoutubeIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ pointerEvents: "none" }}>
-      <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.5 12 4.5 12 4.5s-5.7 0-7.5.6A3 3 0 0 0 2.4 7.2 31.2 31.2 0 0 0 1.8 12c0 1.6.2 3.2.6 4.8a3 3 0 0 0 2.1 2.1c1.8.6 7.5.6 7.5.6s5.7 0 7.5-.6a3 3 0 0 0 2.1-2.1c.4-1.6.6-3.2.6-4.8s-.2-3.2-.6-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />
-    </svg>
-  );
-
-  const XIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ pointerEvents: "none" }}>
-      <path d="M18.9 2H22l-6.8 7.8L23 22h-6.8l-5.3-6.7L4.8 22H2l7.4-8.5L1 2h6.9l4.8 6.1L18.9 2Zm-1.2 18h1.7L7.2 3.9H5.4L17.7 20Z" />
-    </svg>
-  );
-
-  const InstagramIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ pointerEvents: "none" }}>
-      <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5Zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5ZM18 6.8a1.2 1.2 0 1 1-1.2-1.2A1.2 1.2 0 0 1 18 6.8Z" />
-    </svg>
-  );
 
   return (
     <div className="app-container tv-app">
@@ -409,7 +437,7 @@ function App() {
         </div>
       </header>
 
-      {/* ── HERO ── TO TEST: Change <Hero /> to <HeroMerchSlide /> */}
+      {/* ── HERO ── */}
       <Hero />
       <audio ref={playerRef} preload="none" playsInline />
 
@@ -456,45 +484,51 @@ function App() {
 
         <section className="tv-section tv-section--stacked">
           <TrueVoiceConnect
-            onWatchLive={()          => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
-            onListenAgain={()        => openVideoForSection(VIDEO_SECTIONS.LISTEN_AGAIN)}
-            onMusicAndTestimonies={() => openVideoForSection(VIDEO_SECTIONS.MUSIC_TESTIMONIES)}
+            onWatchLive={()           => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
+            onListenAgain={()         => openVideoForSection(VIDEO_SECTIONS.LISTEN_AGAIN)}
+            onMusicAndTestimonies={()  => openVideoForSection(VIDEO_SECTIONS.MUSIC_TESTIMONIES)}
           />
         </section>
 
         <section className="tv-section tv-section--stacked"><ReelsGrid /></section>
         <section className="tv-section tv-section--stacked"><PodcastList /></section>
 
+        {/* ── SUPPORT THE MISSION ── */}
         <section id="tv-support-section" className="tv-section">
-          <div className="tv-support-grid">
-            <div>
-              <h2>Support the Mission</h2>
-              <p className="tv-support-copy">
-                Your generosity helps keep TrueVoice Digital streaming worldwide.
-              </p>
-              <div className="tv-support-actions">
-                <div className="tv-donate-row">
-                  {[
-                    { href: STRIPE.monthly,   label: "Monthly Gift",   sub: "Become a monthly partner." },
-                    { href: STRIPE.oneTime10, label: "One-Time $10",   sub: "Seed Gift" },
-                    { href: STRIPE.oneTime25, label: "One-Time $25",   sub: "Supporter Gift" },
-                    { href: STRIPE.oneTime50, label: "One-Time $50",   sub: "Impact Gift" },
-                  ].map(({ href, label, sub }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      className="tv-support-btn tv-support-btn-primary tv-donate-btn"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={label}
-                    >
-                      <span>{label}</span>
-                      <span className="tv-support-subtext">{sub}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
+          <h2 className="tv-section-title">Support the Mission</h2>
+          <p className="tv-support-copy">
+            Your generosity helps keep TrueVoice Digital streaming worldwide.
+          </p>
+
+          {/*
+            FIX: Removed the tv-support-grid wrapper and the extra nested divs.
+            Previously the structure was:
+              tv-support-grid > div > tv-support-actions > tv-donate-row > buttons
+
+            That 1.5fr / 1.2fr grid was constraining the donate-row to only the
+            left column on desktop, making it look stretched and unbalanced.
+            Now the donate-row sits directly in the section with a max-width cap
+            so it never exceeds a readable line length on wide screens.
+          */}
+          <div className="tv-donate-row">
+            {[
+              { href: STRIPE.monthly,   label: "Monthly Gift",  sub: "Become a monthly partner." },
+              { href: STRIPE.oneTime10, label: "One-Time $10",  sub: "Seed Gift" },
+              { href: STRIPE.oneTime25, label: "One-Time $25",  sub: "Supporter Gift" },
+              { href: STRIPE.oneTime50, label: "One-Time $50",  sub: "Impact Gift" },
+            ].map(({ href, label, sub }) => (
+              <a
+                key={label}
+                href={href}
+                className="tv-support-btn tv-support-btn-primary tv-donate-btn"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+              >
+                <span>{label}</span>
+                <span className="tv-support-subtext">{sub}</span>
+              </a>
+            ))}
           </div>
         </section>
 

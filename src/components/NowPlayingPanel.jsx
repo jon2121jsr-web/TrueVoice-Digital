@@ -13,12 +13,10 @@ export function NowPlayingPanel({
   showHistory = false,
   onStatusChange,
 }) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // ✅ This is now a true "delay by N seconds" using a local buffer.
-  // Start with what you're observing: ~35–45 seconds.
   const METADATA_DELAY_SEC = toInt(
     import.meta.env.VITE_STREAM_METADATA_DELAY_SEC,
     40
@@ -28,13 +26,10 @@ export function NowPlayingPanel({
   const samplesRef = useRef([]);
   const [samplesVersion, setSamplesVersion] = useState(0);
 
-  // Safety fallback if Live365 fails temporarily
   const AZURACAST_FALLBACK_URL =
     "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
-  /* ----------------------------------------
-     Poll AzuraCast Now Playing (source of truth)
-  ---------------------------------------- */
+  /* ─── Poll AzuraCast Now Playing ──────────────────────────────────────── */
   useEffect(() => {
     let alive = true;
 
@@ -45,11 +40,8 @@ export function NowPlayingPanel({
         if (!alive) return;
 
         const tsMs = Date.now();
-
-        // push snapshot to buffer
         samplesRef.current.push({ tsMs, payload: result || null });
 
-        // keep buffer bounded (e.g., last 10 minutes @ 15s polling ~ 40 samples)
         const MAX_SAMPLES = 80;
         if (samplesRef.current.length > MAX_SAMPLES) {
           samplesRef.current.splice(0, samplesRef.current.length - MAX_SAMPLES);
@@ -68,45 +60,31 @@ export function NowPlayingPanel({
 
     load();
     const id = window.setInterval(load, 15_000);
-
     return () => {
       alive = false;
       window.clearInterval(id);
     };
-  }, []);
+  }, []); // no deps — intentionally runs once on mount
 
-  /* ----------------------------------------
-     Tick: re-evaluate which buffered snapshot to show
-     (so the delay "slides" smoothly between polls)
-  ---------------------------------------- */
+  /* ─── 1-second tick to slide the delay window smoothly ───────────────── */
   useEffect(() => {
     const id = window.setInterval(() => {
-      // only tick when we actually have data; cheap
       if (samplesRef.current.length) {
         setSamplesVersion((v) => v + 1);
       }
     }, 1000);
-
     return () => window.clearInterval(id);
-  }, []);
+  }, []); // no deps — intentionally runs once on mount
 
-  /* ----------------------------------------
-     Choose the snapshot from N seconds ago
-  ---------------------------------------- */
+  /* ─── Choose the snapshot from N seconds ago ──────────────────────────── */
   const display = useMemo(() => {
     const samples = samplesRef.current;
     if (!samples || samples.length === 0) {
-      return {
-        song: null,
-        listeners: null,
-      };
+      return { song: null, listeners: null };
     }
 
-    // Target time = now - delay
     const targetMs = Date.now() - METADATA_DELAY_SEC * 1000;
 
-    // Find the latest sample whose tsMs <= targetMs
-    // If none (delay larger than buffer), fall back to oldest
     let chosen = samples[0];
     for (let i = 0; i < samples.length; i++) {
       if (samples[i].tsMs <= targetMs) chosen = samples[i];
@@ -114,21 +92,17 @@ export function NowPlayingPanel({
     }
 
     const payload = chosen?.payload || null;
-
     return {
-      song: payload?.song || null,
+      song:      payload?.song      || null,
       listeners: payload?.listeners ?? null,
     };
   }, [samplesVersion, METADATA_DELAY_SEC]);
 
-  /* ----------------------------------------
-     Derived display values
-  ---------------------------------------- */
-  const title =
-    display.song?.title || (loading ? "Loading current track…" : "Live Stream");
-  const artist = display.song?.artist || "TrueVoice Digital";
-  const album = display.song?.album || "TrueVoice Digital";
-  const art = display.song?.art || null;
+  /* ─── Derived display values ──────────────────────────────────────────── */
+  const title     = display.song?.title  || (loading ? "Loading current track…" : "Live Stream");
+  const artist    = display.song?.artist || "TrueVoice Digital";
+  const album     = display.song?.album  || "TrueVoice Digital";
+  const art       = display.song?.art    || null;
   const listeners = display.listeners;
 
   const liveLabel = useMemo(() => {
@@ -136,57 +110,72 @@ export function NowPlayingPanel({
     return isPlaying ? "NOW STREAMING" : "READY";
   }, [error, isPlaying]);
 
-  /* ----------------------------------------
-     Inform App (lock screen / MediaSession) using the DELAYED song
-  ---------------------------------------- */
+  /* ─── Notify App of status changes ───────────────────────────────────────
+     FIX: onStatusChange is no longer in the dependency array.
+     
+     Root cause of the infinite loop:
+       1. App rendered and passed a new inline arrow to onStatusChange.
+       2. This effect fired because onStatusChange was a dep and changed.
+       3. The effect called onStatusChange → setNowPlaying in App.
+       4. App re-rendered → new arrow → new reference → effect fired again.
+       5. Repeat forever (55+ times per second per the console).
+     
+     The two-part fix:
+       • App.jsx wraps handleStatusChange in useCallback([]) so it has a
+         permanently stable reference across renders.
+       • Here we remove onStatusChange from the dep array and read it via
+         a ref instead (onStatusChangeRef). This means the effect only
+         re-fires when the actual data changes (title, artist, etc.),
+         not when the parent re-renders and coincidentally passes the
+         "same" function with a new reference.
+  ──────────────────────────────────────────────────────────────────────── */
+  const onStatusChangeRef = useRef(onStatusChange);
   useEffect(() => {
-    if (typeof onStatusChange === "function") {
-      onStatusChange({
-        isLive: !!isPlaying && !error,
-        hasError: !!error,
-        isLoading: !!loading,
-        station: "TrueVoice Radio",
-        now_playing: {
-          song: { title, artist, album, art },
-        },
-        listeners: listeners ?? undefined,
-      });
-    }
-  }, [isPlaying, error, loading, onStatusChange, title, artist, album, art, listeners]);
+    onStatusChangeRef.current = onStatusChange;
+  });
 
-  /* ----------------------------------------
-     Wire audio element (events only)
-  ---------------------------------------- */
+  useEffect(() => {
+    if (typeof onStatusChangeRef.current !== "function") return;
+    onStatusChangeRef.current({
+      isLive:    !!isPlaying && !error,
+      hasError:  !!error,
+      isLoading: !!loading,
+      station:   "TrueVoice Radio",
+      now_playing: {
+        song: { title, artist, album, art },
+      },
+      listeners: listeners ?? undefined,
+    });
+  }, [isPlaying, error, loading, title, artist, album, art, listeners]);
+  // onStatusChange intentionally omitted — accessed via ref above
+
+  /* ─── Wire audio element events ───────────────────────────────────────── */
   useEffect(() => {
     const el = audioRef?.current;
     if (!el) return;
 
     el.preload = "none";
 
-    const onPlay = () => setIsPlaying(true);
+    const onPlay  = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
     const onEnded = () => setIsPlaying(false);
 
-    el.addEventListener("play", onPlay);
+    el.addEventListener("play",  onPlay);
     el.addEventListener("pause", onPause);
     el.addEventListener("ended", onEnded);
 
     return () => {
-      el.removeEventListener("play", onPlay);
+      el.removeEventListener("play",  onPlay);
       el.removeEventListener("pause", onPause);
       el.removeEventListener("ended", onEnded);
     };
   }, [audioRef]);
 
-  /* ----------------------------------------
-     iPhone "double tap" fix:
-     - Call play() synchronously (no await)
-     - Use onPointerUp so iOS treats it as a direct gesture
-  ---------------------------------------- */
+  /* ─── Stream control ──────────────────────────────────────────────────── */
   const startStream = (el, url) => {
     el.src = url;
     el.load();
-    const p = el.play(); // don't await
+    const p = el.play();
     if (p && typeof p.catch === "function") {
       p.catch((e) => {
         console.error("play() failed:", e);
@@ -203,17 +192,12 @@ export function NowPlayingPanel({
     try {
       if (!isPlaying) {
         setError(null);
-
-        // Primary
         startStream(el, streamUrl);
 
-        // quick fallback if primary doesn't start
         window.setTimeout(() => {
           try {
             if (el.paused) startStream(el, AZURACAST_FALLBACK_URL);
-          } catch {
-            // ignore
-          }
+          } catch { /* ignore */ }
         }, 600);
 
         setIsPlaying(true);
@@ -230,6 +214,7 @@ export function NowPlayingPanel({
     }
   };
 
+  /* ─── Render ──────────────────────────────────────────────────────────── */
   return (
     <div className="tv-now-playing">
       <div className="tv-now-inner">
