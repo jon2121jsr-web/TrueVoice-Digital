@@ -1,0 +1,233 @@
+/* src/components/HeroMerchSlide.css
+   Hero slide for TrueVoice Gear promo — matches merch section aesthetic
+*/
+
+.hero-merch-slide {
+  position: relative;
+  width: 100%;
+  min-height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #070710;
+  overflow: hidden;
+  padding: 40px 24px;
+}
+
+/* Radial gradient glow effect */
+.hero-merch-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 70% 50% at 50% 0%,
+    rgba(230, 57, 70, 0.15) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Noise texture overlay */
+.hero-merch-slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Content wrapper */
+.hero-merch-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Eyebrow badge */
+.hero-merch-eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #e63946;
+  background: rgba(230, 57, 70, 0.1);
+  border: 1px solid rgba(230, 57, 70, 0.25);
+  border-radius: 4px;
+  padding: 5px 14px;
+  margin-bottom: 24px;
+  animation: hero-merch-fade-in 0.6s ease 0.2s both;
+}
+
+/* Main title */
+.hero-merch-title {
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0 0 16px;
+  line-height: 1;
+  text-transform: uppercase;
+  animation: hero-merch-fade-in 0.6s ease 0.3s both;
+}
+
+.hero-merch-title-accent {
+  color: #e63946;
+  position: relative;
+}
+
+/* Accent underline */
+.hero-merch-underline {
+  width: 120px;
+  height: 4px;
+  background: linear-gradient(90deg, #e63946, #ff6b00);
+  border-radius: 2px;
+  margin: 0 auto 24px;
+  animation: hero-merch-expand 0.8s ease 0.5s both;
+}
+
+@keyframes hero-merch-expand {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 120px;
+    opacity: 1;
+  }
+}
+
+/* Subtitle */
+.hero-merch-subtitle {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 32px;
+  line-height: 1.6;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  animation: hero-merch-fade-in 0.6s ease 0.4s both;
+}
+
+/* Coming Soon badge */
+.hero-merch-coming-soon {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #ff6b00;
+  background: rgba(255, 107, 0, 0.08);
+  border: 1px solid rgba(255, 107, 0, 0.25);
+  border-radius: 100px;
+  padding: 8px 24px;
+  margin-bottom: 32px;
+  animation: hero-merch-fade-in 0.6s ease 0.5s both;
+}
+
+.hero-merch-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff6b00;
+  animation: hero-merch-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes hero-merch-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.75);
+  }
+}
+
+/* CTA Button */
+.hero-merch-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(135deg, #e63946 0%, #c9212d 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 16px 32px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 24px rgba(230, 57, 70, 0.3);
+  animation: hero-merch-fade-in 0.6s ease 0.6s both;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.hero-merch-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(230, 57, 70, 0.4);
+  background: linear-gradient(135deg, #f04451 0%, #d9323e 100%);
+}
+
+.hero-merch-cta:active {
+  transform: translateY(0);
+}
+
+.hero-merch-arrow {
+  transition: transform 0.25s ease;
+}
+
+.hero-merch-cta:hover .hero-merch-arrow {
+  transform: translateX(4px);
+}
+
+/* Fade-in animation */
+@keyframes hero-merch-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .hero-merch-slide {
+    min-height: 320px;
+    padding: 36px 20px;
+  }
+
+  .hero-merch-eyebrow {
+    font-size: 10px;
+    padding: 4px 12px;
+  }
+
+  .hero-merch-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+  }
+
+  .hero-merch-coming-soon {
+    font-size: 11px;
+    padding: 6px 18px;
+    margin-bottom: 24px;
+  }
+
+  .hero-merch-cta {
+    font-size: 13px;
+    padding: 14px 28px;
+  }
+}

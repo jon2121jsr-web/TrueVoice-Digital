@@ -1,6 +1,7 @@
 // src/components/Hero.jsx
 import { useEffect, useMemo, useState } from "react";
 import "./Hero.css";
+import HeroMerchSlide from "./HeroMerchSlide.jsx";
 
 export default function Hero() {
   const slides = useMemo(
@@ -22,7 +23,13 @@ export default function Hero() {
         kind: "poster",
       },
       {
-        // 3️⃣ Public / Feature slide
+        // 3️⃣ TrueVoice Gear promo (React component)
+        kind: "component",
+        component: HeroMerchSlide,
+        alt: "TrueVoice Gear — Coming Soon",
+      },
+      {
+        // 4️⃣ Public / Feature slide
         src: "/images/hero-slide-4.png",
         alt: "TrueVoice Digital — Featured",
         fit: "contain",
@@ -30,7 +37,7 @@ export default function Hero() {
         kind: "poster",
       },
       {
-        // 4️⃣ Coming slide (now last)
+        // 5️⃣ Coming slide (now last)
         src: "/images/hero-coming.png",
         alt: "He is coming back. Let's get ready.",
         fit: "contain",
@@ -58,28 +65,48 @@ export default function Hero() {
   return (
     <section className="hero-section" aria-label="TrueVoice Hero">
       <div className="hero-slider" role="region" aria-label="Hero slides">
-        {slides.map((s, idx) => (
-          <div
-            key={s.src}
-            className={`hero-slide ${idx === active ? "is-active" : ""}`}
-            aria-hidden={idx === active ? "false" : "true"}
-            data-kind={s.kind || "legacy"}
-          >
-            <div className="hero-media">
-              <img
-                className="hero-slide-img"
-                src={s.src}
-                alt={idx === active ? s.alt : ""}
-                loading={idx === 0 ? "eager" : "lazy"}
-                decoding="async"
-                style={{
-                  objectFit: s.fit,
-                  objectPosition: s.position || "center",
-                }}
-              />
+        {slides.map((s, idx) => {
+          const isActive = idx === active;
+
+          // If it's a component slide, render the component
+          if (s.kind === "component" && s.component) {
+            const Component = s.component;
+            return (
+              <div
+                key={`component-${idx}`}
+                className={`hero-slide ${isActive ? "is-active" : ""}`}
+                aria-hidden={isActive ? "false" : "true"}
+                data-kind="component"
+              >
+                <Component />
+              </div>
+            );
+          }
+
+          // Otherwise render image slide
+          return (
+            <div
+              key={s.src}
+              className={`hero-slide ${isActive ? "is-active" : ""}`}
+              aria-hidden={isActive ? "false" : "true"}
+              data-kind={s.kind || "legacy"}
+            >
+              <div className="hero-media">
+                <img
+                  className="hero-slide-img"
+                  src={s.src}
+                  alt={isActive ? s.alt : ""}
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  style={{
+                    objectFit: s.fit,
+                    objectPosition: s.position || "center",
+                  }}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div className="hero-dots" aria-label="Hero slide controls">
           {slides.map((_, idx) => (

@@ -807,43 +807,6 @@ button {
   }
 }
 
-/* === DONATION BUTTON LAYOUT & CLEANUP === */
-
-/* Make support link-buttons look like buttons, not underlined links */
-.tv-support-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  text-decoration: none !important;
-}
-
-.tv-support-btn .tv-support-subtext {
-  text-decoration: none !important;
-}
-
-/* Row that holds the two donate buttons side by side */
-.tv-donate-row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-/* Each donate button should flex to the same width and not force full-width rows */
-.tv-donate-btn {
-  flex: 1 1 0;
-  min-width: 200px;
-  width: auto !important;
-}
-
-/* On very small screens, let them stack nicely */
-@media (max-width: 640px) {
-  .tv-donate-btn {
-    min-width: 100%;
-  }
-}
-
 /* ================================
    TRUEVOICE CONNECT – HORIZONTAL SLIDER
    ================================ */
@@ -1534,4 +1497,67 @@ body.tv-night .tv-footer .tv-social-link:hover {
 
 .tv-player-dock:not(.is-floating) .tv-player-surface .tv-now-playing {
   height: 100%;
+}
+
+/* ===========================================================
+   DONATION BUTTONS - NUCLEAR FIX
+   Add this to the VERY BOTTOM of your App.css file
+   =========================================================== */
+
+/* Force grid layout on donation buttons */
+.tv-donate-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 14px !important;
+  margin-bottom: 16px !important;
+  max-width: 600px !important;
+  flex-direction: initial !important;
+  flex-wrap: initial !important;
+  flex: initial !important;
+}
+
+/* Force each button to be grid item */
+.tv-donate-btn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 16px 18px !important;
+  min-height: 88px !important;
+  text-decoration: none !important;
+  flex: initial !important;
+  min-width: initial !important;
+  width: auto !important;
+}
+
+/* Force text styling */
+.tv-donate-btn > span:first-child {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+}
+
+.tv-donate-btn > .tv-support-subtext,
+.tv-donate-btn > span.tv-support-subtext {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  opacity: 0.85 !important;
+  line-height: 1.3 !important;
+  text-decoration: none !important;
+  margin-top: 4px !important;
+  display: block !important;
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 640px) {
+  .tv-donate-row {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  
+  .tv-donate-btn {
+    min-height: 76px !important;
+    padding: 14px 16px !important;
+  }
 }

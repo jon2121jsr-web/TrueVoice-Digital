@@ -11,6 +11,8 @@ import { NowPlayingDebug } from "./components/NowPlayingDebug";
 import TrueVoiceConnect from "./components/TrueVoiceConnect.jsx";
 import RecentTracksBar from "./components/RecentTracksBar.jsx";
 import VideoModal from "./components/VideoModal.jsx";
+import MerchSection from "./components/MerchSection.jsx";
+import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
 
 import { videoFeed, VIDEO_SECTIONS } from "./data/videoFeed";
 
@@ -407,7 +409,7 @@ function App() {
         </div>
       </header>
 
-      {/* ── HERO ── */}
+      {/* ── HERO ── TO TEST: Change <Hero /> to <HeroMerchSlide /> */}
       <Hero />
       <audio ref={playerRef} preload="none" playsInline />
 
@@ -493,19 +495,10 @@ function App() {
                 </div>
               </div>
             </div>
-
-            <div>
-              <div className="tv-merch-grid">
-                <div className="tv-merch-item">T-Shirts</div>
-                <div className="tv-merch-item">Hoodies</div>
-                <div className="tv-merch-item">Mugs</div>
-              </div>
-              <button className="tv-btn tv-btn-secondary tv-shop-btn" disabled>
-                Shop Merch (Coming Soon)
-              </button>
-            </div>
           </div>
         </section>
+
+        <MerchSection />
 
         {/* ── FOOTER ── */}
         <footer className="tv-footer">
