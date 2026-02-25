@@ -1,4 +1,5 @@
 // src/components/NowPlayingPanel.jsx
+// ✅ Duration-based metadata hold — shows current track until it actually ends
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 
@@ -17,19 +18,19 @@ export function NowPlayingPanel({
   const [error,     setError]     = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const METADATA_DELAY_SEC = toInt(
-    import.meta.env.VITE_STREAM_METADATA_DELAY_SEC,
-    40
-  );
-
-  // Buffer of snapshots: [{ tsMs, payload }]
-  const samplesRef = useRef([]);
-  const [samplesVersion, setSamplesVersion] = useState(0);
+  // Current and scheduled tracks
+  const [currentTrack,    setCurrentTrack]    = useState(null);
+  const [scheduledTrack,  setScheduledTrack]  = useState(null);
+  const [listeners,       setListeners]       = useState(null);
 
   const AZURACAST_FALLBACK_URL =
     "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
-  /* ─── Poll AzuraCast Now Playing ──────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────────────────────────
+     POLL AZURACAST NOW PLAYING
+     Every 15 seconds, fetch metadata and calculate when the current track ends.
+     The UI only switches tracks when the calculated end time passes.
+  ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     let alive = true;
 
@@ -39,16 +40,71 @@ export function NowPlayingPanel({
         const result = await fetchNowPlaying();
         if (!alive) return;
 
-        const tsMs = Date.now();
-        samplesRef.current.push({ tsMs, payload: result || null });
+        const nowPlayingSong = result?.now_playing?.song || result?.song || null;
+        const nextSong       = result?.playing_next?.song || null;
+        const nowPlayingData = result?.now_playing || result || {};
+        const playingNextData = result?.playing_next || {};
 
-        const MAX_SAMPLES = 80;
-        if (samplesRef.current.length > MAX_SAMPLES) {
-          samplesRef.current.splice(0, samplesRef.current.length - MAX_SAMPLES);
+        // Update listener count
+        if (typeof result?.listeners?.current === "number") {
+          setListeners(result.listeners.current);
+        } else if (typeof result?.listeners === "number") {
+          setListeners(result.listeners);
         }
 
+        // If no song data at all, bail
+        if (!nowPlayingSong?.title) {
+          if (alive) setLoading(false);
+          return;
+        }
+
+        /* ─── Calculate track duration ──────────────────────────────────────
+           Priority:
+           1. now_playing.duration (if > 0)
+           2. Time delta between played_at timestamps (next - current)
+           3. Fallback: 180 seconds (3 min average)
+        ──────────────────────────────────────────────────────────────────── */
+        let durationSec = 180; // default fallback
+
+        const apiDuration = toInt(nowPlayingData.duration, 0);
+        if (apiDuration > 0) {
+          durationSec = apiDuration;
+        } else {
+          // Calculate from timestamps if both exist
+          const currentPlayedAt = toInt(nowPlayingData.played_at, 0);
+          const nextPlayedAt    = toInt(playingNextData.played_at, 0);
+
+          if (currentPlayedAt > 0 && nextPlayedAt > currentPlayedAt) {
+            durationSec = nextPlayedAt - currentPlayedAt;
+          }
+        }
+
+        // Calculate when this track ends (absolute UNIX timestamp in ms)
+        const playedAtMs = toInt(nowPlayingData.played_at, Date.now() / 1000) * 1000;
+        const endsAtMs   = playedAtMs + (durationSec * 1000);
+
+        /* ─── Track change detection ────────────────────────────────────────
+           Only update scheduled track if the song ID or title changed.
+           This prevents re-triggering on every 15-second poll.
+        ──────────────────────────────────────────────────────────────────── */
+        setScheduledTrack((prev) => {
+          const newId    = nowPlayingSong.id || nowPlayingSong.title;
+          const prevId   = prev?.song?.id || prev?.song?.title;
+
+          if (newId === prevId) {
+            return prev; // Same track, don't update
+          }
+
+          // New track detected
+          return {
+            song: nowPlayingSong,
+            endsAtMs,
+            playedAtMs,
+            durationSec,
+          };
+        });
+
         setError(null);
-        setSamplesVersion((v) => v + 1);
       } catch (err) {
         if (!alive) return;
         console.error("NowPlaying error:", err);
@@ -64,70 +120,57 @@ export function NowPlayingPanel({
       alive = false;
       window.clearInterval(id);
     };
-  }, []); // no deps — intentionally runs once on mount
+  }, []); // no deps — runs once on mount
 
-  /* ─── 1-second tick to slide the delay window smoothly ───────────────── */
+  /* ────────────────────────────────────────────────────────────────────────
+     1-SECOND TICK
+     Re-evaluate which track to display based on current time vs. endsAtMs.
+  ──────────────────────────────────────────────────────────────────────── */
+  const [tick, setTick] = useState(0);
+
   useEffect(() => {
     const id = window.setInterval(() => {
-      if (samplesRef.current.length) {
-        setSamplesVersion((v) => v + 1);
-      }
+      setTick((t) => t + 1);
     }, 1000);
     return () => window.clearInterval(id);
-  }, []); // no deps — intentionally runs once on mount
+  }, []);
 
-  /* ─── Choose the snapshot from N seconds ago ──────────────────────────── */
-  const display = useMemo(() => {
-    const samples = samplesRef.current;
-    if (!samples || samples.length === 0) {
-      return { song: null, listeners: null };
+  /* ────────────────────────────────────────────────────────────────────────
+     DISPLAY LOGIC
+     Show currentTrack until its endsAtMs passes, then switch to scheduledTrack.
+  ──────────────────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (!scheduledTrack) return;
+
+    const now = Date.now();
+
+    // If no current track, or current track has ended, switch immediately
+    if (!currentTrack || now >= currentTrack.endsAtMs) {
+      setCurrentTrack(scheduledTrack);
+      return;
     }
 
-    const targetMs = Date.now() - METADATA_DELAY_SEC * 1000;
+    // Current track is still playing — keep showing it
+    // (scheduledTrack will display once endsAtMs passes on next tick)
+  }, [scheduledTrack, currentTrack, tick]);
 
-    let chosen = samples[0];
-    for (let i = 0; i < samples.length; i++) {
-      if (samples[i].tsMs <= targetMs) chosen = samples[i];
-      else break;
-    }
+  /* ────────────────────────────────────────────────────────────────────────
+     DERIVED DISPLAY VALUES
+  ──────────────────────────────────────────────────────────────────────── */
+  const displaySong = currentTrack?.song || null;
 
-    const payload = chosen?.payload || null;
-    return {
-      song:      payload?.song      || null,
-      listeners: payload?.listeners ?? null,
-    };
-  }, [samplesVersion, METADATA_DELAY_SEC]);
-
-  /* ─── Derived display values ──────────────────────────────────────────── */
-  const title     = display.song?.title  || (loading ? "Loading current track…" : "Live Stream");
-  const artist    = display.song?.artist || "TrueVoice Digital";
-  const album     = display.song?.album  || "TrueVoice Digital";
-  const art       = display.song?.art    || null;
-  const listeners = display.listeners;
+  const title  = displaySong?.title  || (loading ? "Loading current track…" : "Live Stream");
+  const artist = displaySong?.artist || "TrueVoice Digital";
+  const album  = displaySong?.album  || "TrueVoice Digital";
+  const art    = displaySong?.art    || null;
 
   const liveLabel = useMemo(() => {
     if (error) return "OFF AIR";
     return isPlaying ? "NOW STREAMING" : "READY";
   }, [error, isPlaying]);
 
-  /* ─── Notify App of status changes ───────────────────────────────────────
-     FIX: onStatusChange is no longer in the dependency array.
-     
-     Root cause of the infinite loop:
-       1. App rendered and passed a new inline arrow to onStatusChange.
-       2. This effect fired because onStatusChange was a dep and changed.
-       3. The effect called onStatusChange → setNowPlaying in App.
-       4. App re-rendered → new arrow → new reference → effect fired again.
-       5. Repeat forever (55+ times per second per the console).
-     
-     The two-part fix:
-       • App.jsx wraps handleStatusChange in useCallback([]) so it has a
-         permanently stable reference across renders.
-       • Here we remove onStatusChange from the dep array and read it via
-         a ref instead (onStatusChangeRef). This means the effect only
-         re-fires when the actual data changes (title, artist, etc.),
-         not when the parent re-renders and coincidentally passes the
-         "same" function with a new reference.
+  /* ────────────────────────────────────────────────────────────────────────
+     NOTIFY APP OF STATUS CHANGES (lock screen / MediaSession)
   ──────────────────────────────────────────────────────────────────────── */
   const onStatusChangeRef = useRef(onStatusChange);
   useEffect(() => {
@@ -147,9 +190,10 @@ export function NowPlayingPanel({
       listeners: listeners ?? undefined,
     });
   }, [isPlaying, error, loading, title, artist, album, art, listeners]);
-  // onStatusChange intentionally omitted — accessed via ref above
 
-  /* ─── Wire audio element events ───────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────────────────────────
+     WIRE AUDIO ELEMENT EVENTS
+  ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const el = audioRef?.current;
     if (!el) return;
@@ -171,7 +215,9 @@ export function NowPlayingPanel({
     };
   }, [audioRef]);
 
-  /* ─── Stream control ──────────────────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────────────────────────
+     STREAM CONTROL
+  ──────────────────────────────────────────────────────────────────────── */
   const startStream = (el, url) => {
     el.src = url;
     el.load();
@@ -194,6 +240,7 @@ export function NowPlayingPanel({
         setError(null);
         startStream(el, streamUrl);
 
+        // Quick fallback if primary doesn't start
         window.setTimeout(() => {
           try {
             if (el.paused) startStream(el, AZURACAST_FALLBACK_URL);
@@ -214,7 +261,9 @@ export function NowPlayingPanel({
     }
   };
 
-  /* ─── Render ──────────────────────────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────────────────────────
+     RENDER
+  ──────────────────────────────────────────────────────────────────────── */
   return (
     <div className="tv-now-playing">
       <div className="tv-now-inner">
