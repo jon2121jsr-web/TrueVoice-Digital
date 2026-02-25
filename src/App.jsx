@@ -1,4 +1,4 @@
-// src/App.jsx  — v3  (infinite loop fix + donation grid desktop width fix)
+// src/App.jsx  — v4  (video section rename: New Episodes, Shorts & Reels)
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 
@@ -210,18 +210,6 @@ function App() {
   const [isFloatingPlayer, setIsFloatingPlayer] = useState(false);
   const [dockHeight,       setDockHeight]       = useState(0);
 
-  // ─── FIX: useCallback gives handleStatusChange a stable reference.
-  //
-  //     The infinite loop was caused by passing a plain inline arrow function
-  //     as the onStatusChange prop. NowPlayingPanel listed it in a useEffect
-  //     dependency array — so every time App re-rendered (e.g. from setNowPlaying),
-  //     the Panel saw a "new" function, fired the effect, called onStatusChange,
-  //     which called setNowPlaying again, which re-rendered App... endlessly.
-  //
-  //     useCallback memoises the function so its reference only changes when
-  //     its own dependencies change. Since this function has no dependencies
-  //     that change after mount, the empty array [] makes it permanently stable.
-  // ─────────────────────────────────────────────────────────────────────────────
   const handleStatusChange = useCallback((status) => {
     if (!status) return;
 
@@ -245,14 +233,6 @@ function App() {
       const album  = safeText(s.album)  || "";
       const artUrl = safeText(s.art)    || safeText(s.artUrl) || "";
 
-      // ─── FIX: only call setNowPlaying when values actually changed.
-      //
-      //     Even with a stable callback, calling setState unconditionally
-      //     on every poll would still trigger re-renders. This functional
-      //     update compares incoming values to current state and bails out
-      //     (returns the same object reference) if nothing changed, so React
-      //     skips the re-render entirely.
-      // ─────────────────────────────────────────────────────────────────────
       setNowPlaying((prev) => {
         if (
           prev.title  === title  &&
@@ -260,12 +240,12 @@ function App() {
           prev.album  === album  &&
           prev.artUrl === artUrl
         ) {
-          return prev; // same reference → React bails out, no re-render
+          return prev;
         }
         return { title, artist, album, artUrl };
       });
     }
-  }, []); // empty deps — this function never needs to change
+  }, []);
 
   // Alt+D debug toggle
   useEffect(() => {
@@ -348,8 +328,8 @@ function App() {
     const active  = (videoFeed || []).filter((v) => v?.active);
     const grouped = {
       [VIDEO_SECTIONS.WATCH_LIVE]:        [],
-      [VIDEO_SECTIONS.LISTEN_AGAIN]:      [],
-      [VIDEO_SECTIONS.MUSIC_TESTIMONIES]: [],
+      [VIDEO_SECTIONS.NEW_EPISODES]:      [],
+      [VIDEO_SECTIONS.SHORTS_AND_REELS]:  [],
     };
 
     for (const item of active) {
@@ -484,9 +464,9 @@ function App() {
 
         <section className="tv-section tv-section--stacked">
           <TrueVoiceConnect
-            onWatchLive={()           => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
-            onListenAgain={()         => openVideoForSection(VIDEO_SECTIONS.LISTEN_AGAIN)}
-            onMusicAndTestimonies={()  => openVideoForSection(VIDEO_SECTIONS.MUSIC_TESTIMONIES)}
+            onWatchLive={()       => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
+            onNewEpisodes={()     => openVideoForSection(VIDEO_SECTIONS.NEW_EPISODES)}
+            onShortsAndReels={()  => openVideoForSection(VIDEO_SECTIONS.SHORTS_AND_REELS)}
           />
         </section>
 
@@ -500,16 +480,6 @@ function App() {
             Your generosity helps keep TrueVoice Digital streaming worldwide.
           </p>
 
-          {/*
-            FIX: Removed the tv-support-grid wrapper and the extra nested divs.
-            Previously the structure was:
-              tv-support-grid > div > tv-support-actions > tv-donate-row > buttons
-
-            That 1.5fr / 1.2fr grid was constraining the donate-row to only the
-            left column on desktop, making it look stretched and unbalanced.
-            Now the donate-row sits directly in the section with a max-width cap
-            so it never exceeds a readable line length on wide screens.
-          */}
           <div className="tv-donate-row">
             {[
               { href: STRIPE.monthly,   label: "Monthly Gift",  sub: "Become a monthly partner." },

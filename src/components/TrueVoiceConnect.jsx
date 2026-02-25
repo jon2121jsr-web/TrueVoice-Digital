@@ -3,30 +3,30 @@ import React from "react";
 
 export default function TrueVoiceConnect({
   onWatchLive,
-  onListenAgain,
-  onMusicAndTestimonies,
+  onNewEpisodes,              // ← Renamed from onListenAgain
+  onShortsAndReels,           // ← Renamed from onMusicAndTestimonies
 }) {
   const cards = [
     {
       id: "watch-live",
       label: "Watch Live",
-      description: "Join the live studio stream when we’re on air.",
+      description: "Join the live studio stream when we're on air.",
       tag: "LIVE",
       onClick: onWatchLive,
     },
     {
-      id: "listen-again",
-      label: "Listen Again",
-      description: "Catch replays of recent shows and messages.",
-      tag: "REPLAY",
-      onClick: onListenAgain,
+      id: "new-episodes",       // ← Renamed from listen-again
+      label: "New Episodes",    // ← Changed label
+      description: "Catch the latest episodes and messages.",  // ← Updated description
+      tag: "NEW",               // ← Changed tag from REPLAY
+      onClick: onNewEpisodes,   // ← Renamed prop
     },
     {
-      id: "music-testimonies",
-      label: "Music & Testimonies",
-      description: "Watch new music videos and stories of faith.",
-      tag: "VIDEOS",
-      onClick: onMusicAndTestimonies,
+      id: "shorts-reels",       // ← Renamed from music-testimonies
+      label: "Shorts & Reels",  // ← Changed label
+      description: "Quick encouragement and stories of faith.",  // ← Updated description
+      tag: "SHORTS",            // ← Changed tag from VIDEOS
+      onClick: onShortsAndReels, // ← Renamed prop
     },
   ];
 

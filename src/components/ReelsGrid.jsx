@@ -59,7 +59,8 @@ function ReelsGrid() {
 
   return (
     <>
-      <h2 className="tv-section-title">TrueVoice Reels</h2>
+      {/* ✅ Changed from "TrueVoice Reels" to "TrueVoice Channels" */}
+      <h2 className="tv-section-title">TrueVoice Channels</h2>
       <p className="reels-intro">
         Short-form, high-impact teaching and Q&amp;A content from trusted
         voices.
