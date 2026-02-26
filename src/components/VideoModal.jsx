@@ -18,8 +18,13 @@ export default function VideoModal({ open, onClose, video }) {
 
   const title = video.title || "Video";
   const description = video.description || "";
+
+  // Support embedUrl, videoId, OR youtubeId (videoFeed uses youtubeId)
   const embedUrl =
     video.embedUrl ||
+    (video.youtubeId
+      ? `https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&rel=0`
+      : null) ||
     (video.videoId
       ? `https://www.youtube.com/embed/${video.videoId}?autoplay=1&rel=0`
       : null);
