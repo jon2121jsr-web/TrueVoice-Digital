@@ -51,14 +51,13 @@ const PODCASTS = [
 
 function PodcastList() {
   const [episodesByShow, setEpisodesByShow] = useState({});
-  const [loadingByShow, setLoadingByShow] = useState({});
-  const [errorByShow, setErrorByShow] = useState({});
-  const [expandedByShow, setExpandedByShow] = useState({});
+  const [loadingByShow, setLoadingByShow]   = useState({});
+  const [errorByShow,   setErrorByShow]     = useState({});
 
   useEffect(() => {
     PODCASTS.forEach((podcast) => {
       setLoadingByShow((prev) => ({ ...prev, [podcast.id]: true }));
-      setErrorByShow((prev) => ({ ...prev, [podcast.id]: null }));
+      setErrorByShow((prev)   => ({ ...prev, [podcast.id]: null }));
 
       fetch(podcast.feedUrl)
         .then((res) => {
@@ -67,16 +66,13 @@ function PodcastList() {
         })
         .then((data) => {
           const items = Array.isArray(data.items) ? data.items : [];
-          setEpisodesByShow((prev) => ({
-            ...prev,
-            [podcast.id]: items,
-          }));
+          setEpisodesByShow((prev) => ({ ...prev, [podcast.id]: items }));
         })
         .catch((err) => {
           console.error("Podcast fetch error for", podcast.id, err);
           setErrorByShow((prev) => ({
             ...prev,
-            [podcast.id]: "Could not load podcast feed. Try again later.",
+            [podcast.id]: "Could not load episodes. Try again later.",
           }));
         })
         .finally(() => {
@@ -85,29 +81,27 @@ function PodcastList() {
     });
   }, []);
 
-  const toggleExpanded = (id) => {
-    setExpandedByShow((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
   return (
-    <section className="tv-section">
+    <section className="tv-section tv-podcast-section">
       <h2 className="tv-section-title">TrueVoice Network Podcasts</h2>
-      <div className="tv-podcast-grid">
-        {PODCASTS.map((podcast) => {
-          const episodes = episodesByShow[podcast.id] || [];
-          const isLoading = loadingByShow[podcast.id];
-          const error = errorByShow[podcast.id];
-          const isExpanded = !!expandedByShow[podcast.id];
+      <p className="tv-podcast-intro">
+        Faith-filled conversations for every season of life.
+      </p>
 
-          const displayEpisodes = isExpanded
-            ? episodes.slice(0, 12)
-            : episodes.slice(0, 3);
+      {/* ── Podcast cards scroll horizontally ── */}
+      <div className="tv-podcast-scroller">
+        {PODCASTS.map((podcast) => {
+          const episodes  = episodesByShow[podcast.id] || [];
+          const isLoading = loadingByShow[podcast.id];
+          const error     = errorByShow[podcast.id];
+
+          // Show up to 6 episodes in the horizontal episode strip
+          const displayEpisodes = episodes.slice(0, 6);
 
           return (
             <article key={podcast.id} className="tv-podcast-card">
+
+              {/* Header: artwork + show info */}
               <div className="tv-podcast-header">
                 <img
                   src={podcast.image}
@@ -118,38 +112,28 @@ function PodcastList() {
                 <div className="tv-podcast-heading">
                   <h3 className="tv-podcast-title">{podcast.title}</h3>
                   <p className="tv-podcast-audience">{podcast.audience}</p>
-                  <p className="tv-podcast-description">
-                    {podcast.description}
-                  </p>
                 </div>
               </div>
 
-              <div
-                className={
-                  "tv-podcast-episodes " +
-                  (isExpanded
-                    ? "tv-podcast-episodes--expanded"
-                    : "tv-podcast-episodes--compact")
-                }
-              >
+              <p className="tv-podcast-description">{podcast.description}</p>
+
+              {/* ── Episode strip — scrolls right inside the card ── */}
+              <div className="tv-podcast-episodes-scroller">
                 {isLoading && (
-                  <p className="tv-podcast-status">Loading latest episodes…</p>
+                  <p className="tv-podcast-status">Loading episodes…</p>
                 )}
 
                 {!isLoading && error && (
                   <p className="tv-podcast-status">{error}</p>
                 )}
 
-                {!isLoading &&
-                  !error &&
-                  episodes.length === 0 && (
-                    <p className="tv-podcast-status">
-                      Browse episodes on the original feed below.
-                    </p>
-                  )}
+                {!isLoading && !error && episodes.length === 0 && (
+                  <p className="tv-podcast-status">
+                    Browse episodes on the original feed below.
+                  </p>
+                )}
 
-                {!isLoading &&
-                  !error &&
+                {!isLoading && !error &&
                   displayEpisodes.map((ep) => {
                     const episodeUrl =
                       (ep.enclosure && (ep.enclosure.link || ep.enclosure.url)) ||
@@ -162,32 +146,32 @@ function PodcastList() {
                         href={episodeUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="tv-podcast-episode-row"
+                        className="tv-podcast-episode-chip"
                       >
-                        <span className="tv-podcast-episode-title">
-                          {ep.title}
-                        </span>
-                        {ep.pubDate && (
-                          <span className="tv-podcast-episode-date">
-                            {new Date(ep.pubDate).toLocaleDateString()}
-                          </span>
+                        {ep.thumbnail && (
+                          <img
+                            src={ep.thumbnail}
+                            alt=""
+                            className="tv-podcast-episode-thumb"
+                            loading="lazy"
+                          />
                         )}
+                        <div className="tv-podcast-episode-text">
+                          <span className="tv-podcast-episode-title">
+                            {ep.title}
+                          </span>
+                          {ep.pubDate && (
+                            <span className="tv-podcast-episode-date">
+                              {new Date(ep.pubDate).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       </a>
                     );
                   })}
               </div>
 
-              {/* View all / less toggle */}
-              {!isLoading && !error && episodes.length > 3 && (
-                <button
-                  type="button"
-                  className="tv-podcast-viewall"
-                  onClick={() => toggleExpanded(podcast.id)}
-                >
-                  {isExpanded ? "View less" : "View all"}
-                </button>
-              )}
-
+              {/* Footer CTA */}
               <div className="tv-podcast-footer">
                 <a
                   href={podcast.websiteUrl}
@@ -198,6 +182,7 @@ function PodcastList() {
                   Listen on original feed
                 </a>
               </div>
+
             </article>
           );
         })}

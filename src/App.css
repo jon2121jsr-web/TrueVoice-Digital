@@ -31,7 +31,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden; /* prevent horizontal scroll */
+  overflow-x: hidden;
 }
 
 button {
@@ -40,8 +40,6 @@ button {
   border: none;
   background: none;
 }
-
-/* App shell (older tv-app wrapper – safe to keep) */
 
 .tv-app {
   min-height: 100vh;
@@ -75,15 +73,13 @@ button {
   margin: 0 auto;
 }
 
-/* Hero / Now Playing */
+/* ── Hero / Now Playing ── */
 
 .tv-hero {
   display: grid;
   grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.2fr);
   gap: 24px;
   margin-bottom: 30px;
-
-  /* ✅ KEY: force both columns to stretch to same height */
   align-items: stretch;
 }
 
@@ -97,7 +93,6 @@ button {
   box-shadow: var(--tv-shadow-soft);
 }
 
-/* Inner layout for artwork + text */
 .tv-now-inner {
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
@@ -105,7 +100,6 @@ button {
   align-items: center;
 }
 
-/* Artwork tile */
 .tv-artwork-placeholder {
   position: relative;
   border-radius: var(--tv-radius-md);
@@ -121,8 +115,6 @@ button {
   display: block;
   border-radius: inherit;
 }
-
-/* Text content */
 
 .tv-now-content {
   display: flex;
@@ -149,7 +141,6 @@ button {
   font-size: 0.95rem;
 }
 
-/* LIVE row */
 .tv-meta-row {
   display: flex;
   align-items: center;
@@ -179,11 +170,7 @@ button {
   opacity: 0.85;
 }
 
-/* Optional history block */
-
-.tv-history-block {
-  margin-top: 8px;
-}
+.tv-history-block { margin-top: 8px; }
 
 .tv-history-heading {
   margin: 0 0 4px;
@@ -193,11 +180,7 @@ button {
   color: var(--tv-text-muted);
 }
 
-.tv-history-list {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-}
+.tv-history-list { list-style: none; margin: 4px 0 0; padding: 0; }
 
 .tv-history-item {
   display: flex;
@@ -207,35 +190,16 @@ button {
   font-size: 0.8rem;
 }
 
-.tv-history-thumb {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.tv-history-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.tv-history-title {
-  font-weight: 500;
-}
+.tv-history-thumb { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+.tv-history-text  { display: flex; flex-direction: column; }
+.tv-history-title { font-weight: 500; }
 
 .tv-history-artist,
-.tv-history-time {
-  font-size: 0.7rem;
-  color: var(--tv-text-muted);
-}
+.tv-history-time { font-size: 0.7rem; color: var(--tv-text-muted); }
 
-.tv-history-empty {
-  font-size: 0.8rem;
-  color: var(--tv-text-muted);
-}
+.tv-history-empty { font-size: 0.8rem; color: var(--tv-text-muted); }
 
-/* Player bar */
+/* ── Player bar ── */
 
 .tv-player-bar {
   display: flex;
@@ -254,11 +218,7 @@ button {
   color: var(--tv-text-muted);
 }
 
-.tv-player-title {
-  font-weight: 600;
-}
-
-/* live dot states */
+.tv-player-title { font-weight: 600; }
 
 .tv-live-dot {
   width: 8px;
@@ -269,34 +229,14 @@ button {
   animation: tv-live-pulse 1.3s infinite;
 }
 
-.tv-live-dot-idle {
-  background: var(--tv-border-subtle);
-  animation: none;
-  box-shadow: none;
-}
-
-.tv-live-dot-off {
-  background: #d11c3b;
-  animation: none;
-  box-shadow: none;
-}
+.tv-live-dot-idle { background: var(--tv-border-subtle); animation: none; box-shadow: none; }
+.tv-live-dot-off  { background: #d11c3b; animation: none; box-shadow: none; }
 
 @keyframes tv-live-pulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.6);
-  }
-  70% {
-    transform: scale(1.45);
-    box-shadow: 0 0 0 8px rgba(255, 51, 102, 0);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 51, 102, 0);
-  }
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0   rgba(255, 51, 102, 0.6); }
+  70%  { transform: scale(1.45); box-shadow: 0 0 0 8px rgba(255, 51, 102, 0);   }
+  100% { transform: scale(1);    box-shadow: 0 0 0 0   rgba(255, 51, 102, 0);   }
 }
-
-/* "Now Streaming" label inside player bar (mobile variant) */
 
 .tv-player-subtitle {
   font-size: 0.7rem;
@@ -309,15 +249,9 @@ button {
   color: var(--tv-primary-dark);
 }
 
-/* Controls row */
+.tv-player-controls { display: flex; align-items: center; gap: 10px; }
 
-.tv-player-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Buttons */
+/* ── Buttons ── */
 
 .tv-btn {
   padding: 9px 18px;
@@ -334,25 +268,11 @@ button {
   box-shadow: 0 10px 24px rgba(39, 95, 219, 0.25);
 }
 
-.tv-btn-primary:hover {
-  background: var(--tv-primary-dark);
-  box-shadow: 0 12px 28px rgba(39, 95, 219, 0.35);
-  transform: translateY(-1px);
-}
+.tv-btn-primary:hover  { background: var(--tv-primary-dark); box-shadow: 0 12px 28px rgba(39, 95, 219, 0.35); transform: translateY(-1px); }
+.tv-btn-primary:active { transform: translateY(0); box-shadow: 0 6px 16px rgba(39, 95, 219, 0.22); }
 
-.tv-btn-primary:active {
-  transform: translateY(0);
-  box-shadow: 0 6px 16px rgba(39, 95, 219, 0.22);
-}
-
-.tv-btn-secondary {
-  background: var(--tv-bg-alt);
-  color: var(--tv-text-main);
-}
-
-.tv-btn-secondary:hover {
-  background: #e2e8ff;
-}
+.tv-btn-secondary       { background: var(--tv-bg-alt); color: var(--tv-text-main); }
+.tv-btn-secondary:hover { background: #e2e8ff; }
 
 .tv-icon-btn {
   width: 36px;
@@ -364,30 +284,16 @@ button {
   justify-content: center;
   font-size: 0.9rem;
   color: var(--tv-text-muted);
-  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease,
-    transform 0.08s ease;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.08s ease;
 }
 
-.tv-icon-btn:hover {
-  background: var(--tv-bg-alt);
-  color: var(--tv-primary);
-  border-color: var(--tv-primary);
-  transform: translateY(-1px);
-}
-
-.tv-icon-btn:active {
-  transform: translateY(0);
-}
-
-/* Focus styles */
+.tv-icon-btn:hover  { background: var(--tv-bg-alt); color: var(--tv-primary); border-color: var(--tv-primary); transform: translateY(-1px); }
+.tv-icon-btn:active { transform: translateY(0); }
 
 .tv-btn:focus-visible,
-.tv-icon-btn:focus-visible {
-  outline: 2px solid rgba(39, 95, 219, 0.7);
-  outline-offset: 2px;
-}
+.tv-icon-btn:focus-visible { outline: 2px solid rgba(39, 95, 219, 0.7); outline-offset: 2px; }
 
-/* Verse */
+/* ── Verse ── */
 
 .tv-verse-card {
   background: #f3f6ff;
@@ -397,31 +303,14 @@ button {
   flex-direction: column;
   justify-content: center;
   box-shadow: var(--tv-shadow-soft);
-
-  /* ✅ allow stretching to match Now Playing height */
   height: 100%;
 }
 
-.tv-verse-label {
-  font-size: 0.75rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--tv-text-muted);
-}
+.tv-verse-label { font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tv-text-muted); }
+.tv-verse-text  { margin: 8px 0; font-size: 0.98rem; line-height: 1.6; }
+.tv-verse-ref   { font-size: 0.85rem; font-weight: 600; color: var(--tv-text-muted); }
 
-.tv-verse-text {
-  margin: 8px 0;
-  font-size: 0.98rem;
-  line-height: 1.6;
-}
-
-.tv-verse-ref {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--tv-text-muted);
-}
-
-/* Sections */
+/* ── Sections ── */
 
 .tv-section {
   background: white;
@@ -431,17 +320,10 @@ button {
   box-shadow: var(--tv-shadow-soft);
 }
 
-/* tighter stacked spacing for Connect / Reels / Podcasts */
-.tv-section--stacked {
-  margin-bottom: 18px;
-}
+.tv-section--stacked { margin-bottom: 18px; }
+.tv-section-title    { margin: 0 0 14px; font-size: 1.1rem; }
 
-.tv-section-title {
-  margin: 0 0 14px;
-  font-size: 1.1rem;
-}
-
-/* Generic card grid */
+/* ── Generic card grid ── */
 
 .tv-card-grid {
   display: grid;
@@ -457,11 +339,7 @@ button {
   flex-direction: column;
 }
 
-/* simple connect card styling – basic spacing */
-.tv-connect-card {
-  align-items: flex-start;
-  gap: 8px;
-}
+.tv-connect-card { align-items: flex-start; gap: 8px; }
 
 .tv-play-icon {
   width: 26px;
@@ -476,28 +354,48 @@ button {
   margin-bottom: 4px;
 }
 
-.tv-card-title {
-  margin: 0;
-  font-size: 0.92rem;
+.tv-card-title { margin: 0; font-size: 0.92rem; }
+
+/* =========================================================
+   PODCASTS — HORIZONTAL SCROLL CARDS
+   ========================================================= */
+
+.tv-podcast-intro {
+  margin: 2px 0 14px;
+  font-size: 0.88rem;
+  color: var(--tv-text-muted);
 }
 
-/* --- PODCASTS --- */
-
-.tv-podcast-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
-  align-items: stretch;
+/* Outer strip — podcast cards scroll left/right */
+.tv-podcast-scroller {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 2px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  touch-action: pan-x;
 }
 
+.tv-podcast-scroller::-webkit-scrollbar        { height: 5px; }
+.tv-podcast-scroller::-webkit-scrollbar-track  { background: transparent; }
+.tv-podcast-scroller::-webkit-scrollbar-thumb  { border-radius: 999px; background: rgba(0, 0, 0, 0.10); }
+
+/* Individual podcast card */
 .tv-podcast-card {
+  flex: 0 0 clamp(260px, 72vw, 320px);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   background: var(--tv-bg-alt);
   border-radius: var(--tv-radius-lg);
   padding: 16px 18px;
   box-shadow: var(--tv-shadow-soft);
   display: flex;
   flex-direction: column;
-  height: 360px;
+  height: auto;
 }
 
 .tv-podcast-header {
@@ -515,16 +413,8 @@ button {
   flex-shrink: 0;
 }
 
-.tv-podcast-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.tv-podcast-title {
-  margin: 0;
-  font-size: 1rem;
-}
+.tv-podcast-heading { display: flex; flex-direction: column; gap: 2px; }
+.tv-podcast-title   { margin: 0; font-size: 1rem; }
 
 .tv-podcast-audience {
   margin: 0;
@@ -538,93 +428,79 @@ button {
   margin: 4px 0 0;
   font-size: 0.82rem;
   color: var(--tv-text-muted);
+  line-height: 1.45;
 }
 
-/* Episodes list container – base */
-.tv-podcast-episodes {
-  margin-top: 8px;
-  border-radius: var(--tv-radius-md);
+/* Episode strip — scrolls vertically inside each card */
+.tv-podcast-episodes-scroller {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 200px;
+  margin: 10px 0 12px;
+  padding-right: 4px;
+}
+
+.tv-podcast-episodes-scroller::-webkit-scrollbar       { width: 4px; }
+.tv-podcast-episodes-scroller::-webkit-scrollbar-track { background: transparent; }
+.tv-podcast-episodes-scroller::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(0, 0, 0, 0.12); }
+
+/* Individual episode row inside card */
+.tv-podcast-episode-chip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 10px;
   background: white;
   border: 1px solid var(--tv-border-subtle);
-  padding: 6px 8px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.tv-podcast-episodes--compact {
-  max-height: 150px;
-}
-
-.tv-podcast-episodes--expanded {
-  max-height: 320px;
-}
-
-/* Episode rows */
-.tv-podcast-episode-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 5px 4px;
-  gap: 10px;
   text-decoration: none;
   color: var(--tv-text-main);
-  border-radius: 8px;
+  transition: background 0.12s ease;
+  flex-shrink: 0;
 }
 
-.tv-podcast-episode-row:hover {
-  background: var(--tv-bg-alt);
+.tv-podcast-episode-chip:hover { background: #eef2ff; }
+
+.tv-podcast-episode-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
+
+.tv-podcast-episode-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 
 .tv-podcast-episode-title {
-  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.tv-podcast-episode-date {
-  font-size: 0.72rem;
-  color: var(--tv-text-muted);
-}
+.tv-podcast-episode-date { font-size: 0.7rem; color: var(--tv-text-muted); }
 
-.tv-podcast-status {
-  margin: 4px 2px;
-  font-size: 0.8rem;
-  color: var(--tv-text-muted);
-}
+.tv-podcast-status { margin: 4px 2px; font-size: 0.8rem; color: var(--tv-text-muted); }
 
-/* View All / View Less */
-
-.tv-podcast-viewall {
-  margin-top: 6px;
-  margin-bottom: 2px;
-  font-size: 0.78rem;
-  text-decoration: underline;
-  color: var(--tv-text-muted);
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  align-self: flex-start;
-}
-
-/* Footer pinned to bottom of card */
+/* Footer CTA pinned to bottom of each podcast card */
 .tv-podcast-footer {
   margin-top: auto;
+  padding-top: 12px;
   display: flex;
   justify-content: center;
   width: 100%;
 }
 
-.tv-podcast-cta {
-  padding-inline: 18px;
-  font-size: 0.8rem;
-  text-align: center;
-}
+.tv-podcast-cta { padding-inline: 18px; font-size: 0.8rem; text-align: center; }
 
-/* Support / merch (older grid – safe to keep for now) */
+/* ── Support / merch ── */
 
-.tv-support-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1.2fr;
-  gap: 22px;
-}
+.tv-support-grid  { display: grid; grid-template-columns: 1.5fr 1.2fr; gap: 22px; }
 
 .tv-support-actions {
   display: flex;
@@ -633,40 +509,14 @@ button {
   margin-top: 16px;
 }
 
-.tv-support-btn {
-  padding: 12px 14px;
-  border-radius: var(--tv-radius-md);
-  font-size: 0.95rem;
-}
+.tv-support-btn         { padding: 12px 14px; border-radius: var(--tv-radius-md); font-size: 0.95rem; }
+.tv-support-btn-primary { background: var(--tv-primary); color: white; }
+.tv-support-btn-outline { background: white; border: 1px solid var(--tv-border-subtle); color: var(--tv-text-muted); }
 
-.tv-support-btn-primary {
-  background: var(--tv-primary);
-  color: white;
-}
+.tv-support-subtext { display: block; margin-top: 4px; font-size: 0.8rem; }
+.tv-support-copy    { margin: 4px 0 10px; font-size: 0.88rem; color: var(--tv-text-muted); }
 
-.tv-support-btn-outline {
-  background: white;
-  border: 1px solid var(--tv-border-subtle);
-  color: var(--tv-text-muted);
-}
-
-.tv-support-subtext {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.8rem;
-}
-
-.tv-support-copy {
-  margin: 4px 0 10px;
-  font-size: 0.88rem;
-  color: var(--tv-text-muted);
-}
-
-.tv-merch-grid {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
+.tv-merch-grid { display: flex; gap: 8px; margin-bottom: 10px; }
 
 .tv-merch-item {
   flex: 1;
@@ -680,11 +530,9 @@ button {
   color: var(--tv-text-muted);
 }
 
-.tv-shop-btn {
-  width: 100%;
-}
+.tv-shop-btn { width: 100%; }
 
-/* FOOTER + ATTRIBUTION (older tv-footer, safe to keep) */
+/* ── Footer ── */
 
 .tv-footer {
   padding: 14px 12px 20px;
@@ -708,124 +556,51 @@ button {
   margin-top: -2px;
 }
 
-/* Responsive */
+/* ── Responsive base ── */
 
 @media (max-width: 900px) {
-  .tv-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .tv-card-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .tv-podcast-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tv-support-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tv-podcast-card {
-    height: auto;
-  }
+  .tv-hero         { grid-template-columns: 1fr; }
+  .tv-card-grid    { grid-template-columns: repeat(2, 1fr); }
+  .tv-support-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
-  .tv-main {
-    padding: 18px 14px;
-  }
+  .tv-main { padding: 18px 14px; }
 
-  /* ✅ MOBILE ALBUM ART FIX (keeps art as a square tile) */
   .tv-now-inner {
     grid-template-columns: 92px minmax(0, 1fr);
     align-items: start;
     gap: 14px;
   }
 
-  .tv-artwork-placeholder {
-    width: 92px;
-    height: 92px;
-    border-radius: 16px;
-  }
+  .tv-artwork-placeholder { width: 92px; height: 92px; border-radius: 16px; }
 
-  .tv-player-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
+  .tv-player-bar      { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .tv-player-label    { flex-wrap: wrap; gap: 6px; }
+  .tv-player-controls { flex-wrap: wrap; width: 100%; }
+  .tv-card-grid       { grid-template-columns: 1fr; }
 
-  .tv-player-label {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
+  .tv-podcast-card { padding: 12px; }
+  .tv-podcast-art  { width: 52px; height: 52px; }
 
-  .tv-player-controls {
-    flex-wrap: wrap;
-    width: 100%;
-  }
-
-  .tv-card-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tv-podcast-card {
-    padding: 12px;
-  }
-
-  .tv-podcast-art {
-    width: 52px;
-    height: 52px;
-  }
-
-  .tv-footer {
-    font-size: 0.78rem;
-    padding: 18px 10px 24px;
-    gap: 6px;
-  }
-
-  .tv-footer-attrib {
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-  }
+  .tv-footer        { font-size: 0.78rem; padding: 18px 10px 24px; gap: 6px; }
+  .tv-footer-attrib { font-size: 0.72rem; letter-spacing: 0.1em; }
 }
 
-/* Mobile mini-player */
-
-.tv-mini-player {
-  display: none;
-}
+.tv-mini-player { display: none; }
 
 @media (max-width: 640px) {
-  .tv-mini-player {
-    position: fixed;
-    right: 16px;
-    bottom: 12px;
-    left: auto;
-    transform: none;
-  }
+  .tv-mini-player { position: fixed; right: 16px; bottom: 12px; left: auto; transform: none; }
 }
 
-/* ================================
-   TRUEVOICE CONNECT – HORIZONTAL SLIDER
-   ================================ */
+/* =========================================================
+   TRUEVOICE CONNECT — HORIZONTAL SLIDER
+   ========================================================= */
 
-.tv-connect {
-  margin-top: 2rem;
-}
+.tv-connect { margin-top: 2rem; }
+.tv-connect-header h2 { font-size: 1.2rem; margin-bottom: 0.25rem; }
+.tv-connect-header p  { font-size: 0.9rem; opacity: 0.8; }
 
-.tv-connect-header h2 {
-  font-size: 1.2rem;
-  margin-bottom: 0.25rem;
-}
-
-.tv-connect-header p {
-  font-size: 0.9rem;
-  opacity: 0.8;
-}
-
-/* Horizontal scroll container */
 .tv-connect-scroller {
   margin-top: 1rem;
   display: flex;
@@ -836,22 +611,11 @@ button {
   max-width: 100%;
 }
 
-/* Hide scrollbars in a soft way */
-.tv-connect-scroller::-webkit-scrollbar {
-  height: 6px;
-}
-.tv-connect-scroller::-webkit-scrollbar-track {
-  background: transparent;
-}
-.tv-connect-scroller::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.08);
-}
+.tv-connect-scroller::-webkit-scrollbar       { height: 6px; }
+.tv-connect-scroller::-webkit-scrollbar-track { background: transparent; }
+.tv-connect-scroller::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(0, 0, 0, 0.08); }
 
-/* ================================
-   CONNECT CARD — VERTICAL WITH THUMBNAIL
-   Replaces the old horizontal icon-row layout entirely.
-   ================================ */
+/* ── Connect card — vertical with thumbnail ── */
 
 .tv-connect-card {
   scroll-snap-align: start;
@@ -860,37 +624,26 @@ button {
   border-radius: 1.25rem;
   border: 1px solid rgba(0, 0, 0, 0.05);
   background: #ffffff;
-  padding: 0;                         /* thumbnail bleeds to edges */
+  padding: 0;
   display: flex;
-  flex-direction: column;             /* vertical stack: thumb → body */
+  flex-direction: column;
   align-items: stretch;
   gap: 0;
   box-shadow: 0 18px 45px rgba(2, 10, 42, 0.08);
   cursor: pointer;
   text-align: left;
-  overflow: hidden;                   /* clip thumbnail corners */
+  overflow: hidden;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.tv-connect-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 24px 50px rgba(2, 10, 42, 0.14);
-}
+.tv-connect-card:hover         { transform: translateY(-3px); box-shadow: 0 24px 50px rgba(2, 10, 42, 0.14); }
+.tv-connect-card:active        { transform: translateY(-1px); }
+.tv-connect-card:focus-visible { outline: 2px solid rgba(39, 95, 219, 0.6); outline-offset: 2px; }
 
-.tv-connect-card:active {
-  transform: translateY(-1px);
-}
-
-.tv-connect-card:focus-visible {
-  outline: 2px solid rgba(39, 95, 219, 0.6);
-  outline-offset: 2px;
-}
-
-/* ── Thumbnail area ── */
 .tv-connect-card-thumb {
   width: 100%;
   aspect-ratio: 16 / 9;
-  background-color: #1e293b;          /* dark fallback when no thumbnail */
+  background-color: #1e293b;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -899,7 +652,6 @@ button {
   flex-shrink: 0;
 }
 
-/* Play button overlay – centered on thumbnail */
 .tv-connect-play-icon {
   font-size: 1.4rem;
   color: white;
@@ -913,21 +665,12 @@ button {
   position: relative;
   z-index: 1;
   transition: transform 0.15s ease, background 0.15s ease;
-  /* nudge the triangle glyph to look centered */
   padding-left: 3px;
 }
 
-.tv-connect-card:hover .tv-connect-play-icon {
-  transform: scale(1.14);
-  background: rgba(0, 0, 0, 0.72);
-}
+.tv-connect-card:hover .tv-connect-play-icon { transform: scale(1.14); background: rgba(0, 0, 0, 0.72); }
 
-/* ── Text body below thumbnail ── */
-.tv-connect-card-body {
-  flex: 1;
-  padding: 0.85rem 1rem 1rem;
-  min-width: 0;
-}
+.tv-connect-card-body { flex: 1; padding: 0.85rem 1rem 1rem; min-width: 0; }
 
 .tv-connect-card-top {
   display: flex;
@@ -937,11 +680,7 @@ button {
   margin-bottom: 0.3rem;
 }
 
-.tv-connect-card-label {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--tv-text-main);
-}
+.tv-connect-card-label { font-weight: 600; font-size: 0.95rem; color: var(--tv-text-main); }
 
 .tv-connect-card-tag {
   font-size: 0.68rem;
@@ -955,29 +694,16 @@ button {
   flex-shrink: 0;
 }
 
-.tv-connect-card-description {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--tv-text-muted);
-  line-height: 1.45;
-}
+.tv-connect-card-description { margin: 0; font-size: 0.8rem; color: var(--tv-text-muted); line-height: 1.45; }
 
-/* Mobile adjustments */
 @media (max-width: 640px) {
-  .tv-connect-card {
-    flex: 0 0 230px;
-  }
-
-  .tv-connect-play-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-  }
+  .tv-connect-card      { flex: 0 0 230px; }
+  .tv-connect-play-icon { width: 40px; height: 40px; font-size: 1.2rem; }
 }
 
-/* ================================
-   SUPPORT SECTION + FOOTER (NEW)
-   ================================ */
+/* =========================================================
+   SUPPORT SECTION
+   ========================================================= */
 
 .support-section {
   max-width: 960px;
@@ -988,19 +714,8 @@ button {
   box-shadow: 0 18px 45px rgba(2, 10, 42, 0.06);
 }
 
-.support-section h2 {
-  font-size: 1.3rem;
-  margin-bottom: 0.25rem;
-}
-
-.support-section p {
-  font-size: 0.9rem;
-  opacity: 0.85;
-}
-
-/* =========================================================
-   DONATION BUTTON ROW — 2×2 GRID
-   ========================================================= */
+.support-section h2 { font-size: 1.3rem; margin-bottom: 0.25rem; }
+.support-section p  { font-size: 0.9rem; opacity: 0.85; }
 
 .support-buttons,
 .tv-donate-row {
@@ -1030,21 +745,11 @@ button {
   box-sizing: border-box;
 }
 
-/* Primary: Monthly */
 .support-btn.monthly,
-.tv-donate-btn.monthly {
-  background: #275fdb;
-  color: #ffffff;
-  box-shadow: 0 12px 24px rgba(39, 95, 219, 0.35);
-}
+.tv-donate-btn.monthly  { background: #275fdb; color: #ffffff; box-shadow: 0 12px 24px rgba(39, 95, 219, 0.35); }
 
-/* One-time matches Monthly */
 .support-btn.onetime,
-.tv-donate-btn.onetime {
-  background: #275fdb;
-  color: #ffffff;
-  box-shadow: 0 12px 24px rgba(39, 95, 219, 0.35);
-}
+.tv-donate-btn.onetime  { background: #275fdb; color: #ffffff; box-shadow: 0 12px 24px rgba(39, 95, 219, 0.35); }
 
 .tv-support-subtext {
   display: block;
@@ -1056,25 +761,14 @@ button {
   margin-top: 4px;
 }
 
-/* Footer used by current App.jsx */
-.footer {
-  text-align: center;
-  padding: 1.5rem 1rem 3rem;
-  font-size: 0.8rem;
-  opacity: 0.7;
-}
+.footer { text-align: center; padding: 1.5rem 1rem 3rem; font-size: 0.8rem; opacity: 0.7; }
 
-/* TEMP: hide old inline history list in the Now Playing card */
-.tv-history-block {
-  display: none !important;
-}
+/* Hide old history list */
+.tv-history-block { display: none !important; }
 
-/* HEADER ACTIONS / GIVE BUTTON */
-.tv-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+/* ── Header actions / Give button ── */
+
+.tv-header-actions { display: flex; align-items: center; gap: 12px; }
 
 .tv-header-give {
   padding: 6px 18px;
@@ -1090,18 +784,10 @@ button {
   cursor: pointer;
 }
 
-.tv-header-give:hover {
-  background: #f5f7ff;
-  box-shadow: 0 10px 24px rgba(9, 33, 93, 0.32);
-  transform: translateY(-1px);
-}
+.tv-header-give:hover  { background: #f5f7ff; box-shadow: 0 10px 24px rgba(9, 33, 93, 0.32); transform: translateY(-1px); }
+.tv-header-give:active { transform: translateY(0); box-shadow: 0 5px 14px rgba(9, 33, 93, 0.22); }
 
-.tv-header-give:active {
-  transform: translateY(0);
-  box-shadow: 0 5px 14px rgba(9, 33, 93, 0.22);
-}
-
-/* === RECENTLY PLAYED HORIZONTAL STRIP === */
+/* ── Recently Played strip ── */
 
 .tv-history-strip {
   display: flex;
@@ -1112,16 +798,9 @@ button {
   scroll-snap-type: x mandatory;
 }
 
-.tv-history-strip::-webkit-scrollbar {
-  height: 6px;
-}
-.tv-history-strip::-webkit-scrollbar-track {
-  background: transparent;
-}
-.tv-history-strip::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.12);
-}
+.tv-history-strip::-webkit-scrollbar       { height: 6px; }
+.tv-history-strip::-webkit-scrollbar-track { background: transparent; }
+.tv-history-strip::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(0, 0, 0, 0.12); }
 
 .tv-history-chip {
   scroll-snap-align: start;
@@ -1144,11 +823,7 @@ button {
   flex-shrink: 0;
 }
 
-.tv-history-chip-text {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
+.tv-history-chip-text  { min-width: 0; display: flex; flex-direction: column; }
 
 .tv-history-chip-title {
   font-size: 0.86rem;
@@ -1167,60 +842,32 @@ button {
 }
 
 @media (max-width: 640px) {
-  .tv-history-chip {
-    flex: 0 0 180px;
-  }
+  .tv-history-chip { flex: 0 0 180px; }
 }
 
-/* === NIGHT MODE (body.tv-night is toggled from App.jsx) === */
+/* ── Night mode ── */
 
-body.tv-night {
-  background: #050816;
-}
-
-body.tv-night .tv-main {
-  background: #050816;
-}
-
-/* Optional: soften sections a bit at night without going full dark UI */
+body.tv-night                              { background: #050816; }
+body.tv-night .tv-main                    { background: #050816; }
 body.tv-night .tv-section,
-body.tv-night .tv-verse-card {
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
-}
-
-body.tv-night .tv-header {
-  background: linear-gradient(90deg, #243b8f, #4a6ce0);
-}
+body.tv-night .tv-verse-card              { box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35); }
+body.tv-night .tv-header                  { background: linear-gradient(90deg, #243b8f, #4a6ce0); }
 
 /* =========================================================
    MOBILE + SWIPE FIX PACK
    ========================================================= */
 
-html, body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-.tv-main {
-  width: 100%;
-  max-width: 1100px;
-}
+html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+.tv-main   { width: 100%; max-width: 1100px; }
 
 @media (max-width: 900px) {
-  .tv-main {
-    max-width: 100%;
-  }
-
-  .tv-hero,
-  .tv-now-playing,
-  .tv-verse-card,
-  .tv-section {
-    min-width: 0;
-  }
+  .tv-main { max-width: 100%; }
+  .tv-hero, .tv-now-playing, .tv-verse-card, .tv-section { min-width: 0; }
 }
 
+/* All horizontal scrollers get touch-friendly treatment */
 .tv-connect-scroller,
+.tv-podcast-scroller,
 .tv-history-strip {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
@@ -1232,38 +879,28 @@ html, body {
 }
 
 .tv-connect-card,
+.tv-podcast-card,
 .tv-history-chip {
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
 
-.tv-section {
-  overflow: visible;
-}
+.tv-section { overflow: visible; }
 
 @media (max-width: 760px) {
-  .tv-hero {
-    grid-template-columns: 1fr !important;
-  }
+  .tv-hero { grid-template-columns: 1fr !important; }
 }
 
-/* Mobile: stack donation buttons to single column */
 @media (max-width: 640px) {
   .support-buttons,
-  .tv-donate-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
+  .tv-donate-row  { grid-template-columns: 1fr; gap: 10px; }
 
   .support-btn,
-  .tv-donate-btn {
-    min-height: 76px;
-    padding: 14px 16px;
-  }
+  .tv-donate-btn  { min-height: 76px; padding: 14px 16px; }
 }
 
 /* =========================================================
-   NEW: SOCIAL ICONS (HEADER + FOOTER)
+   SOCIAL ICONS (HEADER + FOOTER)
    ========================================================= */
 
 .tv-social-row {
@@ -1286,19 +923,9 @@ html, body {
   transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
 }
 
-.tv-social-link:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 10px 24px rgba(9, 33, 93, 0.18);
-}
-
-.tv-social-link:active {
-  transform: translateY(0);
-}
-
-.tv-social-link svg {
-  display: block;
-}
+.tv-social-link:hover  { transform: translateY(-1px); background: rgba(255, 255, 255, 0.22); box-shadow: 0 10px 24px rgba(9, 33, 93, 0.18); }
+.tv-social-link:active { transform: translateY(0); }
+.tv-social-link svg    { display: block; }
 
 .tv-footer-social {
   display: flex;
@@ -1309,62 +936,29 @@ html, body {
   margin-bottom: 10px;
 }
 
-.tv-footer-follow {
-  font-weight: 700;
-  opacity: 0.9;
-}
+.tv-footer-follow { font-weight: 700; opacity: 0.9; }
 
-/* ✅ Footer icons: visible on light background */
 .tv-footer .tv-social-link {
   color: var(--tv-primary-dark);
   background: rgba(39, 95, 219, 0.10);
   border: 1px solid rgba(39, 95, 219, 0.18);
 }
 
-.tv-footer .tv-social-link:hover {
-  transform: translateY(-1px);
-  background: rgba(39, 95, 219, 0.16);
-  box-shadow: 0 10px 24px rgba(9, 33, 93, 0.12);
-}
+.tv-footer .tv-social-link:hover        { transform: translateY(-1px); background: rgba(39, 95, 219, 0.16); box-shadow: 0 10px 24px rgba(9, 33, 93, 0.12); }
+.tv-footer .tv-social-link:active       { transform: translateY(0); }
+.tv-footer .tv-social-link:focus-visible { outline: 2px solid rgba(39, 95, 219, 0.7); outline-offset: 2px; }
 
-.tv-footer .tv-social-link:active {
-  transform: translateY(0);
-}
-
-.tv-footer .tv-social-link:focus-visible {
-  outline: 2px solid rgba(39, 95, 219, 0.7);
-  outline-offset: 2px;
-}
-
-body.tv-night .tv-footer .tv-social-link {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-body.tv-night .tv-footer .tv-social-link:hover {
-  background: rgba(255, 255, 255, 0.22);
-}
+body.tv-night .tv-footer .tv-social-link       { color: #ffffff; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.16); }
+body.tv-night .tv-footer .tv-social-link:hover { background: rgba(255, 255, 255, 0.22); }
 
 /* =========================================================
-   NEW: MOBILE HEADER SAFE LAYOUT (NO DESKTOP IMPACT)
+   MOBILE HEADER
    ========================================================= */
 
 @media (max-width: 640px) {
-  .tv-header {
-    padding: 12px 14px;
-  }
-
-  .tv-header-inner {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-
-  .tv-brand {
-    text-align: center;
-  }
+  .tv-header       { padding: 12px 14px; }
+  .tv-header-inner { flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+  .tv-brand        { text-align: center; }
 
   .tv-header-actions {
     width: 100%;
@@ -1374,51 +968,27 @@ body.tv-night .tv-footer .tv-social-link:hover {
     max-width: 100%;
   }
 
-  .tv-social-row {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .tv-social-link {
-    width: 32px;
-    height: 32px;
-  }
-
-  .tv-header-give {
-    padding: 6px 14px;
-    font-size: 0.82rem;
-  }
+  .tv-social-row  { justify-content: center; flex-wrap: wrap; }
+  .tv-social-link { width: 32px; height: 32px; }
+  .tv-header-give { padding: 6px 14px; font-size: 0.82rem; }
 }
 
 /* =========================================================
    FLOATING / DETACHING PLAYER
    ========================================================= */
 
-.tv-player-dock {
-  position: relative;
-  min-width: 0;
-}
-
-.tv-player-sentinel {
-  height: 1px;
-  width: 1px;
-}
-
-.tv-player-spacer {
-  width: 100%;
-}
+.tv-player-dock     { position: relative; min-width: 0; }
+.tv-player-sentinel { height: 1px; width: 1px; }
+.tv-player-spacer   { width: 100%; }
 
 .tv-player-dock.is-floating .tv-player-surface .tv-now-playing {
   position: fixed;
   right: 16px;
   bottom: 16px;
   left: auto;
-
   width: 420px;
   max-width: calc(100vw - 32px);
-
   z-index: 9999;
-
   height: auto !important;
 }
 
@@ -1426,19 +996,11 @@ body.tv-night .tv-footer .tv-social-link:hover {
   padding: 14px;
   border-radius: 16px;
   box-shadow: 0 18px 45px rgba(2, 10, 42, 0.18);
-
   height: auto !important;
 }
 
-.tv-player-dock.is-floating .tv-now-inner {
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 12px;
-}
-
-.tv-player-dock.is-floating .tv-artwork-placeholder {
-  height: 72px;
-  border-radius: 14px;
-}
+.tv-player-dock.is-floating .tv-now-inner          { grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
+.tv-player-dock.is-floating .tv-artwork-placeholder { height: 72px; border-radius: 14px; }
 
 .tv-player-dock.is-floating .tv-song-title {
   font-size: 1.05rem;
@@ -1459,28 +1021,12 @@ body.tv-night .tv-footer .tv-social-link:hover {
   overflow: hidden;
 }
 
-.tv-player-dock.is-floating .tv-eyebrow {
-  display: none;
-}
-
-.tv-player-dock.is-floating .tv-player-bar {
-  gap: 10px;
-}
-
-.tv-player-dock.is-floating .tv-player-label {
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-}
-
-.tv-player-dock.is-floating .tv-player-subtitle {
-  font-size: 0.62rem;
-  padding: 2px 6px;
-}
-
-.tv-player-dock.is-floating .tv-btn {
-  padding: 8px 14px;
-  font-size: 0.85rem;
-}
+.tv-player-dock.is-floating .tv-eyebrow         { display: none; }
+.tv-player-dock.is-floating .tv-player-bar      { gap: 10px; }
+.tv-player-dock.is-floating .tv-player-label    { font-size: 0.72rem; letter-spacing: 0.14em; }
+.tv-player-dock.is-floating .tv-player-subtitle { font-size: 0.62rem; padding: 2px 6px; }
+.tv-player-dock.is-floating .tv-btn             { padding: 8px 14px; font-size: 0.85rem; }
+.tv-player-dock.is-floating .tv-listeners       { display: none; }
 
 @media (max-width: 640px) {
   .tv-player-dock.is-floating .tv-player-surface .tv-now-playing {
@@ -1491,9 +1037,7 @@ body.tv-night .tv-footer .tv-social-link:hover {
     max-width: none;
   }
 
-  .tv-main--player-floating {
-    padding-bottom: 150px;
-  }
+  .tv-main--player-floating { padding-bottom: 150px; }
 
   .tv-player-dock.is-floating .tv-now-inner {
     grid-template-columns: 60px minmax(0, 1fr);
@@ -1501,10 +1045,7 @@ body.tv-night .tv-footer .tv-social-link:hover {
     align-items: center;
   }
 
-  .tv-player-dock.is-floating .tv-artwork-placeholder {
-    width: 60px;
-    height: 60px;
-  }
+  .tv-player-dock.is-floating .tv-artwork-placeholder { width: 60px; height: 60px; }
 
   .tv-player-dock.is-floating .tv-player-bar {
     flex-direction: row;
@@ -1512,50 +1053,23 @@ body.tv-night .tv-footer .tv-social-link:hover {
     justify-content: space-between;
   }
 
-  .tv-player-dock.is-floating .tv-player-controls {
-    width: auto;
-  }
+  .tv-player-dock.is-floating .tv-player-controls { width: auto; }
 }
 
-.tv-player-dock.is-floating .tv-player-bar {
-  min-width: 0;
-}
-
-.tv-player-dock.is-floating .tv-player-label {
-  min-width: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
-}
-
-.tv-player-dock.is-floating .tv-player-controls {
-  flex: 0 0 auto;
-  max-width: 100%;
-}
+.tv-player-dock.is-floating .tv-player-bar      { min-width: 0; }
+.tv-player-dock.is-floating .tv-player-label    { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+.tv-player-dock.is-floating .tv-player-controls { flex: 0 0 auto; max-width: 100%; }
 
 .tv-player-dock.is-floating .tv-player-title,
-.tv-player-dock.is-floating .tv-player-subtitle {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.tv-player-dock.is-floating .tv-player-subtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.tv-player-dock.is-floating .tv-btn {
-  white-space: nowrap;
-}
-
-.tv-player-dock.is-floating .tv-listeners {
-  display: none;
-}
+.tv-player-dock.is-floating .tv-btn { white-space: nowrap; }
 
 /* =========================================================
-   EQUAL HEIGHT PLAYER + VERSE (NON-FLOATING ONLY)
+   EQUAL HEIGHT PLAYER + VERSE (NON-FLOATING)
    ========================================================= */
 
-.tv-player-dock:not(.is-floating) {
-  display: flex;
-  min-width: 0;
-  height: 100%;
-}
+.tv-player-dock:not(.is-floating) { display: flex; min-width: 0; height: 100%; }
 
 .tv-player-dock:not(.is-floating) .tv-player-surface {
   display: flex;
@@ -1564,11 +1078,7 @@ body.tv-night .tv-footer .tv-social-link:hover {
   height: 100%;
 }
 
-.tv-player-dock:not(.is-floating) .tv-player-surface .tv-now-playing {
-  height: 100%;
-}
+.tv-player-dock:not(.is-floating) .tv-player-surface .tv-now-playing { height: 100%; }
 
-/* Force donation buttons to be rounded rectangles, not pills */
-.tv-donate-btn {
-  border-radius: 12px !important;
-}
+/* Force donation buttons to be rounded rectangles */
+.tv-donate-btn { border-radius: 12px !important; }
