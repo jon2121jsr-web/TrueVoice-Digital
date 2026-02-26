@@ -7,13 +7,8 @@ import "./ReelsGrid.css";
 function ReelsGrid() {
   const [activeVideo, setActiveVideo] = useState(null);
 
-  const handleOpen = (video) => {
-    setActiveVideo(video);
-  };
-
-  const handleClose = () => {
-    setActiveVideo(null);
-  };
+  const handleOpen = (video) => setActiveVideo(video);
+  const handleClose = () => setActiveVideo(null);
 
   const renderChannel = (channelTitle, items) => (
     <section className="reels-channel" key={channelTitle}>
@@ -24,7 +19,8 @@ function ReelsGrid() {
         </span>
       </div>
 
-      <div className="reels-grid">
+      {/* Horizontal scroll strip — same pattern as TrueVoice Connect */}
+      <div className="reels-scroller">
         {items.map((item) => (
           <button
             key={item.id}
@@ -59,11 +55,9 @@ function ReelsGrid() {
 
   return (
     <>
-      {/* ✅ Changed from "TrueVoice Reels" to "TrueVoice Channels" */}
       <h2 className="tv-section-title">TrueVoice Channels</h2>
       <p className="reels-intro">
-        Short-form, high-impact teaching and Q&amp;A content from trusted
-        voices.
+        Short-form, high-impact teaching and Q&amp;A content from trusted voices.
       </p>
 
       {renderChannel("Give Me an Answer", GMAA_REELS)}

@@ -9,19 +9,26 @@
 /* Channel layout */
 
 .reels-channel {
-  margin-top: 18px;
+  margin-top: 22px;
+}
+
+.reels-channel + .reels-channel {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--tv-border-subtle);
 }
 
 .reels-channel-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .reels-channel-title {
   font-size: 1rem;
   font-weight: 600;
+  margin: 0;
 }
 
 .reels-channel-count {
@@ -29,17 +36,41 @@
   color: var(--tv-text-muted);
 }
 
-/* GRID of tiles */
+/* ─── HORIZONTAL SCROLL STRIP ─────────────────────────────────────────────── */
 
-.reels-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+.reels-scroller {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;          /* room for scrollbar */
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 2px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  touch-action: pan-x;
 }
 
-/* Individual reel card */
+/* Thin, unobtrusive scrollbar — matches TrueVoice Connect */
+.reels-scroller::-webkit-scrollbar {
+  height: 5px;
+}
+.reels-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.reels-scroller::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.10);
+}
+
+/* ─── INDIVIDUAL REEL CARD ────────────────────────────────────────────────── */
 
 .reel-card {
+  /* Fixed width so cards feel like slides, not stretched cells */
+  flex: 0 0 clamp(200px, 46%, 260px);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -58,14 +89,15 @@
   box-shadow: 0 10px 24px rgba(9, 33, 93, 0.14);
 }
 
-/* Thumbnail with fixed 16:9 aspect ratio */
+/* Thumbnail — fixed 16:9 */
 
 .reel-thumb-wrap {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 */
+  padding-top: 56.25%;          /* 16:9 */
   overflow: hidden;
   background: #000;
+  flex-shrink: 0;
 }
 
 .reel-thumb {
@@ -76,34 +108,41 @@
   object-fit: cover;
 }
 
-/* “Watch” pill overlay */
+/* "Watch" pill overlay */
 
 .reel-play-pill {
   position: absolute;
-  left: 12px;
-  bottom: 10px;
-  padding: 4px 10px;
+  left: 10px;
+  bottom: 8px;
+  padding: 3px 9px;
   border-radius: 999px;
-  font-size: 0.75rem;
-  background: rgba(0, 0, 0, 0.7);
+  font-size: 0.72rem;
+  background: rgba(0, 0, 0, 0.68);
   color: #fff;
 }
 
 /* Metadata below thumb */
 
 .reel-meta {
-  padding: 10px 12px 12px;
+  padding: 9px 11px 11px;
+  flex: 1;
 }
 
 .reel-title {
   margin: 0 0 4px;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 600;
+  /* Two-line clamp so cards stay same height */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
 }
 
 .reel-speaker {
-  margin: 0 0 4px;
-  font-size: 0.8rem;
+  margin: 0 0 3px;
+  font-size: 0.76rem;
   color: var(--tv-text-muted);
 }
 
@@ -113,11 +152,11 @@
 
 .reel-source {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--tv-text-muted);
 }
 
-/* Modal */
+/* ─── MODAL ───────────────────────────────────────────────────────────────── */
 
 .reel-modal-backdrop {
   position: fixed;
@@ -174,7 +213,7 @@
 .reel-modal-video-wrapper {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 */
+  padding-top: 56.25%;          /* 16:9 */
   background: #000;
   border-radius: 10px;
   overflow: hidden;
@@ -204,10 +243,10 @@
   text-decoration: underline;
 }
 
-/* Responsive tweaks */
+/* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-  .reels-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .reel-card {
+    flex: 0 0 200px;            /* slightly narrower on mobile */
   }
 }
