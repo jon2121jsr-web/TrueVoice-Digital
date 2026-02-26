@@ -3,8 +3,8 @@ import React from "react";
 
 export default function TrueVoiceConnect({
   onWatchLive,
-  onNewEpisodes,              // ← Renamed from onListenAgain
-  onShortsAndReels,           // ← Renamed from onMusicAndTestimonies
+  onNewEpisodes,
+  onShortsAndReels,
 }) {
   const cards = [
     {
@@ -13,20 +13,23 @@ export default function TrueVoiceConnect({
       description: "Join the live studio stream when we're on air.",
       tag: "LIVE",
       onClick: onWatchLive,
+      thumbnail: null, // no live video yet
     },
     {
-      id: "new-episodes",       // ← Renamed from listen-again
-      label: "New Episodes",    // ← Changed label
-      description: "Catch the latest episodes and messages.",  // ← Updated description
-      tag: "NEW",               // ← Changed tag from REPLAY
-      onClick: onNewEpisodes,   // ← Renamed prop
+      id: "new-episodes",
+      label: "New Episodes",
+      description: "Catch the latest episodes and messages.",
+      tag: "NEW",
+      onClick: onNewEpisodes,
+      thumbnail: "https://img.youtube.com/vi/mESQkTA9AX0/maxresdefault.jpg",
     },
     {
-      id: "shorts-reels",       // ← Renamed from music-testimonies
-      label: "Shorts & Reels",  // ← Changed label
-      description: "Quick encouragement and stories of faith.",  // ← Updated description
-      tag: "SHORTS",            // ← Changed tag from VIDEOS
-      onClick: onShortsAndReels, // ← Renamed prop
+      id: "shorts-reels",
+      label: "Shorts & Reels",
+      description: "Quick encouragement and stories of faith.",
+      tag: "SHORTS",
+      onClick: onShortsAndReels,
+      thumbnail: "https://img.youtube.com/vi/qlpeKRAAPuI/maxresdefault.jpg",
     },
   ];
 
@@ -51,22 +54,28 @@ export default function TrueVoiceConnect({
             className="tv-connect-card"
             onClick={() => handleClick(card)}
           >
-            <div className="tv-connect-card-icon">
+            {/* Thumbnail area */}
+            <div
+              className="tv-connect-card-thumb"
+              style={
+                card.thumbnail
+                  ? {
+                      backgroundImage: `url(${card.thumbnail})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }
+                  : {}
+              }
+            >
               <span className="tv-connect-play-icon">▶</span>
             </div>
 
             <div className="tv-connect-card-body">
               <div className="tv-connect-card-top">
-                <span className="tv-connect-card-label">
-                  {card.label}
-                </span>
-                <span className="tv-connect-card-tag">
-                  {card.tag}
-                </span>
+                <span className="tv-connect-card-label">{card.label}</span>
+                <span className="tv-connect-card-tag">{card.tag}</span>
               </div>
-              <p className="tv-connect-card-description">
-                {card.description}
-              </p>
+              <p className="tv-connect-card-description">{card.description}</p>
             </div>
           </button>
         ))}

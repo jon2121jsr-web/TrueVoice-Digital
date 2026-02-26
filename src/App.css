@@ -848,20 +848,37 @@ button {
   background: rgba(0, 0, 0, 0.08);
 }
 
-/* Each card behaves like a slide */
+/* ================================
+   CONNECT CARD — VERTICAL WITH THUMBNAIL
+   Replaces the old horizontal icon-row layout entirely.
+   ================================ */
+
 .tv-connect-card {
   scroll-snap-align: start;
-  flex: 0 0 clamp(240px, 30%, 320px); /* responsive width */
+  scroll-snap-stop: always;
+  flex: 0 0 clamp(220px, 28%, 300px);
   border-radius: 1.25rem;
-  border: 1px solid rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   background: #ffffff;
-  padding: 1rem 1.2rem;
+  padding: 0;                         /* thumbnail bleeds to edges */
   display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  box-shadow: 0 18px 45px rgba(2, 10, 42, 0.06);
+  flex-direction: column;             /* vertical stack: thumb → body */
+  align-items: stretch;
+  gap: 0;
+  box-shadow: 0 18px 45px rgba(2, 10, 42, 0.08);
   cursor: pointer;
   text-align: left;
+  overflow: hidden;                   /* clip thumbnail corners */
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tv-connect-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 24px 50px rgba(2, 10, 42, 0.14);
+}
+
+.tv-connect-card:active {
+  transform: translateY(-1px);
 }
 
 .tv-connect-card:focus-visible {
@@ -869,22 +886,46 @@ button {
   outline-offset: 2px;
 }
 
-.tv-connect-card-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: #e7f0ff; /* matches your light blue */
+/* ── Thumbnail area ── */
+.tv-connect-card-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-color: #1e293b;          /* dark fallback when no thumbnail */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
   flex-shrink: 0;
 }
 
+/* Play button overlay – centered on thumbnail */
 .tv-connect-play-icon {
-  font-size: 1rem;
+  font-size: 1.4rem;
+  color: white;
+  background: rgba(0, 0, 0, 0.52);
+  border-radius: 50%;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.15s ease, background 0.15s ease;
+  /* nudge the triangle glyph to look centered */
+  padding-left: 3px;
 }
 
+.tv-connect-card:hover .tv-connect-play-icon {
+  transform: scale(1.14);
+  background: rgba(0, 0, 0, 0.72);
+}
+
+/* ── Text body below thumbnail ── */
 .tv-connect-card-body {
   flex: 1;
+  padding: 0.85rem 1rem 1rem;
   min-width: 0;
 }
 
@@ -893,32 +934,44 @@ button {
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.3rem;
 }
 
 .tv-connect-card-label {
   font-weight: 600;
   font-size: 0.95rem;
+  color: var(--tv-text-main);
 }
 
 .tv-connect-card-tag {
-  font-size: 0.7rem;
-  padding: 0.15rem 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.18rem 0.5rem;
   border-radius: 999px;
-  background: #f0f4ff;
+  background: #eef2ff;
   color: #275fdb;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tv-connect-card-description {
+  margin: 0;
   font-size: 0.8rem;
-  opacity: 0.8;
+  color: var(--tv-text-muted);
+  line-height: 1.45;
 }
 
-/* Mobile: make the cards a bit narrower so sliding feels natural */
+/* Mobile adjustments */
 @media (max-width: 640px) {
   .tv-connect-card {
-    flex: 0 0 240px;
-    padding: 0.85rem 1rem;
+    flex: 0 0 230px;
+  }
+
+  .tv-connect-play-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
   }
 }
 
@@ -947,9 +1000,6 @@ button {
 
 /* =========================================================
    DONATION BUTTON ROW — 2×2 GRID
-   Replaces the old .support-buttons flex rule entirely.
-   The grid approach is unambiguous: no flex-wrap conflicts,
-   no min-width battles, no !important needed on children.
    ========================================================= */
 
 .support-buttons,
@@ -958,7 +1008,6 @@ button {
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
   margin-top: 1rem;
-  /* No max-width cap — let the parent (.support-section) control width */
 }
 
 .support-btn,
@@ -976,8 +1025,6 @@ button {
   text-decoration: none;
   border: none;
   cursor: pointer;
-  /* min-width: 0 is the key fix — overrides browser button default
-     of min-width: min-content, which was busting out of grid cells */
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
