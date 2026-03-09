@@ -1007,8 +1007,8 @@ body.tv-night .tv-footer .tv-social-link:hover { background: rgba(255, 255, 255,
   height: auto !important;
 }
 
-.tv-player-dock.is-floating .tv-now-inner          { grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
-.tv-player-dock.is-floating .tv-artwork-placeholder { height: 72px; min-height: unset; border-radius: 14px; }
+.tv-player-dock.is-floating .tv-now-inner          { grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; }
+.tv-player-dock.is-floating .tv-artwork-placeholder { width: 72px; height: 72px !important; min-height: unset !important; border-radius: 14px; }
 
 .tv-player-dock.is-floating .tv-song-title {
   font-size: 1.05rem;
@@ -1053,7 +1053,7 @@ body.tv-night .tv-footer .tv-social-link:hover { background: rgba(255, 255, 255,
     align-items: center;
   }
 
-  .tv-player-dock.is-floating .tv-artwork-placeholder { width: 60px; height: 60px; min-height: unset; }
+  .tv-player-dock.is-floating .tv-artwork-placeholder { width: 60px; height: 60px !important; min-height: unset !important; }
 
   .tv-player-dock.is-floating .tv-player-bar {
     flex-direction: row;
