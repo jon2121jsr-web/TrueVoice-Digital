@@ -1,4 +1,5 @@
 // src/components/RecentTracksBar.jsx
+// Reads data.song_history from api.js (AzuraCast field name, no translation)
 import { useEffect, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 
@@ -15,14 +16,20 @@ export default function RecentTracksBar() {
         setLoading(true);
         const data = await fetchNowPlaying();
 
-        // Same logic as NowPlayingPanel history
-        const historyRaw =
-          (Array.isArray(data?.history) && data.history) ||
-          (Array.isArray(data?.recent_tracks) && data.recent_tracks) ||
-          [];
+        // api.js always returns song_history with nested song objects
+        const raw = Array.isArray(data?.song_history) ? data.song_history : [];
+
+        const normalized = raw.slice(0, 12).map((item) => ({
+          id:        item.sh_id || item.played_at || undefined,
+          played_at: item.played_at || 0,
+          title:     item.song?.title  || "Unknown title",
+          artist:    item.song?.artist || "",
+          album:     item.song?.album  || "",
+          art:       item.song?.art    || null,
+        }));
 
         if (isMounted) {
-          setTracks(historyRaw.slice(0, 12));
+          setTracks(normalized);
           setError(null);
         }
       } catch (err) {
@@ -36,18 +43,11 @@ export default function RecentTracksBar() {
     }
 
     load();
-    const id = window.setInterval(load, 60_000); // refresh every 60s
-
-    return () => {
-      isMounted = false;
-      window.clearInterval(id);
-    };
+    const id = window.setInterval(load, 60_000);
+    return () => { isMounted = false; window.clearInterval(id); };
   }, []);
 
-  if ((loading || error) && tracks.length === 0) {
-    // fail silently – don't show an empty bar
-    return null;
-  }
+  if ((loading || error) && tracks.length === 0) return null;
 
   return (
     <section className="tv-section tv-section--stacked">
@@ -55,12 +55,7 @@ export default function RecentTracksBar() {
       <div className="tv-history-strip">
         {tracks.map((item, idx) => (
           <div
-            key={
-              item.id ||
-              item.song_id ||
-              item.played_at ||
-              `${item.title}-${idx}`
-            }
+            key={item.id || `${item.title}-${idx}`}
             className="tv-history-chip"
           >
             {item.art && (

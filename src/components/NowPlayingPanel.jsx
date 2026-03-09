@@ -1,12 +1,28 @@
 // src/components/NowPlayingPanel.jsx
-// ✅ Duration-based metadata hold — shows current track until it actually ends
+// ✅ When AzuraCast flips to next song, waits STREAM_DELAY_SEC before showing it
+// ✅ This compensates for Live365 CDN relay buffer (~50-55 seconds)
+// ✅ Owner-only listener count via ?owner=true
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 
-function toInt(v, fallback) {
-  const n = Number.parseInt(String(v ?? ""), 10);
+function toNum(v, fallback = 0) {
+  const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 }
+
+function useIsOwner() {
+  return useMemo(() => {
+    try {
+      return new URLSearchParams(window.location.search).get("owner") === "true";
+    } catch { return false; }
+  }, []);
+}
+
+// Extra seconds to wait AFTER AzuraCast says the next song started,
+// before we update the display. This matches the Live365 CDN relay buffer.
+// Tune via .env: VITE_STREAM_DELAY_SEC=55
+// Too early → increase. Too late → decrease.
+const STREAM_DELAY_SEC = toNum(import.meta.env.VITE_STREAM_DELAY_SEC, 65);
 
 export function NowPlayingPanel({
   streamUrl,
@@ -17,148 +33,110 @@ export function NowPlayingPanel({
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [listeners, setListeners] = useState(null);
+  const isOwner = useIsOwner();
 
-  // Current and scheduled tracks
-  const [currentTrack,    setCurrentTrack]    = useState(null);
-  const [scheduledTrack,  setScheduledTrack]  = useState(null);
-  const [listeners,       setListeners]       = useState(null);
+  // displaySong: what the UI shows right now
+  // pendingFlipAt: Date.now() ms timestamp when we should flip to pendingSong
+  const [displaySong,  setDisplaySong]  = useState(null);
+  const pendingSongRef  = useRef(null);   // { song } waiting to be shown
+  const pendingFlipRef  = useRef(null);   // ms timestamp to flip at
+  const displaySongRef  = useRef(null);   // mirrors displaySong for use in callbacks
 
   const AZURACAST_FALLBACK_URL =
     "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
-  /* ────────────────────────────────────────────────────────────────────────
-     POLL AZURACAST NOW PLAYING
-     Every 15 seconds, fetch metadata and calculate when the current track ends.
-     The UI only switches tracks when the calculated end time passes.
-  ──────────────────────────────────────────────────────────────────────── */
+  /* ──────────────────────────────────────────────────────────────────────────
+     POLL AZURACAST every 15 seconds
+  ────────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     let alive = true;
 
     async function load() {
       try {
-        setLoading(true);
         const result = await fetchNowPlaying();
         if (!alive) return;
 
-        const nowPlayingSong = result?.now_playing?.song || result?.song || null;
-        const nextSong       = result?.playing_next?.song || null;
-        const nowPlayingData = result?.now_playing || result || {};
-        const playingNextData = result?.playing_next || {};
+        const song = result?.now_playing?.song || null;
 
-        // Update listener count
-        if (typeof result?.listeners?.current === "number") {
-          setListeners(result.listeners.current);
-        } else if (typeof result?.listeners === "number") {
-          setListeners(result.listeners);
+        // Listeners
+        const rawL = result?.listeners;
+        if (rawL != null) {
+          const c = typeof rawL === "object"
+            ? (rawL.current ?? rawL.total ?? 0)
+            : Number(rawL);
+          setListeners(Number.isFinite(c) ? c : null);
         }
 
-        // If no song data at all, bail
-        if (!nowPlayingSong?.title) {
+        if (!song?.title) {
           if (alive) setLoading(false);
           return;
         }
 
-        /* ─── Calculate track duration ──────────────────────────────────────
-           Priority:
-           1. now_playing.duration (if > 0)
-           2. Time delta between played_at timestamps (next - current)
-           3. Fallback: 180 seconds (3 min average)
-        ──────────────────────────────────────────────────────────────────── */
-        let durationSec = 180; // default fallback
+        const incomingId = song.id    || song.title;
+        const currentId  = displaySongRef.current?.id || displaySongRef.current?.title;
+        const pendingId  = pendingSongRef.current?.song?.id || pendingSongRef.current?.song?.title;
 
-        const apiDuration = toInt(nowPlayingData.duration, 0);
-        if (apiDuration > 0) {
-          durationSec = apiDuration;
-        } else {
-          // Calculate from timestamps if both exist
-          const currentPlayedAt = toInt(nowPlayingData.played_at, 0);
-          const nextPlayedAt    = toInt(playingNextData.played_at, 0);
+        if (!displaySongRef.current) {
+          // First load — show immediately, no delay needed
+          displaySongRef.current = song;
+          setDisplaySong(song);
 
-          if (currentPlayedAt > 0 && nextPlayedAt > currentPlayedAt) {
-            durationSec = nextPlayedAt - currentPlayedAt;
+        } else if (incomingId === currentId) {
+          // Same song still playing on AzuraCast — nothing to do
+          // (clear any stale pending if AzuraCast rolled back somehow)
+          if (pendingId && pendingId !== incomingId) {
+            // keep pending — different song is queued
           }
+
+        } else if (incomingId === pendingId) {
+          // AzuraCast confirms the pending song again — flip time already set
+          // Nothing to update
+
+        } else {
+          // New song detected on AzuraCast that we haven't seen before.
+          // Schedule it to appear STREAM_DELAY_SEC seconds from now.
+          // This is the CDN buffer delay — listeners still hear the old song.
+          pendingSongRef.current  = { song };
+          pendingFlipRef.current  = Date.now() + (STREAM_DELAY_SEC * 1000);
         }
 
-        // Calculate when this track ends (absolute UNIX timestamp in ms)
-        const playedAtMs = toInt(nowPlayingData.played_at, Date.now() / 1000) * 1000;
-        const endsAtMs   = playedAtMs + (durationSec * 1000);
-
-        /* ─── Track change detection ────────────────────────────────────────
-           Only update scheduled track if the song ID or title changed.
-           This prevents re-triggering on every 15-second poll.
-        ──────────────────────────────────────────────────────────────────── */
-        setScheduledTrack((prev) => {
-          const newId    = nowPlayingSong.id || nowPlayingSong.title;
-          const prevId   = prev?.song?.id || prev?.song?.title;
-
-          if (newId === prevId) {
-            return prev; // Same track, don't update
-          }
-
-          // New track detected
-          return {
-            song: nowPlayingSong,
-            endsAtMs,
-            playedAtMs,
-            durationSec,
-          };
-        });
-
         setError(null);
+        setLoading(false);
       } catch (err) {
         if (!alive) return;
         console.error("NowPlaying error:", err);
         setError(err?.message || "Failed to load now playing.");
-      } finally {
-        if (alive) setLoading(false);
+        setLoading(false);
       }
     }
 
     load();
     const id = window.setInterval(load, 15_000);
-    return () => {
-      alive = false;
-      window.clearInterval(id);
-    };
-  }, []); // no deps — runs once on mount
+    return () => { alive = false; window.clearInterval(id); };
+  }, []);
 
-  /* ────────────────────────────────────────────────────────────────────────
-     1-SECOND TICK
-     Re-evaluate which track to display based on current time vs. endsAtMs.
-  ──────────────────────────────────────────────────────────────────────── */
-  const [tick, setTick] = useState(0);
-
+  /* ──────────────────────────────────────────────────────────────────────────
+     1-SECOND TICK — checks if it's time to flip to pending song
+  ────────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const id = window.setInterval(() => {
-      setTick((t) => t + 1);
-    }, 1000);
+      if (!pendingSongRef.current || !pendingFlipRef.current) return;
+      if (Date.now() >= pendingFlipRef.current) {
+        // Time to flip
+        const next = pendingSongRef.current.song;
+        displaySongRef.current = next;
+        setDisplaySong(next);
+        pendingSongRef.current = null;
+        pendingFlipRef.current = null;
+      }
+    }, 1_000);
     return () => window.clearInterval(id);
   }, []);
 
-  /* ────────────────────────────────────────────────────────────────────────
-     DISPLAY LOGIC
-     Show currentTrack until its endsAtMs passes, then switch to scheduledTrack.
-  ──────────────────────────────────────────────────────────────────────── */
-  useEffect(() => {
-    if (!scheduledTrack) return;
-
-    const now = Date.now();
-
-    // If no current track, or current track has ended, switch immediately
-    if (!currentTrack || now >= currentTrack.endsAtMs) {
-      setCurrentTrack(scheduledTrack);
-      return;
-    }
-
-    // Current track is still playing — keep showing it
-    // (scheduledTrack will display once endsAtMs passes on next tick)
-  }, [scheduledTrack, currentTrack, tick]);
-
-  /* ────────────────────────────────────────────────────────────────────────
+  /* ──────────────────────────────────────────────────────────────────────────
      DERIVED DISPLAY VALUES
-  ──────────────────────────────────────────────────────────────────────── */
-  const displaySong = currentTrack?.song || null;
-
+  ────────────────────────────────────────────────────────────────────────── */
   const title  = displaySong?.title  || (loading ? "Loading current track…" : "Live Stream");
   const artist = displaySong?.artist || "TrueVoice Digital";
   const album  = displaySong?.album  || "TrueVoice Digital";
@@ -169,13 +147,11 @@ export function NowPlayingPanel({
     return isPlaying ? "NOW STREAMING" : "READY";
   }, [error, isPlaying]);
 
-  /* ────────────────────────────────────────────────────────────────────────
-     NOTIFY APP OF STATUS CHANGES (lock screen / MediaSession)
-  ──────────────────────────────────────────────────────────────────────── */
+  /* ──────────────────────────────────────────────────────────────────────────
+     NOTIFY APP (lock screen / MediaSession)
+  ────────────────────────────────────────────────────────────────────────── */
   const onStatusChangeRef = useRef(onStatusChange);
-  useEffect(() => {
-    onStatusChangeRef.current = onStatusChange;
-  });
+  useEffect(() => { onStatusChangeRef.current = onStatusChange; });
 
   useEffect(() => {
     if (typeof onStatusChangeRef.current !== "function") return;
@@ -184,30 +160,24 @@ export function NowPlayingPanel({
       hasError:  !!error,
       isLoading: !!loading,
       station:   "TrueVoice Radio",
-      now_playing: {
-        song: { title, artist, album, art },
-      },
+      now_playing: { song: { title, artist, album, art } },
       listeners: listeners ?? undefined,
     });
   }, [isPlaying, error, loading, title, artist, album, art, listeners]);
 
-  /* ────────────────────────────────────────────────────────────────────────
-     WIRE AUDIO ELEMENT EVENTS
-  ──────────────────────────────────────────────────────────────────────── */
+  /* ──────────────────────────────────────────────────────────────────────────
+     AUDIO ELEMENT EVENTS
+  ────────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const el = audioRef?.current;
     if (!el) return;
-
     el.preload = "none";
-
     const onPlay  = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
     const onEnded = () => setIsPlaying(false);
-
     el.addEventListener("play",  onPlay);
     el.addEventListener("pause", onPause);
     el.addEventListener("ended", onEnded);
-
     return () => {
       el.removeEventListener("play",  onPlay);
       el.removeEventListener("pause", onPause);
@@ -215,38 +185,31 @@ export function NowPlayingPanel({
     };
   }, [audioRef]);
 
-  /* ────────────────────────────────────────────────────────────────────────
+  /* ──────────────────────────────────────────────────────────────────────────
      STREAM CONTROL
-  ──────────────────────────────────────────────────────────────────────── */
+  ────────────────────────────────────────────────────────────────────────── */
   const startStream = (el, url) => {
     el.src = url;
     el.load();
     const p = el.play();
-    if (p && typeof p.catch === "function") {
-      p.catch((e) => {
-        console.error("play() failed:", e);
-        setError("Tap again to start audio.");
-        setIsPlaying(false);
-      });
-    }
+    if (p?.catch) p.catch((e) => {
+      console.error("play() failed:", e);
+      setError("Tap again to start audio.");
+      setIsPlaying(false);
+    });
   };
 
   const handleTogglePlay = () => {
     const el = audioRef?.current;
     if (!el) return;
-
     try {
       if (!isPlaying) {
         setError(null);
         startStream(el, streamUrl);
-
-        // Quick fallback if primary doesn't start
         window.setTimeout(() => {
-          try {
-            if (el.paused) startStream(el, AZURACAST_FALLBACK_URL);
-          } catch { /* ignore */ }
+          try { if (el.paused) startStream(el, AZURACAST_FALLBACK_URL); }
+          catch { /* ignore */ }
         }, 600);
-
         setIsPlaying(true);
       } else {
         el.pause();
@@ -255,15 +218,15 @@ export function NowPlayingPanel({
         setIsPlaying(false);
       }
     } catch (err) {
-      console.error("Live stream toggle failed:", err);
+      console.error("Stream toggle failed:", err);
       setError("Tap again to start audio.");
       setIsPlaying(false);
     }
   };
 
-  /* ────────────────────────────────────────────────────────────────────────
+  /* ──────────────────────────────────────────────────────────────────────────
      RENDER
-  ──────────────────────────────────────────────────────────────────────── */
+  ────────────────────────────────────────────────────────────────────────── */
   return (
     <div className="tv-now-playing">
       <div className="tv-now-inner">
@@ -289,18 +252,16 @@ export function NowPlayingPanel({
           <div className="tv-player-bar">
             <div className="tv-player-label">
               <span
-                className={
-                  isPlaying && !error
-                    ? "tv-live-dot"
-                    : "tv-live-dot tv-live-dot-idle"
-                }
+                className={isPlaying && !error ? "tv-live-dot" : "tv-live-dot tv-live-dot-idle"}
                 aria-hidden="true"
               />
               <span className="tv-player-title">TRUEVOICE RADIO</span>
               <span className="tv-player-subtitle">{liveLabel}</span>
 
-              {listeners != null && !Number.isNaN(listeners) && (
-                <span className="tv-listeners">{listeners} listening</span>
+              {isOwner && listeners != null && !Number.isNaN(listeners) && (
+                <span className="tv-listeners" title="Live listeners (owner view)">
+                  {listeners} listening
+                </span>
               )}
             </div>
 

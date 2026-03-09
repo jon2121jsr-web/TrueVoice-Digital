@@ -83,21 +83,25 @@ button {
   align-items: stretch;
 }
 
+/* ── Now Playing card — fills full card height ── */
+
 .tv-now-playing {
   background: white;
   border-radius: var(--tv-radius-lg);
-  padding: 20px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
   box-shadow: var(--tv-shadow-soft);
+  height: 100%;
 }
 
 .tv-now-inner {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
-  gap: 18px;
-  align-items: center;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;   /* both columns stretch to card height */
+  flex: 1;
+  min-height: 0;
 }
 
 .tv-artwork-placeholder {
@@ -105,7 +109,9 @@ button {
   border-radius: var(--tv-radius-md);
   background: linear-gradient(145deg, #d4e0ff, #f1f4ff);
   overflow: hidden;
-  height: 110px;
+  width: 140px;
+  height: 100%;            /* fill the full column height */
+  min-height: 140px;       /* never collapse below this */
 }
 
 .tv-artwork-img {
@@ -119,7 +125,9 @@ button {
 .tv-now-content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;  /* eyebrow+title top, player bar bottom */
+  min-height: 0;
+  padding: 2px 0;
 }
 
 .tv-eyebrow {
@@ -569,11 +577,11 @@ button {
 
   .tv-now-inner {
     grid-template-columns: 92px minmax(0, 1fr);
-    align-items: start;
+    align-items: stretch;
     gap: 14px;
   }
 
-  .tv-artwork-placeholder { width: 92px; height: 92px; border-radius: 16px; }
+  .tv-artwork-placeholder { width: 92px; min-height: 92px; border-radius: 16px; }
 
   .tv-player-bar      { flex-direction: column; align-items: flex-start; gap: 8px; }
   .tv-player-label    { flex-wrap: wrap; gap: 6px; }
@@ -1000,7 +1008,7 @@ body.tv-night .tv-footer .tv-social-link:hover { background: rgba(255, 255, 255,
 }
 
 .tv-player-dock.is-floating .tv-now-inner          { grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
-.tv-player-dock.is-floating .tv-artwork-placeholder { height: 72px; border-radius: 14px; }
+.tv-player-dock.is-floating .tv-artwork-placeholder { height: 72px; min-height: unset; border-radius: 14px; }
 
 .tv-player-dock.is-floating .tv-song-title {
   font-size: 1.05rem;
@@ -1045,7 +1053,7 @@ body.tv-night .tv-footer .tv-social-link:hover { background: rgba(255, 255, 255,
     align-items: center;
   }
 
-  .tv-player-dock.is-floating .tv-artwork-placeholder { width: 60px; height: 60px; }
+  .tv-player-dock.is-floating .tv-artwork-placeholder { width: 60px; height: 60px; min-height: unset; }
 
   .tv-player-dock.is-floating .tv-player-bar {
     flex-direction: row;
