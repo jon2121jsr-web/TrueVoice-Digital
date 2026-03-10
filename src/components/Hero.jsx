@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./Hero.css";
 import HeroMerchSlide from "./HeroMerchSlide.jsx";
+import HeroPigskinSlide from "./HeroPigskinSlide.jsx";
 
 export default function Hero() {
   const slides = useMemo(
@@ -29,7 +30,13 @@ export default function Hero() {
         alt: "TrueVoice Gear — Coming Soon",
       },
       {
-        // 4️⃣ Public / Feature slide
+        // 4️⃣ Pigskin Frenzy — Coming Soon
+        kind: "component",
+        component: HeroPigskinSlide,
+        alt: "Pigskin Frenzy with Joel Norris — Coming Soon",
+      },
+      {
+        // 5️⃣ Public / Feature slide
         src: "/images/hero-slide-4.png",
         alt: "TrueVoice Digital — Featured",
         fit: "contain",
@@ -37,7 +44,7 @@ export default function Hero() {
         kind: "poster",
       },
       {
-        // 5️⃣ Coming slide (now last)
+        // 6️⃣ Coming slide (last)
         src: "/images/hero-coming.png",
         alt: "He is coming back. Let's get ready.",
         fit: "contain",
@@ -68,7 +75,7 @@ export default function Hero() {
         {slides.map((s, idx) => {
           const isActive = idx === active;
 
-          // If it's a component slide, render the component
+          // Component slides
           if (s.kind === "component" && s.component) {
             const Component = s.component;
             return (
@@ -83,7 +90,7 @@ export default function Hero() {
             );
           }
 
-          // Otherwise render image slide
+          // Image slides
           return (
             <div
               key={s.src}
@@ -124,3 +131,4 @@ export default function Hero() {
     </section>
   );
 }
+
