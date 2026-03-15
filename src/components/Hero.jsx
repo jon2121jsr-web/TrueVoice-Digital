@@ -8,48 +8,58 @@ export default function Hero() {
   const slides = useMemo(
     () => [
       {
-        // 1️⃣ Legacy hero banner
-        src: "/images/truevoice-hero.jpg",
-        alt: "TrueVoice Digital hero",
-        fit: "contain",
-        position: "center",
-        kind: "legacy",
+        // 1️⃣ TrueVoice Digital — cover so it fills the full frame, bold and legible
+        src:      "/images/truevoice-hero.jpg",
+        alt:      "TrueVoice Digital — Faithful Voices. Inspired Content.",
+        fit:      "cover",
+        position: "center center",
+        cover:    true,   // removes padding/radius so image bleeds edge to edge
+        kind:     "legacy",
       },
       {
         // 2️⃣ TrueVoice LIVE hero
-        src: "/images/hero-truevoice-live.png",
-        alt: "TrueVoice LIVE — Where Truth and Faith Come Together",
-        fit: "contain",
+        src:      "/images/hero-truevoice-live.png",
+        alt:      "TrueVoice LIVE — Where Truth and Faith Come Together",
+        fit:      "contain",
         position: "center",
-        kind: "poster",
+        kind:     "poster",
       },
       {
-        // 3️⃣ TrueVoice Gear promo (React component)
-        kind: "component",
+        // 3️⃣ The Church in Shorts — wide banner, cover fill
+        src:      "/images/The-Church-Hero-2500x900-FULL__2_.png",
+        alt:      "The Church in Shorts — Real Truth. Real Church. In Short Video.",
+        fit:      "cover",
+        position: "center center",
+        cover:    true,
+        kind:     "poster",
+      },
+      {
+        // 4️⃣ TrueVoice Gear promo (React component)
+        kind:      "component",
         component: HeroMerchSlide,
-        alt: "TrueVoice Gear — Coming Soon",
+        alt:       "TrueVoice Gear — Coming Soon",
       },
       {
-        // 4️⃣ Pigskin Frenzy — Coming Soon
-        kind: "component",
+        // 5️⃣ Pigskin Frenzy — Coming Soon
+        kind:      "component",
         component: HeroPigskinSlide,
-        alt: "Pigskin Frenzy with Joel Norris — Coming Soon",
+        alt:       "Pigskin Frenzy with Joel Norris — Coming Soon",
       },
       {
-        // 5️⃣ Public / Feature slide
-        src: "/images/hero-slide-4.png",
-        alt: "TrueVoice Digital — Featured",
-        fit: "contain",
+        // 6️⃣ Public / Feature slide
+        src:      "/images/hero-slide-4.png",
+        alt:      "TrueVoice Digital — Featured",
+        fit:      "contain",
         position: "center",
-        kind: "poster",
+        kind:     "poster",
       },
       {
-        // 6️⃣ Coming slide (last)
-        src: "/images/hero-coming.png",
-        alt: "He is coming back. Let's get ready.",
-        fit: "contain",
+        // 7️⃣ Coming slide (last)
+        src:      "/images/hero-coming.png",
+        alt:      "He is coming back. Let's get ready.",
+        fit:      "contain",
         position: "center",
-        kind: "poster",
+        kind:     "poster",
       },
     ],
     []
@@ -75,7 +85,7 @@ export default function Hero() {
         {slides.map((s, idx) => {
           const isActive = idx === active;
 
-          // Component slides
+          // Component slides (HeroMerchSlide, HeroPigskinSlide)
           if (s.kind === "component" && s.component) {
             const Component = s.component;
             return (
@@ -90,7 +100,18 @@ export default function Hero() {
             );
           }
 
-          // Image slides
+          // Image slides — cover slides bleed edge to edge, contained slides use the framed look
+          const mediaStyle = s.cover
+            ? {
+                width:        "100%",
+                height:       "100%",
+                padding:      0,
+                borderRadius: 0,
+                background:   "none",
+                boxShadow:    "none",
+              }
+            : {};
+
           return (
             <div
               key={s.src}
@@ -98,7 +119,7 @@ export default function Hero() {
               aria-hidden={isActive ? "false" : "true"}
               data-kind={s.kind || "legacy"}
             >
-              <div className="hero-media">
+              <div className="hero-media" style={mediaStyle}>
                 <img
                   className="hero-slide-img"
                   src={s.src}
@@ -106,8 +127,9 @@ export default function Hero() {
                   loading={idx === 0 ? "eager" : "lazy"}
                   decoding="async"
                   style={{
-                    objectFit: s.fit,
+                    objectFit:      s.fit      || "contain",
                     objectPosition: s.position || "center",
+                    borderRadius:   s.cover ? 0 : undefined,
                   }}
                 />
               </div>
@@ -131,4 +153,3 @@ export default function Hero() {
     </section>
   );
 }
-
