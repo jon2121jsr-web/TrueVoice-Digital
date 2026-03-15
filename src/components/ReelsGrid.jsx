@@ -21,35 +21,38 @@ function ReelsGrid() {
         </span>
       </div>
 
-      <div className="reels-scroller">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            className="reel-card"
-            type="button"
-            onClick={() => handleOpen(item)}
-          >
-            <div className="reel-thumb-wrap">
-              <img
-                src={item.thumbnailUrl}
-                alt={item.title}
-                className="reel-thumb"
-                loading="lazy"
-              />
-              <div className="reel-play-pill">Watch</div>
-            </div>
-            <div className="reel-meta">
-              <h4 className="reel-title">{item.title}</h4>
-              <p className="reel-speaker">
-                {item.speaker} •{" "}
-                <span className="reel-topic">{item.topic}</span>
-              </p>
-              {item.source && (
-                <p className="reel-source">Source: {item.source}</p>
-              )}
-            </div>
-          </button>
-        ))}
+      {/* Wrap gives us the fade-edge + scrollbar affordance */}
+      <div className="reels-scroller-wrap">
+        <div className="reels-scroller">
+          {items.map((item) => (
+            <button
+              key={item.id}
+              className="reel-card"
+              type="button"
+              onClick={() => handleOpen(item)}
+            >
+              <div className="reel-thumb-wrap">
+                <img
+                  src={item.thumbnailUrl}
+                  alt={item.title}
+                  className="reel-thumb"
+                  loading="lazy"
+                />
+                <div className="reel-play-pill">Watch</div>
+              </div>
+              <div className="reel-meta">
+                <h4 className="reel-title">{item.title}</h4>
+                <p className="reel-speaker">
+                  {item.speaker} •{" "}
+                  <span className="reel-topic">{item.topic}</span>
+                </p>
+                {item.source && (
+                  <p className="reel-source">Source: {item.source}</p>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -61,15 +64,11 @@ function ReelsGrid() {
         Short-form, high-impact teaching and Q&amp;A content from trusted voices.
       </p>
 
-      {/* ── New channels — shown first ── */}
-      {renderChannel("Pigskin Frenzy", PIGSKIN_REELS)}
+      {renderChannel("Pigskin Frenzy",       PIGSKIN_REELS)}
       {renderChannel("The Church in Shorts", CHURCH_SHORTS_REELS)}
+      {renderChannel("Give Me an Answer",    GMAA_REELS)}
+      {renderChannel("BibleProject",         BIBLEPROJECT_REELS)}
 
-      {/* ── Existing channels ── */}
-      {renderChannel("Give Me an Answer", GMAA_REELS)}
-      {renderChannel("BibleProject", BIBLEPROJECT_REELS)}
-
-      {/* ── Video modal ── */}
       {activeVideo && (
         <div className="reel-modal-backdrop" onClick={handleClose}>
           <div className="reel-modal" onClick={(e) => e.stopPropagation()}>

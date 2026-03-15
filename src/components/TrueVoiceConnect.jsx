@@ -60,9 +60,7 @@ export default function TrueVoiceConnect({
   ];
 
   const handleClick = (card) => {
-    if (typeof card.onClick === "function") {
-      card.onClick();
-    }
+    if (typeof card.onClick === "function") card.onClick();
   };
 
   return (
@@ -72,39 +70,42 @@ export default function TrueVoiceConnect({
         <p>Go deeper with live video, replays, and stories.</p>
       </div>
 
-      <div className="tv-connect-scroller">
-        {cards.map((card) => (
-          <button
-            key={card.id}
-            type="button"
-            className="tv-connect-card"
-            onClick={() => handleClick(card)}
-            aria-label={card.label}
-          >
-            <div
-              className="tv-connect-card-thumb"
-              style={
-                card.thumbnail
-                  ? {
-                      backgroundImage:    `url(${card.thumbnail})`,
-                      backgroundSize:     "cover",
-                      backgroundPosition: "center",
-                    }
-                  : {}
-              }
+      {/* Wrap gives fade-edge scroll indicator */}
+      <div className="tv-connect-scroller-wrap">
+        <div className="tv-connect-scroller">
+          {cards.map((card) => (
+            <button
+              key={card.id}
+              type="button"
+              className="tv-connect-card"
+              onClick={() => handleClick(card)}
+              aria-label={card.label}
             >
-              <span className="tv-connect-play-icon">▶</span>
-            </div>
-
-            <div className="tv-connect-card-body">
-              <div className="tv-connect-card-top">
-                <span className="tv-connect-card-label">{card.label}</span>
-                <span className="tv-connect-card-tag">{card.tag}</span>
+              <div
+                className="tv-connect-card-thumb"
+                style={
+                  card.thumbnail
+                    ? {
+                        backgroundImage:    `url(${card.thumbnail})`,
+                        backgroundSize:     "cover",
+                        backgroundPosition: "center",
+                      }
+                    : {}
+                }
+              >
+                <span className="tv-connect-play-icon">▶</span>
               </div>
-              <p className="tv-connect-card-description">{card.description}</p>
-            </div>
-          </button>
-        ))}
+
+              <div className="tv-connect-card-body">
+                <div className="tv-connect-card-top">
+                  <span className="tv-connect-card-label">{card.label}</span>
+                  <span className="tv-connect-card-tag">{card.tag}</span>
+                </div>
+                <p className="tv-connect-card-description">{card.description}</p>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );

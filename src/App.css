@@ -1090,3 +1090,74 @@ body.tv-night .tv-footer .tv-social-link:hover { background: rgba(255, 255, 255,
 
 /* Force donation buttons to be rounded rectangles */
 .tv-donate-btn { border-radius: 12px !important; }
+
+/* =========================================================
+   SCROLL INDICATORS — fade edges + visible scrollbar
+   Applies to TrueVoice Connect and Podcast scrollers
+   ADD THIS BLOCK TO THE BOTTOM OF App.css
+   ========================================================= */
+
+/* Wrap the scroller to get positioned pseudo-elements */
+.tv-connect-scroller-wrap,
+.tv-podcast-scroller-wrap {
+  position: relative;
+}
+
+/* Right fade — always visible, hints at more content */
+.tv-connect-scroller-wrap::after,
+.tv-podcast-scroller-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60px;
+  height: calc(100% - 12px);
+  background: linear-gradient(to right, transparent, var(--tv-bg-alt, #f0f4ff));
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 0 var(--tv-radius-lg) var(--tv-radius-lg) 0;
+}
+
+/* Thicker, colored scrollbar for Connect + Podcast strips */
+.tv-connect-scroller::-webkit-scrollbar,
+.tv-podcast-scroller::-webkit-scrollbar {
+  height: 5px;
+}
+
+.tv-connect-scroller::-webkit-scrollbar-track,
+.tv-podcast-scroller::-webkit-scrollbar-track {
+  background: rgba(39, 95, 219, 0.08);
+  border-radius: 999px;
+  margin: 0 4px;
+}
+
+.tv-connect-scroller::-webkit-scrollbar-thumb,
+.tv-podcast-scroller::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(39, 95, 219, 0.35);
+}
+
+.tv-connect-scroller::-webkit-scrollbar-thumb:hover,
+.tv-podcast-scroller::-webkit-scrollbar-thumb:hover {
+  background: rgba(39, 95, 219, 0.55);
+}
+
+/* Firefox */
+.tv-connect-scroller,
+.tv-podcast-scroller {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(39, 95, 219, 0.35) rgba(39, 95, 219, 0.08);
+}
+
+/* Add right padding so last card doesn't hide behind fade */
+.tv-connect-scroller,
+.tv-podcast-scroller {
+  padding-right: 48px;
+}
+
+@media (max-width: 640px) {
+  .tv-connect-scroller-wrap::after,
+  .tv-podcast-scroller-wrap::after {
+    width: 40px;
+  }
+}

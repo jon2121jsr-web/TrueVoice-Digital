@@ -1,23 +1,19 @@
-/* HERO SLIDER – 3 SLIDES (legacy hero + COMING + LIVE) */
+/* HERO SLIDER */
 
 .hero-section {
   position: relative;
   width: 100%;
   height: 420px;
   background-color: #050816;
-
-  /* Keep hero as a hard viewport so nothing bleeds into the page */
   overflow: hidden;
 }
 
-/* ✅ Desktop: give banners the vertical room they need (prevents bottom shave) */
 @media (min-width: 1025px) {
   .hero-section {
     height: 520px;
   }
 }
 
-/* Subtle glow behind hero area */
 .hero-section::before {
   content: "";
   position: absolute;
@@ -38,7 +34,6 @@
   height: 100%;
 }
 
-/* Slide layers */
 .hero-slide {
   position: absolute;
   inset: 0;
@@ -46,7 +41,6 @@
   transform: none;
   transition: opacity 450ms ease;
   z-index: 1;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,73 +50,53 @@
   opacity: 1;
 }
 
-/* Media stage */
 .hero-media {
   display: grid;
   place-items: center;
 }
 
-/* -----------------------------------------
-   ✅ FRAME NORMALIZATION (KEY FIX)
-   - Legacy is framed like posters
-   - Rounded corners own overflow:hidden
------------------------------------------- */
-
-/* ✅ Legacy slide: allow it to grow larger on big screens */
 .hero-slide[data-kind="legacy"] .hero-media {
   width: min(1280px, 98%);
   height: 98%;
-
   border-radius: 22px;
   overflow: hidden;
-
   padding-bottom: 0;
   box-sizing: border-box;
-
   background: radial-gradient(
     circle at 50% 30%,
     rgba(255, 0, 255, 0.08),
     rgba(0, 0, 0, 0.08) 55%,
     rgba(0, 0, 0, 0.18)
   );
-
   box-shadow:
     0 18px 60px rgba(0, 0, 0, 0.55),
     0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* Poster slides: slightly wider on large screens (safe) */
 .hero-slide[data-kind="poster"] .hero-media {
   width: min(1280px, 98%);
   height: 96%;
-
   border-radius: 22px;
   overflow: hidden;
-
-  /* Reserve dot space so we don’t cut off bottom content */
   padding-bottom: 44px;
   box-sizing: border-box;
-
   background: radial-gradient(
     circle at 50% 30%,
     rgba(255, 0, 255, 0.08),
     rgba(0, 0, 0, 0.08) 55%,
     rgba(0, 0, 0, 0.18)
   );
-
   box-shadow:
     0 18px 60px rgba(0, 0, 0, 0.55),
     0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* Base image rules */
 .hero-slide-img {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-/* Always contain. No crop. (Desktop/Tablet default) */
 .hero-slide[data-kind="legacy"] .hero-slide-img,
 .hero-slide[data-kind="poster"] .hero-slide-img {
   object-fit: contain;
@@ -130,7 +104,8 @@
   clip-path: none;
 }
 
-/* Dots */
+/* ── Dots ── */
+
 .hero-dots {
   position: absolute;
   left: 50%;
@@ -161,18 +136,69 @@
   box-shadow: 0 0 0 4px rgba(255, 0, 255, 0.14);
 }
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .hero-slide {
-    transition: none;
+/* ── Prev / Next arrow buttons ── */
+
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.38);
+  color: white;
+  font-size: 1.6rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;                         /* hidden by default */
+  transition: opacity 0.2s ease, background 0.2s ease, transform 0.15s ease;
+  backdrop-filter: blur(4px);
+  padding: 0;
+  padding-bottom: 2px;               /* optical centre for › ‹ */
+}
+
+.hero-arrow--prev { left: 14px; }
+.hero-arrow--next { right: 14px; }
+
+/* Show arrows on hover over the slider */
+.hero-slider:hover .hero-arrow {
+  opacity: 1;
+}
+
+.hero-arrow:hover {
+  background: rgba(0, 0, 0, 0.62);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.hero-arrow--prev:hover { transform: translateY(-50%) translateX(-2px); }
+.hero-arrow--next:hover { transform: translateY(-50%) translateX(2px); }
+
+/* Always show arrows on touch devices (no hover state) */
+@media (hover: none) {
+  .hero-arrow {
+    opacity: 0.7;
+    width: 34px;
+    height: 34px;
+    font-size: 1.3rem;
   }
 }
 
-/* Tablets */
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide { transition: none; }
+  .hero-arrow { transition: none; }
+}
+
+/* ── Tablets ── */
+
 @media (max-width: 1024px) {
-  .hero-section {
-    height: 380px;
-  }
+  .hero-section { height: 380px; }
 
   .hero-slide[data-kind="poster"] .hero-media {
     height: 96%;
@@ -187,26 +213,21 @@
   }
 }
 
-/* Mobile */
-@media (max-width: 768px) {
-  .hero-section {
-    height: 240px;
-  }
+/* ── Mobile ── */
 
-  /* ✅ Make the frame fill the hero height (no shrinking via aspect-ratio) */
+@media (max-width: 768px) {
+  .hero-section { height: 240px; }
+
   .hero-slide[data-kind="poster"] .hero-media,
   .hero-slide[data-kind="legacy"] .hero-media {
     width: 100%;
     height: 100%;
-
     border-radius: 18px;
     overflow: hidden;
-
     padding-bottom: 0;
     margin-bottom: 0;
   }
 
-  /* ✅ Default mobile behavior (works for the other slides) */
   .hero-slide[data-kind="poster"] .hero-slide-img,
   .hero-slide[data-kind="legacy"] .hero-slide-img {
     object-fit: cover;
@@ -214,7 +235,6 @@
     transform: scale(1.06);
   }
 
-  /* ✅ Targeted boosts: ONLY these two slides get bigger on mobile */
   .hero-slide-img[src*="truevoice-hero"] {
     transform: scale(1.14);
     object-position: center;
@@ -225,38 +245,41 @@
     object-position: center;
   }
 
-  .hero-dots {
-    bottom: 10px;
+  .hero-dots { bottom: 10px; }
+
+  .hero-arrow {
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
+    opacity: 0.6;
   }
+
+  .hero-arrow--prev { left: 8px; }
+  .hero-arrow--next { right: 8px; }
 }
 
-/* Small phones */
+/* ── Small phones ── */
+
 @media (max-width: 480px) {
-  .hero-section {
-    height: 220px;
-  }
+  .hero-section { height: 220px; }
 
   .hero-slide[data-kind="poster"] .hero-media,
   .hero-slide[data-kind="legacy"] .hero-media {
     border-radius: 16px;
   }
 
-  /* Default small-phone scale */
   .hero-slide[data-kind="poster"] .hero-slide-img,
   .hero-slide[data-kind="legacy"] .hero-slide-img {
     transform: scale(1.08);
   }
 
-  /* ✅ Small-phone targeted boosts */
-  .hero-slide-img[src*="truevoice-hero"] {
-    transform: scale(1.18);
-  }
+  .hero-slide-img[src*="truevoice-hero"] { transform: scale(1.18); }
+  .hero-slide-img[src*="hero-coming"]    { transform: scale(1.20); }
 
-  .hero-slide-img[src*="hero-coming"] {
-    transform: scale(1.20);
-  }
+  .hero-arrow { display: none; } /* too cramped on small phones — swipe only */
 }
-/* ── Pigskin Frenzy — Coming Soon badge ── */
+
+/* ── Pigskin Frenzy slide ── */
 
 .hero-pigskin {
   position: relative;
@@ -266,34 +289,4 @@
   overflow: hidden;
   padding-bottom: 44px;
   box-sizing: border-box;
-}
-
-.hero-pigskin-badge {
-  position: absolute;
-  bottom: 54px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 18px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.62);
-  border: 1px solid rgba(255, 100, 0, 0.7);
-  color: #ff6400;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  backdrop-filter: blur(6px);
-  white-space: nowrap;
-}
-
-.hero-pigskin-badge-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: #ff6400;
-  box-shadow: 0 0 0 0 rgba(255, 100, 0, 0.6);
-  animation: tv-live-pulse 1.3s infinite;
 }
