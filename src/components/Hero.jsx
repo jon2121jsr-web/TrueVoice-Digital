@@ -54,8 +54,9 @@ export default function Hero() {
       {
         src:      "/images/hero-coming.png",
         alt:      "He is coming back. Let's get ready.",
-        fit:      "contain",
-        position: "center",
+        fit:      "cover",
+        position: "center center",
+        cover:    true,
         kind:     "poster",
       },
     ],
