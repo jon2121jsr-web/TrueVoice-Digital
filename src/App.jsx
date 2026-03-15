@@ -1,4 +1,4 @@
-// src/App.jsx  — v4  (video section rename: New Episodes, Shorts & Reels)
+// src/App.jsx  — v6  (Pigskin Frenzy + Church in Shorts Connect handlers)
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 
@@ -29,13 +29,13 @@ const LIVE_STREAM_URL =
 const SOCIAL = {
   youtube:
     import.meta.env.VITE_TRUEVOICE_YOUTUBE_URL ||
-    "https://www.youtube.com/channel/UCWpVof-rd5hs1xpchwj1MAQl",
+    "https://www.youtube.com/@TrueVoiceDigital",
   x:
     import.meta.env.VITE_TRUEVOICE_X_URL ||
-    "https://x.com/YOUR_HANDLE",
+    "https://x.com/TrueVoiceStream",
   instagram:
     import.meta.env.VITE_TRUEVOICE_INSTAGRAM_URL ||
-    "https://www.instagram.com/YOUR_HANDLE",
+    "https://www.instagram.com/truevoicedigital",
 };
 
 // ─── Stripe links ─────────────────────────────────────────────────────────────
@@ -131,7 +131,6 @@ function SocialIconLink({ href, label, children }) {
       e.preventDefault();
       return;
     }
-
     if (isRunningAsIOSPWA() && navigator.share) {
       e.preventDefault();
       navigator.share({ url }).catch(() => {
@@ -139,7 +138,6 @@ function SocialIconLink({ href, label, children }) {
       });
       return;
     }
-    // All other contexts: let the <a> tag handle it naturally.
   };
 
   return (
@@ -239,9 +237,7 @@ function App() {
           prev.artist === artist &&
           prev.album  === album  &&
           prev.artUrl === artUrl
-        ) {
-          return prev;
-        }
+        ) return prev;
         return { title, artist, album, artUrl };
       });
     }
@@ -276,15 +272,11 @@ function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (!params.get("thanks")) return;
-
     setShowThanks(true);
     params.delete("thanks");
     const qs     = params.toString();
-    const newUrl = qs
-      ? `${window.location.pathname}?${qs}`
-      : window.location.pathname;
+    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     window.history.replaceState({}, "", newUrl);
-
     const t = window.setTimeout(() => setShowThanks(false), 9000);
     return () => window.clearTimeout(t);
   }, []);
@@ -306,7 +298,6 @@ function App() {
 
     audioEl.addEventListener("error", handleAudioError);
     const cleanup = wireMediaSessionControls(audioEl);
-
     return () => {
       audioEl.removeEventListener("error", handleAudioError);
       cleanup?.();
@@ -323,13 +314,15 @@ function App() {
     });
   }, [nowPlaying]);
 
-  // Video feed grouped by section
+  // Video feed grouped by section — includes all 5 sections
   const feedBySection = useMemo(() => {
     const active  = (videoFeed || []).filter((v) => v?.active);
     const grouped = {
-      [VIDEO_SECTIONS.WATCH_LIVE]:        [],
-      [VIDEO_SECTIONS.NEW_EPISODES]:      [],
-      [VIDEO_SECTIONS.SHORTS_AND_REELS]:  [],
+      [VIDEO_SECTIONS.WATCH_LIVE]:       [],
+      [VIDEO_SECTIONS.NEW_EPISODES]:     [],
+      [VIDEO_SECTIONS.SHORTS_AND_REELS]: [],
+      [VIDEO_SECTIONS.PIGSKIN_FRENZY]:   [],
+      [VIDEO_SECTIONS.CHURCH_IN_SHORTS]: [],
     };
 
     for (const item of active) {
@@ -464,9 +457,11 @@ function App() {
 
         <section className="tv-section tv-section--stacked">
           <TrueVoiceConnect
-            onWatchLive={()       => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
-            onNewEpisodes={()     => openVideoForSection(VIDEO_SECTIONS.NEW_EPISODES)}
-            onShortsAndReels={()  => openVideoForSection(VIDEO_SECTIONS.SHORTS_AND_REELS)}
+            onWatchLive={()        => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
+            onNewEpisodes={()      => openVideoForSection(VIDEO_SECTIONS.NEW_EPISODES)}
+            onShortsAndReels={()   => openVideoForSection(VIDEO_SECTIONS.SHORTS_AND_REELS)}
+            onPigskinFrenzy={()    => openVideoForSection(VIDEO_SECTIONS.PIGSKIN_FRENZY)}
+            onChurchInShorts={()   => openVideoForSection(VIDEO_SECTIONS.CHURCH_IN_SHORTS)}
           />
         </section>
 

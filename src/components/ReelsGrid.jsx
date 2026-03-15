@@ -2,12 +2,14 @@
 import { useState } from "react";
 import { GMAA_REELS } from "../data/gmaaReels";
 import { BIBLEPROJECT_REELS } from "../data/bibleProjectReels";
+import { PIGSKIN_REELS } from "../data/pigskinReels";
+import { CHURCH_SHORTS_REELS } from "../data/churchShortsReels";
 import "./ReelsGrid.css";
 
 function ReelsGrid() {
   const [activeVideo, setActiveVideo] = useState(null);
 
-  const handleOpen = (video) => setActiveVideo(video);
+  const handleOpen  = (video) => setActiveVideo(video);
   const handleClose = () => setActiveVideo(null);
 
   const renderChannel = (channelTitle, items) => (
@@ -19,7 +21,6 @@ function ReelsGrid() {
         </span>
       </div>
 
-      {/* Horizontal scroll strip — same pattern as TrueVoice Connect */}
       <div className="reels-scroller">
         {items.map((item) => (
           <button
@@ -60,9 +61,15 @@ function ReelsGrid() {
         Short-form, high-impact teaching and Q&amp;A content from trusted voices.
       </p>
 
+      {/* ── New channels — shown first ── */}
+      {renderChannel("Pigskin Frenzy", PIGSKIN_REELS)}
+      {renderChannel("The Church in Shorts", CHURCH_SHORTS_REELS)}
+
+      {/* ── Existing channels ── */}
       {renderChannel("Give Me an Answer", GMAA_REELS)}
       {renderChannel("BibleProject", BIBLEPROJECT_REELS)}
 
+      {/* ── Video modal ── */}
       {activeVideo && (
         <div className="reel-modal-backdrop" onClick={handleClose}>
           <div className="reel-modal" onClick={(e) => e.stopPropagation()}>

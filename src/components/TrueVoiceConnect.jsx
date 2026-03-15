@@ -5,31 +5,57 @@ export default function TrueVoiceConnect({
   onWatchLive,
   onNewEpisodes,
   onShortsAndReels,
+  onPigskinFrenzy,
+  onChurchInShorts,
 }) {
   const cards = [
     {
-      id: "watch-live",
-      label: "Watch Live",
+      id:          "watch-live",
+      label:       "Watch Live",
       description: "Join the live studio stream when we're on air.",
-      tag: "LIVE",
-      onClick: onWatchLive,
-      thumbnail: null, // no live video yet
+      tag:         "LIVE",
+      onClick:     onWatchLive,
+      thumbnail:   null,
     },
     {
-      id: "new-episodes",
-      label: "New Episodes",
+      id:          "new-episodes",
+      label:       "New Episodes",
       description: "Catch the latest episodes and messages.",
-      tag: "NEW",
-      onClick: onNewEpisodes,
-      thumbnail: "https://img.youtube.com/vi/mESQkTA9AX0/maxresdefault.jpg",
+      tag:         "NEW",
+      onClick:     onNewEpisodes,
+      thumbnail:   "https://img.youtube.com/vi/hIgy8zgcLH0/maxresdefault.jpg",
     },
     {
-      id: "shorts-reels",
-      label: "Shorts & Reels",
+      id:          "shorts-reels",
+      label:       "Shorts & Reels",
       description: "Quick encouragement and stories of faith.",
-      tag: "SHORTS",
-      onClick: onShortsAndReels,
-      thumbnail: "https://img.youtube.com/vi/qlpeKRAAPuI/maxresdefault.jpg",
+      tag:         "SHORTS",
+      onClick:     onShortsAndReels,
+      thumbnail:   "https://img.youtube.com/vi/BeUX5DGGj0s/maxresdefault.jpg",
+    },
+    {
+      id:          "the-church-in-shorts",
+      label:       "The Church in Shorts",
+      description: "Real Truth. Real Church. In Short Video.",
+      tag:         "SHORTS",
+      onClick:     onChurchInShorts,
+      thumbnail:   "/images/The-Church-Hero-2500x900-FULL__2_.png",
+    },
+    {
+      id:          "pigskin-frenzy",
+      label:       "Pigskin Frenzy",
+      description: "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
+      tag:         "CFB",
+      onClick:     onPigskinFrenzy,
+      thumbnail:   "/images/Pigskin_Frenzy_Hero_Banner.png",
+    },
+    {
+      id:          "scott-ryan-show",
+      label:       "The Scott & Ryan Show",
+      description: "Coming Soon — stay tuned.",
+      tag:         "SOON",
+      onClick:     null,
+      thumbnail:   null,
     },
   ];
 
@@ -53,15 +79,15 @@ export default function TrueVoiceConnect({
             type="button"
             className="tv-connect-card"
             onClick={() => handleClick(card)}
+            aria-label={card.label}
           >
-            {/* Thumbnail area */}
             <div
               className="tv-connect-card-thumb"
               style={
                 card.thumbnail
                   ? {
-                      backgroundImage: `url(${card.thumbnail})`,
-                      backgroundSize: "cover",
+                      backgroundImage:    `url(${card.thumbnail})`,
+                      backgroundSize:     "cover",
                       backgroundPosition: "center",
                     }
                   : {}
