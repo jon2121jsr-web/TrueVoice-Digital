@@ -19,5 +19,5 @@
 
 export const LIVE_CONFIG = {
   isLive:  true,
-  videoId: "",     // paste YouTube Live video ID here when going live
+videoId: "",     // paste YouTube Live video ID here when going live (placeholder active)
 };
