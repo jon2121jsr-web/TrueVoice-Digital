@@ -444,6 +444,7 @@ function App() {
                 audioRef={playerRef}
                 showHistory={false}
                 onStatusChange={handleStatusChange}
+                isFloating={isFloatingPlayer}
               />
             </div>
           </div>
