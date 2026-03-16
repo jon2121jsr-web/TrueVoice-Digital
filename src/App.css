@@ -1,6 +1,6 @@
 :root {
-  --tv-bg: #d7e4ff;        /* was #e7f0ff – a bit darker */
-  --tv-bg-alt: #f0f4ff;    /* keep this light but slightly cooler */
+  --tv-bg: #d7e4ff;
+  --tv-bg-alt: #f0f4ff;
   --tv-primary: #275fdb;
   --tv-primary-dark: #204bb0;
   --tv-text-main: #0e1b3a;
@@ -20,13 +20,11 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--tv-bg);
   color: var(--tv-text-main);
 }
 
-/* Root app container for current App.jsx */
 .app-container {
   min-height: 100vh;
   display: flex;
@@ -77,13 +75,14 @@ button {
 
 .tv-hero {
   display: grid;
-  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   gap: 24px;
   margin-bottom: 30px;
   align-items: stretch;
+  width: 100%;
 }
 
-/* ── Now Playing card — fills full card height ── */
+/* ── Now Playing card ── */
 
 .tv-now-playing {
   background: white;
@@ -93,13 +92,14 @@ button {
   flex-direction: column;
   box-shadow: var(--tv-shadow-soft);
   height: 100%;
+  width: 100%;
 }
 
 .tv-now-inner {
   display: grid;
   grid-template-columns: 140px minmax(0, 1fr);
   gap: 20px;
-  align-items: stretch;   /* both columns stretch to card height */
+  align-items: stretch;
   flex: 1;
   min-height: 0;
 }
@@ -110,8 +110,8 @@ button {
   background: linear-gradient(145deg, #d4e0ff, #f1f4ff);
   overflow: hidden;
   width: 140px;
-  height: 100%;            /* fill the full column height */
-  min-height: 140px;       /* never collapse below this */
+  height: 100%;
+  min-height: 140px;
 }
 
 .tv-artwork-img {
@@ -125,7 +125,7 @@ button {
 .tv-now-content {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;  /* eyebrow+title top, player bar bottom */
+  justify-content: space-between;
   min-height: 0;
   padding: 2px 0;
 }
@@ -365,7 +365,7 @@ button {
 .tv-card-title { margin: 0; font-size: 0.92rem; }
 
 /* =========================================================
-   PODCASTS — HORIZONTAL SCROLL CARDS
+   PODCASTS
    ========================================================= */
 
 .tv-podcast-intro {
@@ -374,7 +374,6 @@ button {
   color: var(--tv-text-muted);
 }
 
-/* Outer strip — podcast cards scroll left/right */
 .tv-podcast-scroller {
   display: flex;
   gap: 16px;
@@ -392,7 +391,6 @@ button {
 .tv-podcast-scroller::-webkit-scrollbar-track  { background: transparent; }
 .tv-podcast-scroller::-webkit-scrollbar-thumb  { border-radius: 999px; background: rgba(0, 0, 0, 0.10); }
 
-/* Individual podcast card */
 .tv-podcast-card {
   flex: 0 0 clamp(260px, 72vw, 320px);
   scroll-snap-align: start;
@@ -439,7 +437,6 @@ button {
   line-height: 1.45;
 }
 
-/* Episode strip — scrolls vertically inside each card */
 .tv-podcast-episodes-scroller {
   display: flex;
   flex-direction: column;
@@ -454,7 +451,6 @@ button {
 .tv-podcast-episodes-scroller::-webkit-scrollbar-track { background: transparent; }
 .tv-podcast-episodes-scroller::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(0, 0, 0, 0.12); }
 
-/* Individual episode row inside card */
 .tv-podcast-episode-chip {
   display: flex;
   align-items: flex-start;
@@ -492,10 +488,8 @@ button {
 }
 
 .tv-podcast-episode-date { font-size: 0.7rem; color: var(--tv-text-muted); }
-
 .tv-podcast-status { margin: 4px 2px; font-size: 0.8rem; color: var(--tv-text-muted); }
 
-/* Footer CTA pinned to bottom of each podcast card */
 .tv-podcast-footer {
   margin-top: auto;
   padding-top: 12px;
@@ -602,7 +596,7 @@ button {
 }
 
 /* =========================================================
-   TRUEVOICE CONNECT — HORIZONTAL SLIDER
+   TRUEVOICE CONNECT
    ========================================================= */
 
 .tv-connect { margin-top: 2rem; }
@@ -622,8 +616,6 @@ button {
 .tv-connect-scroller::-webkit-scrollbar       { height: 6px; }
 .tv-connect-scroller::-webkit-scrollbar-track { background: transparent; }
 .tv-connect-scroller::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(0, 0, 0, 0.08); }
-
-/* ── Connect card — vertical with thumbnail ── */
 
 .tv-connect-card {
   scroll-snap-align: start;
@@ -755,7 +747,6 @@ button {
 
 .support-btn.monthly,
 .tv-donate-btn.monthly  { background: #275fdb; color: #ffffff; box-shadow: 0 12px 24px rgba(39, 95, 219, 0.35); }
-
 .support-btn.onetime,
 .tv-donate-btn.onetime  { background: #275fdb; color: #ffffff; box-shadow: 0 12px 24px rgba(39, 95, 219, 0.35); }
 
@@ -771,7 +762,6 @@ button {
 
 .footer { text-align: center; padding: 1.5rem 1rem 3rem; font-size: 0.8rem; opacity: 0.7; }
 
-/* Hide old history list */
 .tv-history-block { display: none !important; }
 
 /* ── Header actions / Give button ── */
@@ -873,7 +863,6 @@ html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
   .tv-hero, .tv-now-playing, .tv-verse-card, .tv-section { min-width: 0; }
 }
 
-/* All horizontal scrollers get touch-friendly treatment */
 .tv-connect-scroller,
 .tv-podcast-scroller,
 .tv-history-strip {
@@ -902,13 +891,12 @@ html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
 @media (max-width: 640px) {
   .support-buttons,
   .tv-donate-row  { grid-template-columns: 1fr; gap: 10px; }
-
   .support-btn,
   .tv-donate-btn  { min-height: 76px; padding: 14px 16px; }
 }
 
 /* =========================================================
-   SOCIAL ICONS (HEADER + FOOTER)
+   SOCIAL ICONS
    ========================================================= */
 
 .tv-social-row {
@@ -1075,35 +1063,44 @@ body.tv-night .tv-footer .tv-social-link:hover { background: rgba(255, 255, 255,
 
 /* =========================================================
    EQUAL HEIGHT PLAYER + VERSE (NON-FLOATING)
+   THE FIX: dock and surface must fill their grid cell fully
    ========================================================= */
 
-.tv-player-dock:not(.is-floating) { display: flex; min-width: 0; height: 100%; }
+.tv-player-dock:not(.is-floating) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  align-self: stretch;
+}
 
 .tv-player-dock:not(.is-floating) .tv-player-surface {
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
+  width: 100%;
   height: 100%;
 }
 
-.tv-player-dock:not(.is-floating) .tv-player-surface .tv-now-playing { height: 100%; }
+.tv-player-dock:not(.is-floating) .tv-player-surface .tv-now-playing {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
 
 /* Force donation buttons to be rounded rectangles */
 .tv-donate-btn { border-radius: 12px !important; }
 
 /* =========================================================
-   SCROLL INDICATORS — fade edges + visible scrollbar
-   Applies to TrueVoice Connect and Podcast scrollers
-   ADD THIS BLOCK TO THE BOTTOM OF App.css
+   SCROLL INDICATORS
    ========================================================= */
 
-/* Wrap the scroller to get positioned pseudo-elements */
 .tv-connect-scroller-wrap,
 .tv-podcast-scroller-wrap {
   position: relative;
 }
 
-/* Right fade — always visible, hints at more content */
 .tv-connect-scroller-wrap::after,
 .tv-podcast-scroller-wrap::after {
   content: "";
@@ -1118,7 +1115,6 @@ body.tv-night .tv-footer .tv-social-link:hover { background: rgba(255, 255, 255,
   border-radius: 0 var(--tv-radius-lg) var(--tv-radius-lg) 0;
 }
 
-/* Thicker, colored scrollbar for Connect + Podcast strips */
 .tv-connect-scroller::-webkit-scrollbar,
 .tv-podcast-scroller::-webkit-scrollbar {
   height: 5px;
@@ -1142,16 +1138,10 @@ body.tv-night .tv-footer .tv-social-link:hover { background: rgba(255, 255, 255,
   background: rgba(39, 95, 219, 0.55);
 }
 
-/* Firefox */
 .tv-connect-scroller,
 .tv-podcast-scroller {
   scrollbar-width: thin;
   scrollbar-color: rgba(39, 95, 219, 0.35) rgba(39, 95, 219, 0.08);
-}
-
-/* Add right padding so last card doesn't hide behind fade */
-.tv-connect-scroller,
-.tv-podcast-scroller {
   padding-right: 48px;
 }
 

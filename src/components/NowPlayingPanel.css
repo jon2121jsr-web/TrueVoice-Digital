@@ -1,0 +1,212 @@
+/* src/components/NowPlayingPanel.css */
+
+/* ── Live card modifier — no padding, overflow hidden ───────────────────────*/
+.tv-now-playing--live {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+/* ── Live panel wrapper ─────────────────────────────────────────────────────*/
+.tv-live-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;           /* must fill .tv-now-playing horizontally */
+  height: 100%;
+  min-height: 0;
+}
+
+/* ── Video / placeholder block ──────────────────────────────────────────────*/
+.tv-live-video-block {
+  position: relative;
+  width: 100%;           /* explicit — flex children need this stated */
+  flex: 1;               /* grow to fill remaining card height */
+  min-height: 200px;
+  background: #07091a;
+  border-radius: var(--tv-radius-lg) var(--tv-radius-lg) 0 0;
+  overflow: hidden;
+  display: block;        /* not flex/grid — children use position:absolute */
+}
+
+/* YouTube iframe — fills block absolutely */
+.tv-live-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* ── Placeholder (State 2) ──────────────────────────────────────────────────*/
+.tv-live-placeholder {
+  position: absolute;
+  inset: 0;              /* fills .tv-live-video-block 100% × 100% */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: linear-gradient(145deg, #0d0f2b 0%, #130820 100%);
+  padding: 28px 24px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.tv-live-placeholder-title {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 700;
+  color: #e879c4;
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.tv-live-placeholder-title span {
+  color: #7db8f7;
+}
+
+.tv-live-placeholder-sub {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+
+.tv-live-placeholder-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 179, 247, 0.35);
+  color: #7db8f7;
+  background: rgba(124, 179, 247, 0.08);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tv-live-placeholder-music {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+  letter-spacing: 0.06em;
+}
+
+/* ── Live badge (State 3 overlay) ───────────────────────────────────────────*/
+.tv-live-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(230, 57, 70, 0.85);
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tv-live-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+  animation: tv-live-pulse 1.3s infinite;
+}
+
+/* ── Radio strip ────────────────────────────────────────────────────────────*/
+.tv-live-radio-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  width: 100%;
+  border-top: 1px solid var(--tv-border-subtle);
+  background: white;
+  border-radius: 0 0 var(--tv-radius-lg) var(--tv-radius-lg);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.tv-live-radio-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tv-live-radio-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+}
+
+.tv-live-radio-song {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--tv-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tv-live-radio-artist {
+  font-size: 0.8rem;
+  color: var(--tv-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tv-live-radio-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tv-live-mute-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--tv-border-subtle);
+  background: var(--tv-bg-alt);
+  color: var(--tv-text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tv-live-mute-btn:hover    { background: var(--tv-bg); color: var(--tv-text-main); }
+.tv-live-mute-btn.is-muted { background: var(--tv-primary); color: white; border-color: var(--tv-primary); }
+
+/* ── Mobile ─────────────────────────────────────────────────────────────────*/
+@media (max-width: 640px) {
+  .tv-live-video-block  { min-height: 160px; }
+
+  .tv-live-radio-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .tv-live-radio-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
