@@ -10,14 +10,6 @@ export default function TrueVoiceConnect({
 }) {
   const cards = [
     {
-      id:          "watch-live",
-      label:       "Watch Live",
-      description: "Join the live studio stream when we're on air.",
-      tag:         "LIVE",
-      onClick:     onWatchLive,
-      thumbnail:   null,
-    },
-    {
       id:          "new-episodes",
       label:       "New Episodes",
       description: "Catch the latest episodes and messages.",
