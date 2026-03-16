@@ -18,6 +18,6 @@
 // ─────────────────────────────────────────────────────────────────
 
 export const LIVE_CONFIG = {
-  isLive:  false,
+  isLive:  true,
   videoId: "",     // paste YouTube Live video ID here when going live
 };
