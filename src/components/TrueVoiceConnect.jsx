@@ -1,13 +1,34 @@
 // src/components/TrueVoiceConnect.jsx
+// ✅ RSS auto-thumbnails for TrueVoice channel and Pigskin Frenzy
+// ✅ Church in Shorts pulls from dedicated playlist
+// ✅ All cards open video modal on click
 import React from "react";
+import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
+
+const CHANNEL_IDS = {
+  TRUEVOICE: "UCWpVof-rd5hs1xpchwj1MAQ",
+  PIGSKIN:   "UC_khbgasHiiwUxPHOMfbR0A",
+};
+
+// Church in Shorts playlist on TrueVoice channel
+const CHURCH_PLAYLIST_ID = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
+
+const FALLBACKS = {
+  truevoice: "https://img.youtube.com/vi/hIgy8zgcLH0/maxresdefault.jpg",
+  pigskin:   "https://img.youtube.com/vi/gC4VikZ0dcA/maxresdefault.jpg",
+  church:    "/images/The-Church-Hero-2500x900-FULL__2_.png",
+};
 
 export default function TrueVoiceConnect({
-  onWatchLive,
   onNewEpisodes,
   onShortsAndReels,
   onPigskinFrenzy,
   onChurchInShorts,
 }) {
+  const tvLatest      = useYouTubeLatest({ channelId:  CHANNEL_IDS.TRUEVOICE });
+  const pigskinLatest = useYouTubeLatest({ channelId:  CHANNEL_IDS.PIGSKIN });
+  const churchLatest  = useYouTubeLatest({ playlistId: CHURCH_PLAYLIST_ID });
+
   const cards = [
     {
       id:          "new-episodes",
@@ -15,7 +36,7 @@ export default function TrueVoiceConnect({
       description: "Catch the latest episodes and messages.",
       tag:         "NEW",
       onClick:     onNewEpisodes,
-      thumbnail:   "https://img.youtube.com/vi/hIgy8zgcLH0/maxresdefault.jpg",
+      thumbnail:   tvLatest.thumbnail      || FALLBACKS.truevoice,
     },
     {
       id:          "shorts-reels",
@@ -23,7 +44,7 @@ export default function TrueVoiceConnect({
       description: "Quick encouragement and stories of faith.",
       tag:         "SHORTS",
       onClick:     onShortsAndReels,
-      thumbnail:   "https://img.youtube.com/vi/BeUX5DGGj0s/maxresdefault.jpg",
+      thumbnail:   tvLatest.thumbnail      || FALLBACKS.truevoice,
     },
     {
       id:          "the-church-in-shorts",
@@ -31,7 +52,7 @@ export default function TrueVoiceConnect({
       description: "Real Truth. Real Church. In Short Video.",
       tag:         "SHORTS",
       onClick:     onChurchInShorts,
-      thumbnail:   "/images/The-Church-Hero-2500x900-FULL__2_.png",
+      thumbnail:   churchLatest.thumbnail  || FALLBACKS.church,
     },
     {
       id:          "pigskin-frenzy",
@@ -39,7 +60,7 @@ export default function TrueVoiceConnect({
       description: "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
       tag:         "CFB",
       onClick:     onPigskinFrenzy,
-      thumbnail:   "/images/Pigskin_Frenzy_Hero_Banner.png",
+      thumbnail:   pigskinLatest.thumbnail || FALLBACKS.pigskin,
     },
     {
       id:          "scott-ryan-show",
@@ -62,7 +83,6 @@ export default function TrueVoiceConnect({
         <p>Go deeper with live video, replays, and stories.</p>
       </div>
 
-      {/* Wrap gives fade-edge scroll indicator */}
       <div className="tv-connect-scroller-wrap">
         <div className="tv-connect-scroller">
           {cards.map((card) => (

@@ -1,13 +1,58 @@
 // src/components/ReelsGrid.jsx
+// ✅ RSS auto-updates first card in each channel with newest video
+// ✅ Church in Shorts uses dedicated playlist RSS
+// ✅ Static backlog remains intact below the newest entry
 import { useState } from "react";
+import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
 import { GMAA_REELS } from "../data/gmaaReels";
 import { BIBLEPROJECT_REELS } from "../data/bibleProjectReels";
 import { PIGSKIN_REELS } from "../data/pigskinReels";
 import { CHURCH_SHORTS_REELS } from "../data/churchShortsReels";
 import "./ReelsGrid.css";
 
+const CHANNEL_IDS = {
+  PIGSKIN:      "UC_khbgasHiiwUxPHOMfbR0A",
+  GMAA:         "UCKr-liguaGWMf3f94eQXsug",
+  BIBLEPROJECT: "UCVfwlh9XpX2Y_tQfjeln9QA",
+};
+
+const CHURCH_PLAYLIST_ID = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
+
+// Replace the first entry with live RSS data if available.
+// Falls back to static data if RSS is loading or failed.
+function mergeLatest(staticReels, rssData) {
+  if (!rssData?.videoId || rssData.loading || rssData.error) return staticReels;
+
+  const liveEntry = {
+    ...staticReels[0],
+    id:           rssData.videoId,
+    title:        rssData.title     || staticReels[0]?.title || "Latest Episode",
+    thumbnailUrl: rssData.thumbnail || staticReels[0]?.thumbnailUrl,
+    embedUrl:     `https://www.youtube.com/embed/${rssData.videoId}?autoplay=1`,
+    videoUrl:     `https://www.youtube.com/watch?v=${rssData.videoId}`,
+  };
+
+  // Put live entry first, then backlog (skipping the old first entry
+  // only if it has the same video ID — avoids duplicates)
+  const backlog = staticReels.slice(1).filter(
+    (v) => v.id !== rssData.videoId
+  );
+
+  return [liveEntry, ...backlog];
+}
+
 function ReelsGrid() {
   const [activeVideo, setActiveVideo] = useState(null);
+
+  const pigskinRss = useYouTubeLatest({ channelId:  CHANNEL_IDS.PIGSKIN });
+  const churchRss  = useYouTubeLatest({ playlistId: CHURCH_PLAYLIST_ID });
+  const gmaaRss    = useYouTubeLatest({ channelId:  CHANNEL_IDS.GMAA });
+  const bpRss      = useYouTubeLatest({ channelId:  CHANNEL_IDS.BIBLEPROJECT });
+
+  const pigskinReels = mergeLatest(PIGSKIN_REELS,       pigskinRss);
+  const churchReels  = mergeLatest(CHURCH_SHORTS_REELS, churchRss);
+  const gmaaReels    = mergeLatest(GMAA_REELS,          gmaaRss);
+  const bpReels      = mergeLatest(BIBLEPROJECT_REELS,  bpRss);
 
   const handleOpen  = (video) => setActiveVideo(video);
   const handleClose = () => setActiveVideo(null);
@@ -21,7 +66,6 @@ function ReelsGrid() {
         </span>
       </div>
 
-      {/* Wrap gives us the fade-edge + scrollbar affordance */}
       <div className="reels-scroller-wrap">
         <div className="reels-scroller">
           {items.map((item) => (
@@ -64,10 +108,10 @@ function ReelsGrid() {
         Short-form, high-impact teaching and Q&amp;A content from trusted voices.
       </p>
 
-      {renderChannel("Pigskin Frenzy",       PIGSKIN_REELS)}
-      {renderChannel("The Church in Shorts", CHURCH_SHORTS_REELS)}
-      {renderChannel("Give Me an Answer",    GMAA_REELS)}
-      {renderChannel("BibleProject",         BIBLEPROJECT_REELS)}
+      {renderChannel("Pigskin Frenzy",       pigskinReels)}
+      {renderChannel("The Church in Shorts", churchReels)}
+      {renderChannel("Give Me an Answer",    gmaaReels)}
+      {renderChannel("BibleProject",         bpReels)}
 
       {activeVideo && (
         <div className="reel-modal-backdrop" onClick={handleClose}>
@@ -80,13 +124,7 @@ function ReelsGrid() {
                   {activeVideo.topic ? ` • ${activeVideo.topic}` : ""}
                 </p>
               </div>
-              <button
-                type="button"
-                className="reel-modal-close"
-                onClick={handleClose}
-              >
-                ×
-              </button>
+              <button type="button" className="reel-modal-close" onClick={handleClose}>×</button>
             </header>
 
             <div className="reel-modal-body">
@@ -100,17 +138,10 @@ function ReelsGrid() {
                 />
               </div>
               {activeVideo.description && (
-                <p className="reel-modal-description">
-                  {activeVideo.description}
-                </p>
+                <p className="reel-modal-description">{activeVideo.description}</p>
               )}
               {activeVideo.videoUrl && (
-                <a
-                  href={activeVideo.videoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="reel-modal-link"
-                >
+                <a href={activeVideo.videoUrl} target="_blank" rel="noreferrer" className="reel-modal-link">
                   View on YouTube ↗
                 </a>
               )}

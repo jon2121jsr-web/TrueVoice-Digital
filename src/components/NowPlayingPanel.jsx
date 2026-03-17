@@ -1,7 +1,8 @@
 // src/components/NowPlayingPanel.jsx
 // ✅ Three states: radio | live placeholder | YouTube Live
-// ✅ Live panel fills full card width (no padding bleed)
-// ✅ Floating player always shows compact radio mode regardless of live state
+// ✅ Song metadata updates correctly without page refresh
+// ✅ All pending song tracking via refs — no stale closure bug
+// ✅ Floating player always shows compact radio mode
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 import { LIVE_CONFIG } from "../data/liveConfig";
@@ -25,31 +26,32 @@ export function NowPlayingPanel({
   audioRef,
   showHistory = false,
   onStatusChange,
-  isFloating = false,   // passed from App.jsx so we can collapse to radio when floating
+  isFloating = false,
 }) {
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [listeners, setListeners] = useState(null);
-  const [isMuted,   setIsMuted]   = useState(false);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState(null);
+  const [isPlaying,    setIsPlaying]    = useState(false);
+  const [listeners,    setListeners]    = useState(null);
+  const [isMuted,      setIsMuted]      = useState(false);
+  const [displaySong,  setDisplaySong]  = useState(null);
 
   const isOwner = useIsOwner();
 
-  const isLive        = !!LIVE_CONFIG.isLive;
-  const videoId       = (LIVE_CONFIG.videoId || "").trim();
-  const showLivePanel = isLive && !isFloating; // collapse to radio when floating
-  const showVideo     = showLivePanel && videoId.length > 0;
+  const isLive          = !!LIVE_CONFIG.isLive;
+  const videoId         = (LIVE_CONFIG.videoId || "").trim();
+  const showLivePanel   = isLive && !isFloating;
+  const showVideo       = showLivePanel && videoId.length > 0;
   const showPlaceholder = showLivePanel && !showVideo;
 
-  const STREAM_DELAY_SEC    = toNum(import.meta.env.VITE_STREAM_DELAY_SEC, 65);
-  const AZURACAST_FALLBACK  = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
+  const STREAM_DELAY_SEC   = toNum(import.meta.env.VITE_STREAM_DELAY_SEC, 65);
+  const AZURACAST_FALLBACK = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
-  const [displaySong,  setDisplaySong]  = useState(null);
-  const [pendingSong,  setPendingSong]  = useState(null);
-  const pendingFlipRef  = useRef(null);
-  const displaySongRef  = useRef(null);
+  // ── All mutable tracking in refs so polling closure never goes stale ──────
+  const displaySongRef  = useRef(null);   // current displayed song
+  const pendingSongRef  = useRef(null);   // { song } waiting to flip
+  const pendingFlipRef  = useRef(null);   // ms timestamp to flip at
 
-  /* ── Poll AzuraCast ────────────────────────────────────────────────────── */
+  /* ── Poll AzuraCast every 15 seconds ──────────────────────────────────── */
   useEffect(() => {
     let alive = true;
 
@@ -60,6 +62,7 @@ export function NowPlayingPanel({
 
         const song = result?.now_playing?.song || null;
 
+        // Listeners
         const rawL = result?.listeners;
         if (rawL != null) {
           const c = typeof rawL === "object"
@@ -70,16 +73,24 @@ export function NowPlayingPanel({
 
         if (!song?.title) { if (alive) setLoading(false); return; }
 
-        const incomingId = song.id || song.title;
-        const currentId  = displaySongRef.current?.id || displaySongRef.current?.title;
-        const pendingId  = pendingSong?.song?.id       || pendingSong?.song?.title;
+        const incomingId = song.id    || song.title;
+        const currentId  = displaySongRef.current?.id    || displaySongRef.current?.title;
+        const pendingId  = pendingSongRef.current?.song?.id || pendingSongRef.current?.song?.title;
 
         if (!displaySongRef.current) {
+          // First load — show immediately
           displaySongRef.current = song;
           setDisplaySong(song);
         } else if (incomingId !== currentId && incomingId !== pendingId) {
-          setPendingSong({ song });
-          pendingFlipRef.current = Date.now() + (STREAM_DELAY_SEC * 1000);
+          // New song — queue it with delay
+          pendingSongRef.current  = { song };
+          pendingFlipRef.current  = Date.now() + (STREAM_DELAY_SEC * 1000);
+        } else if (incomingId === currentId) {
+          // Same song still playing — clear any stale pending for a different song
+          // that may have been queued during a transition
+          if (pendingId && pendingId !== incomingId) {
+            // keep — different song is legitimately queued
+          }
         }
 
         setError(null);
@@ -94,21 +105,22 @@ export function NowPlayingPanel({
     load();
     const id = window.setInterval(load, 15_000);
     return () => { alive = false; window.clearInterval(id); };
-  }, []);
+  }, []); // empty deps — refs ensure we always read current values
 
-  /* ── 1-second tick — flip pending song ────────────────────────────────── */
+  /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {
     const id = window.setInterval(() => {
-      if (!pendingSong || !pendingFlipRef.current) return;
+      if (!pendingSongRef.current || !pendingFlipRef.current) return;
       if (Date.now() >= pendingFlipRef.current) {
-        displaySongRef.current = pendingSong.song;
-        setDisplaySong(pendingSong.song);
-        setPendingSong(null);
+        const next = pendingSongRef.current.song;
+        displaySongRef.current = next;
+        pendingSongRef.current = null;
         pendingFlipRef.current = null;
+        setDisplaySong(next);   // triggers re-render with new song
       }
     }, 1_000);
     return () => window.clearInterval(id);
-  }, [pendingSong]);
+  }, []); // empty deps — reads refs directly, never stale
 
   /* ── Derived display values ────────────────────────────────────────────── */
   const title  = displaySong?.title  || (loading ? "Loading…" : "Live Stream");
@@ -198,7 +210,7 @@ export function NowPlayingPanel({
     }
   };
 
-  /* ── RENDER: Radio mode (default + floating) ───────────────────────────── */
+  /* ── RENDER: Radio mode ────────────────────────────────────────────────── */
   if (!showLivePanel) {
     return (
       <div className="tv-now-playing">
@@ -252,14 +264,11 @@ export function NowPlayingPanel({
     );
   }
 
-  /* ── RENDER: Live panel (placeholder or active video) ──────────────────── */
-  // .tv-now-playing--live removes padding so the dark video block
-  // fills edge-to-edge inside the card.
+  /* ── RENDER: Live panel ────────────────────────────────────────────────── */
   return (
     <div className="tv-now-playing tv-now-playing--live">
       <div className="tv-live-panel">
 
-        {/* Video / placeholder block */}
         <div className="tv-live-video-block">
           {showPlaceholder ? (
             <div className="tv-live-placeholder">
@@ -291,7 +300,6 @@ export function NowPlayingPanel({
           )}
         </div>
 
-        {/* Radio strip — always visible below video/placeholder */}
         <div className="tv-live-radio-strip">
           <div className="tv-live-radio-info">
             <span className="tv-live-radio-label">
