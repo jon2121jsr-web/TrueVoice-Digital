@@ -1,5 +1,7 @@
 // src/data/videoFeed.js
 // Video content for TrueVoice Connect modals
+// When adding new videos, set featured: true on the newest one
+// and set featured: false on the previous one.
 
 export const VIDEO_SECTIONS = {
   WATCH_LIVE:       'WATCH_LIVE',
@@ -66,19 +68,30 @@ export const videoFeed = [
   // PIGSKIN FRENZY — newest first
   // ═══════════════════════════════════════════════════════════════════════════
   {
-    id:           'rvNBHCgsMTc',
+    id:           'gC4VikZ0dcA',
     title:        'Pigskin Frenzy — Latest Episode',
+    description:  'The boldest takes in College Football. Unfiltered analysis. Unashamed faith.',
+    youtubeId:    'gC4VikZ0dcA',
+    thumbnailUrl: 'https://img.youtube.com/vi/gC4VikZ0dcA/maxresdefault.jpg',
+    section:      'PIGSKIN_FRENZY',
+    featured:     true,
+    active:       true,
+    publishedAt:  '2025-03-17T10:00:00Z',
+  },
+  {
+    id:           'rvNBHCgsMTc',
+    title:        'Pigskin Frenzy — Episode 2',
     description:  'The boldest takes in College Football. Unfiltered analysis. Unashamed faith.',
     youtubeId:    'rvNBHCgsMTc',
     thumbnailUrl: 'https://img.youtube.com/vi/rvNBHCgsMTc/maxresdefault.jpg',
     section:      'PIGSKIN_FRENZY',
-    featured:     true,
+    featured:     false,
     active:       true,
     publishedAt:  '2025-03-09T10:00:00Z',
   },
   {
     id:           'clVOoGRAVMQ',
-    title:        'Pigskin Frenzy — Episode 2',
+    title:        'Pigskin Frenzy — Episode 3',
     description:  'The boldest takes in College Football. Unfiltered analysis. Unashamed faith.',
     youtubeId:    'clVOoGRAVMQ',
     thumbnailUrl: 'https://img.youtube.com/vi/clVOoGRAVMQ/maxresdefault.jpg',
@@ -87,23 +100,12 @@ export const videoFeed = [
     active:       true,
     publishedAt:  '2025-03-08T10:00:00Z',
   },
-  {
-    id:           'KznJw_MDtJo',
-    title:        'Pigskin Frenzy — Episode 3',
-    description:  'The boldest takes in College Football. Unfiltered analysis. Unashamed faith.',
-    youtubeId:    'KznJw_MDtJo',
-    thumbnailUrl: 'https://img.youtube.com/vi/KznJw_MDtJo/maxresdefault.jpg',
-    section:      'PIGSKIN_FRENZY',
-    featured:     false,
-    active:       true,
-    publishedAt:  '2025-03-07T10:00:00Z',
-  },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CHURCH IN SHORTS
   // ═══════════════════════════════════════════════════════════════════════════
   {
-    id:           'church-hIgy8zgcLH0',
+    id:           'church-1BngrEWflKs',
     title:        'The Church — Latest Episode',
     description:  'Real Truth. Real Church. In Short Video.',
     youtubeId:    'hIgy8zgcLH0',
@@ -113,19 +115,4 @@ export const videoFeed = [
     active:       true,
     publishedAt:  '2025-03-09T10:00:00Z',
   },
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // WATCH LIVE (uncomment when live streaming starts)
-  // ═══════════════════════════════════════════════════════════════════════════
-  // {
-  //   id: 'your_live_video_id',
-  //   title: 'TrueVoice Live',
-  //   description: 'Join us live',
-  //   youtubeId: 'your_live_video_id',
-  //   thumbnailUrl: 'https://img.youtube.com/vi/your_live_video_id/maxresdefault.jpg',
-  //   section: 'WATCH_LIVE',
-  //   featured: true,
-  //   active: true,
-  //   publishedAt: '2025-03-09T15:00:00Z',
-  // },
 ];
