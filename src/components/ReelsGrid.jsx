@@ -1,7 +1,7 @@
 // src/components/ReelsGrid.jsx
-// ✅ RSS auto-updates first card in each channel with newest video
-// ✅ Church in Shorts uses dedicated playlist RSS
-// ✅ Static backlog remains intact below the newest entry
+// ✅ YouTube Data API v3 auto-updates each channel with newest video
+// ✅ Church in Shorts uses dedicated playlist
+// ✅ Live fetch prepends as new card — static backlog fully preserved
 import { useState } from "react";
 import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
 import { GMAA_REELS } from "../data/gmaaReels";
@@ -18,27 +18,31 @@ const CHANNEL_IDS = {
 
 const CHURCH_PLAYLIST_ID = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
 
-// Replace the first entry with live RSS data if available.
-// Falls back to static data if RSS is loading or failed.
-function mergeLatest(staticReels, rssData) {
-  if (!rssData?.videoId || rssData.loading || rssData.error) return staticReels;
+// Prepends live API data as a new card in front of the full static backlog.
+// Falls back to static data unchanged if API is loading, errored, or the
+// live video ID already exists anywhere in the static array (no duplicates).
+function mergeLatest(staticReels, apiData) {
+  if (!apiData?.videoId || apiData.loading || apiData.error) return staticReels;
 
-  const liveEntry = {
-    ...staticReels[0],
-    id:           rssData.videoId,
-    title:        rssData.title     || staticReels[0]?.title || "Latest Episode",
-    thumbnailUrl: rssData.thumbnail || staticReels[0]?.thumbnailUrl,
-    embedUrl:     `https://www.youtube.com/embed/${rssData.videoId}?autoplay=1`,
-    videoUrl:     `https://www.youtube.com/watch?v=${rssData.videoId}`,
+  // If this video is already in the static backlog, don't duplicate it
+  if (staticReels.some((v) => v.id === apiData.videoId)) return staticReels;
+
+  const ref = staticReels[0] ?? {};
+
+  const liveCard = {
+    id:           apiData.videoId,
+    title:        apiData.title       || "Latest Episode",
+    thumbnailUrl: apiData.thumbnail   || ref.thumbnailUrl || null,
+    embedUrl:     `https://www.youtube.com/embed/${apiData.videoId}?autoplay=1`,
+    videoUrl:     `https://www.youtube.com/watch?v=${apiData.videoId}`,
+    // Context fields inherited from static slot 0
+    speaker:      ref.speaker      || null,
+    topic:        ref.topic        || null,
+    source:       ref.source       || null,
+    description:  ref.description  || null,
   };
 
-  // Put live entry first, then backlog (skipping the old first entry
-  // only if it has the same video ID — avoids duplicates)
-  const backlog = staticReels.slice(1).filter(
-    (v) => v.id !== rssData.videoId
-  );
-
-  return [liveEntry, ...backlog];
+  return [liveCard, ...staticReels];
 }
 
 function ReelsGrid() {

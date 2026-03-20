@@ -4,17 +4,6 @@
 
 export const PIGSKIN_REELS = [
   {
-    id:           "gC4VikZ0dcA",
-    title:        "Pigskin Frenzy — Latest Episode",
-    speaker:      "Joel Norris",
-    topic:        "College Football",
-    description:  "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
-    thumbnailUrl: "https://img.youtube.com/vi/gC4VikZ0dcA/maxresdefault.jpg",
-    embedUrl:     "https://www.youtube.com/embed/gC4VikZ0dcA?autoplay=1",
-    videoUrl:     "https://www.youtube.com/watch?v=gC4VikZ0dcA",
-    source:       "Pigskin Frenzy",
-  },
-  {
     id:           "rvNBHCgsMTc",
     title:        "Pigskin Frenzy — Episode 2",
     speaker:      "Joel Norris",

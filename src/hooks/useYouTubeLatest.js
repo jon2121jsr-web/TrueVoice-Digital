@@ -1,30 +1,68 @@
 // src/hooks/useYouTubeLatest.js
-// Fetches the latest video from a YouTube channel OR playlist RSS feed.
-// No API key required.
+// Fetches the latest video from a YouTube channel OR playlist via YouTube Data API v3.
+// Quota-efficient strategy:
+//   - Channel lookup:  channels endpoint (1 unit) → resolves uploads playlist ID,
+//                      then playlistItems endpoint (1 unit) → ~2 units total
+//   - Playlist lookup: playlistItems endpoint (1 unit) directly
 // Returns { videoId, title, thumbnail, loading, error }
 
 import { useEffect, useState } from "react";
 
-const RSS2JSON = "https://api.rss2json.com/v1/api.json?rss_url=";
+const API_KEY      = import.meta.env.VITE_YOUTUBE_API_KEY;
+const BASE_URL     = "https://www.googleapis.com/youtube/v3";
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-function channelRssUrl(channelId) {
-  return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-}
+// uploadsCache — channelId → uploadsPlaylistId
+// Permanent: upload playlist IDs are stable and never change.
+const uploadsCache = {};
 
-function playlistRssUrl(playlistId) {
-  return `https://www.youtube.com/feeds/videos.xml?playlist_id=${playlistId}`;
-}
+// resultCache — channelId|playlistId → { data: { videoId, title, thumbnail }, cachedAt }
+// TTL-based: expires after CACHE_TTL_MS so fresh uploads are picked up.
+const resultCache = {};
 
-function extractVideoId(link) {
-  try {
-    const url = new URL(link);
-    return url.searchParams.get("v") || null;
-  } catch {
-    return null;
+async function resolveUploadsPlaylistId(channelId) {
+  if (uploadsCache[channelId]) {
+    console.log(`[YT] uploadsCache hit for ${channelId}:`, uploadsCache[channelId]);
+    return uploadsCache[channelId];
   }
+
+  const url = `${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${API_KEY}`;
+  const res  = await fetch(url);
+  if (!res.ok) throw new Error(`channels API failed: ${res.status}`);
+
+  const data      = await res.json();
+  const uploadsId = data?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+  if (!uploadsId) throw new Error(`No uploads playlist found for channel: ${channelId}`);
+
+  console.log(`[YT] resolved uploadsPlaylistId for ${channelId}:`, uploadsId);
+  uploadsCache[channelId] = uploadsId;
+  return uploadsId;
 }
 
-const cache = {};
+async function fetchLatestFromPlaylist(playlistId) {
+  const url = `${BASE_URL}/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=1&key=${API_KEY}`;
+  const res  = await fetch(url);
+  if (!res.ok) throw new Error(`playlistItems API failed: ${res.status}`);
+
+  const data    = await res.json();
+  console.log(`[YT] raw playlistItems response for ${playlistId}:`, JSON.stringify(data?.items?.[0]?.snippet, null, 2));
+
+  const snippet = data?.items?.[0]?.snippet;
+  if (!snippet) throw new Error(`No items in playlist: ${playlistId}`);
+
+  const videoId   = snippet.resourceId?.videoId || null;
+  const title     = snippet.title || null;
+  const thumbnail =
+    (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null) ||
+    snippet.thumbnails?.maxres?.url  ||
+    snippet.thumbnails?.high?.url    ||
+    snippet.thumbnails?.medium?.url  ||
+    null;
+
+  console.log(`[YT] fetchLatestFromPlaylist result for ${playlistId}:`, { videoId, title, publishedAt: snippet.publishedAt });
+
+  return { videoId, title, thumbnail };
+}
 
 export function useYouTubeLatest({ channelId, playlistId } = {}) {
   const key = channelId || playlistId;
@@ -43,8 +81,14 @@ export function useYouTubeLatest({ channelId, playlistId } = {}) {
       return;
     }
 
-    if (cache[key]) {
-      setState({ ...cache[key], loading: false, error: null });
+    const cached = resultCache[key];
+    if (cached && (Date.now() - cached.cachedAt) < CACHE_TTL_MS) {
+      setState({ ...cached.data, loading: false, error: null });
+      return;
+    }
+
+    if (!API_KEY) {
+      setState(s => ({ ...s, loading: false, error: "VITE_YOUTUBE_API_KEY is not set" }));
       return;
     }
 
@@ -52,29 +96,16 @@ export function useYouTubeLatest({ channelId, playlistId } = {}) {
 
     async function fetch_() {
       try {
-        const rssUrl = playlistId
-          ? playlistRssUrl(playlistId)
-          : channelRssUrl(channelId);
+        let result;
 
-        const apiUrl = `${RSS2JSON}${encodeURIComponent(rssUrl)}&count=1`;
-        const res    = await fetch(apiUrl);
-        if (!res.ok) throw new Error(`RSS fetch failed: ${res.status}`);
+        if (channelId) {
+          const uploadsPlaylistId = await resolveUploadsPlaylistId(channelId);
+          result = await fetchLatestFromPlaylist(uploadsPlaylistId);
+        } else {
+          result = await fetchLatestFromPlaylist(playlistId);
+        }
 
-        const data = await res.json();
-        const item = data?.items?.[0];
-        if (!item) throw new Error("No items in RSS feed");
-
-        const videoId   = extractVideoId(item.link)
-          || item.guid?.split("video:")[1]
-          || null;
-        const title     = item.title || null;
-        const thumbnail = item.thumbnail
-          || item.enclosure?.link
-          || (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null);
-
-        const result = { videoId, title, thumbnail };
-        cache[key] = result;
-
+        resultCache[key] = { data: result, cachedAt: Date.now() };
         if (alive) setState({ ...result, loading: false, error: null });
       } catch (err) {
         if (alive) setState(s => ({ ...s, loading: false, error: err.message }));
