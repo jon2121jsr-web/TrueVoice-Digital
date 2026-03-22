@@ -62,14 +62,6 @@ export default function TrueVoiceConnect({
       onClick:     onPigskinFrenzy,
       thumbnail:   pigskinLatest.thumbnail || FALLBACKS.pigskin,
     },
-    {
-      id:          "scott-ryan-show",
-      label:       "The Scott & Ryan Show",
-      description: "Coming Soon — stay tuned.",
-      tag:         "SOON",
-      onClick:     null,
-      thumbnail:   null,
-    },
   ];
 
   const handleClick = (card) => {
