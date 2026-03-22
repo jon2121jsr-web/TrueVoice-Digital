@@ -13,7 +13,7 @@ export const CHURCH_SHORTS_REELS = [
     thumbnailUrl: "https://img.youtube.com/vi/1BngrEWflKs/maxresdefault.jpg",
     embedUrl:     "https://www.youtube.com/embed/1BngrEWflKs?autoplay=1",
     videoUrl:     "https://www.youtube.com/watch?v=1BngrEWflKs",
-    source:       "The Church in Shorts",
+    source:       "The Cut with Erica",
   },
   {
     id:           "hIgy8zgcLH0",
@@ -24,7 +24,7 @@ export const CHURCH_SHORTS_REELS = [
     thumbnailUrl: "https://img.youtube.com/vi/hIgy8zgcLH0/maxresdefault.jpg",
     embedUrl:     "https://www.youtube.com/embed/hIgy8zgcLH0?autoplay=1",
     videoUrl:     "https://www.youtube.com/watch?v=hIgy8zgcLH0",
-    source:       "The Church in Shorts",
+    source:       "The Cut with Erica",
   },
   {
     id:           "BeUX5DGGj0s",
@@ -35,7 +35,7 @@ export const CHURCH_SHORTS_REELS = [
     thumbnailUrl: "https://img.youtube.com/vi/BeUX5DGGj0s/maxresdefault.jpg",
     embedUrl:     "https://www.youtube.com/embed/BeUX5DGGj0s?autoplay=1",
     videoUrl:     "https://www.youtube.com/shorts/BeUX5DGGj0s",
-    source:       "The Church in Shorts",
+    source:       "The Cut with Erica",
   },
   {
     id:           "35nP63Hh91E",
@@ -46,7 +46,7 @@ export const CHURCH_SHORTS_REELS = [
     thumbnailUrl: "https://img.youtube.com/vi/35nP63Hh91E/maxresdefault.jpg",
     embedUrl:     "https://www.youtube.com/embed/35nP63Hh91E?autoplay=1",
     videoUrl:     "https://www.youtube.com/shorts/35nP63Hh91E",
-    source:       "The Church in Shorts",
+    source:       "The Cut with Erica",
   },
   {
     id:           "z2WqMQgNjs0",
@@ -57,6 +57,6 @@ export const CHURCH_SHORTS_REELS = [
     thumbnailUrl: "https://img.youtube.com/vi/z2WqMQgNjs0/maxresdefault.jpg",
     embedUrl:     "https://www.youtube.com/embed/z2WqMQgNjs0?autoplay=1",
     videoUrl:     "https://www.youtube.com/shorts/z2WqMQgNjs0",
-    source:       "The Church in Shorts",
+    source:       "The Cut with Erica",
   },
 ];

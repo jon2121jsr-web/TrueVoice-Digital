@@ -22,7 +22,6 @@ const resultCache = {};
 
 async function resolveUploadsPlaylistId(channelId) {
   if (uploadsCache[channelId]) {
-    console.log(`[YT] uploadsCache hit for ${channelId}:`, uploadsCache[channelId]);
     return uploadsCache[channelId];
   }
 
@@ -34,7 +33,6 @@ async function resolveUploadsPlaylistId(channelId) {
   const uploadsId = data?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
   if (!uploadsId) throw new Error(`No uploads playlist found for channel: ${channelId}`);
 
-  console.log(`[YT] resolved uploadsPlaylistId for ${channelId}:`, uploadsId);
   uploadsCache[channelId] = uploadsId;
   return uploadsId;
 }
@@ -45,8 +43,6 @@ async function fetchLatestFromPlaylist(playlistId) {
   if (!res.ok) throw new Error(`playlistItems API failed: ${res.status}`);
 
   const data    = await res.json();
-  console.log(`[YT] raw playlistItems response for ${playlistId}:`, JSON.stringify(data?.items?.[0]?.snippet, null, 2));
-
   const snippet = data?.items?.[0]?.snippet;
   if (!snippet) throw new Error(`No items in playlist: ${playlistId}`);
 
@@ -58,8 +54,6 @@ async function fetchLatestFromPlaylist(playlistId) {
     snippet.thumbnails?.high?.url    ||
     snippet.thumbnails?.medium?.url  ||
     null;
-
-  console.log(`[YT] fetchLatestFromPlaylist result for ${playlistId}:`, { videoId, title, publishedAt: snippet.publishedAt });
 
   return { videoId, title, thumbnail };
 }

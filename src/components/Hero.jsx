@@ -20,21 +20,6 @@ export default function Hero() {
         kind:     "legacy",
       },
       {
-        src:      "/images/hero-truevoice-live.png",
-        alt:      "TrueVoice LIVE — Where Truth and Faith Come Together",
-        fit:      "contain",
-        position: "center",
-        kind:     "poster",
-      },
-      {
-        src:      "/images/The-Church-Hero-2500x900-FULL__2_.png",
-        alt:      "The Church in Shorts — Real Truth. Real Church. In Short Video.",
-        fit:      "cover",
-        position: "center center",
-        cover:    true,
-        kind:     "poster",
-      },
-      {
         kind:      "component",
         component: HeroMerchSlide,
         alt:       "TrueVoice Gear — Coming Soon",

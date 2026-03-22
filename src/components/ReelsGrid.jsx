@@ -1,6 +1,6 @@
 // src/components/ReelsGrid.jsx
 // ✅ YouTube Data API v3 auto-updates each channel with newest video
-// ✅ Church in Shorts uses dedicated playlist
+// ✅ The Cut with Erica uses dedicated playlist
 // ✅ Live fetch prepends as new card — static backlog fully preserved
 import { useState } from "react";
 import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
@@ -113,7 +113,7 @@ function ReelsGrid() {
       </p>
 
       {renderChannel("Pigskin Frenzy",       pigskinReels)}
-      {renderChannel("The Church in Shorts", churchReels)}
+      {renderChannel("The Cut with Erica", churchReels)}
       {renderChannel("Give Me an Answer",    gmaaReels)}
       {renderChannel("BibleProject",         bpReels)}
 

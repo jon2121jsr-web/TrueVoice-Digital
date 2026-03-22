@@ -10,7 +10,7 @@ const CHANNEL_IDS = {
   PIGSKIN:   "UC_khbgasHiiwUxPHOMfbR0A",
 };
 
-// Church in Shorts playlist on TrueVoice channel
+// The Cut with Erica playlist on TrueVoice channel
 const CHURCH_PLAYLIST_ID = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
 
 const FALLBACKS = {
@@ -47,8 +47,8 @@ export default function TrueVoiceConnect({
       thumbnail:   tvLatest.thumbnail      || FALLBACKS.truevoice,
     },
     {
-      id:          "the-church-in-shorts",
-      label:       "The Church in Shorts",
+      id:          "the-cut-with-erica",
+      label:       "The Cut with Erica",
       description: "Real Truth. Real Church. In Short Video.",
       tag:         "SHORTS",
       onClick:     onChurchInShorts,
