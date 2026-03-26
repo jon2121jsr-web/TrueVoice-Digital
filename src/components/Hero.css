@@ -1,5 +1,4 @@
 /* HERO SLIDER */
-
 .hero-section {
   position: relative;
   width: 100%;
@@ -32,7 +31,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  touch-action: pan-y;   /* lets browser scroll vertically, we handle horizontal */
+  touch-action: pan-y; /* lets browser scroll vertically, we handle horizontal */
 }
 
 .hero-slide {
@@ -49,6 +48,24 @@
 
 .hero-slide.is-active {
   opacity: 1;
+}
+
+/* ── Component slides (Ryan, Scott, Merch, Deep End) ──
+   Fill the full slide area so their internal CSS controls height.
+   NOTE: HeroPigskinSlide manages its own sizing via .hero-pigskin,
+   so we exclude it from the stretch rule using a sibling selector trick —
+   we instead apply stretch only when the direct child is NOT .hero-pigskin */
+.hero-slide[data-kind="component"] {
+  align-items: center;
+}
+
+/* Slides whose root element fills the full container (Ryan, Scott, Merch, Deep End) */
+.hero-slide[data-kind="component"] > .hero-ryan-slide,
+.hero-slide[data-kind="component"] > .hero-scott-slide,
+.hero-slide[data-kind="component"] > .hero-merch-slide,
+.hero-slide[data-kind="component"] > .hero-deepend-slide {
+  width: 100%;
+  height: 100%;
 }
 
 .hero-media {
@@ -76,7 +93,9 @@
 
 .hero-slide[data-kind="poster"] .hero-media {
   width: min(1280px, 98%);
-  height: 96%;
+  /* FIX: use calc so padding-bottom always reserves dot clearance
+     regardless of browser zoom level */
+  height: calc(100% - 8px);
   border-radius: 22px;
   overflow: hidden;
   padding-bottom: 44px;
@@ -106,7 +125,6 @@
 }
 
 /* ── Dots ── */
-
 .hero-dots {
   position: absolute;
   left: 50%;
@@ -138,7 +156,6 @@
 }
 
 /* ── Prev / Next arrow buttons ── */
-
 .hero-arrow {
   position: absolute;
   top: 50%;
@@ -156,11 +173,11 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  opacity: 0;                         /* hidden by default */
+  opacity: 0; /* hidden by default */
   transition: opacity 0.2s ease, background 0.2s ease, transform 0.15s ease;
   backdrop-filter: blur(4px);
   padding: 0;
-  padding-bottom: 2px;               /* optical centre for › ‹ */
+  padding-bottom: 2px; /* optical centre for › ‹ */
 }
 
 .hero-arrow--prev { left: 14px; }
@@ -190,19 +207,19 @@
 }
 
 /* ── Reduced motion ── */
-
 @media (prefers-reduced-motion: reduce) {
-  .hero-slide { transition: none; }
-  .hero-arrow { transition: none; }
+  .hero-slide  { transition: none; }
+  .hero-arrow  { transition: none; }
 }
 
 /* ── Tablets ── */
-
 @media (max-width: 1024px) {
-  .hero-section { height: 380px; }
+  .hero-section {
+    height: 380px;
+  }
 
   .hero-slide[data-kind="poster"] .hero-media {
-    height: 96%;
+    height: calc(100% - 6px);
     width: 96%;
     padding-bottom: 40px;
   }
@@ -215,9 +232,10 @@
 }
 
 /* ── Mobile ── */
-
 @media (max-width: 768px) {
-  .hero-section { height: 240px; }
+  .hero-section {
+    height: 240px;
+  }
 
   .hero-slide[data-kind="poster"] .hero-media,
   .hero-slide[data-kind="legacy"] .hero-media {
@@ -241,12 +259,9 @@
     object-position: center;
   }
 
-  .hero-slide-img[src*="hero-coming"] {
-    transform: scale(1.16);
-    object-position: center;
+  .hero-dots {
+    bottom: 10px;
   }
-
-  .hero-dots { bottom: 10px; }
 
   .hero-arrow {
     width: 30px;
@@ -260,9 +275,10 @@
 }
 
 /* ── Small phones ── */
-
 @media (max-width: 480px) {
-  .hero-section { height: 220px; }
+  .hero-section {
+    height: 220px;
+  }
 
   .hero-slide[data-kind="poster"] .hero-media,
   .hero-slide[data-kind="legacy"] .hero-media {
@@ -274,14 +290,16 @@
     transform: scale(1.08);
   }
 
-  .hero-slide-img[src*="truevoice-hero"] { transform: scale(1.18); }
-  .hero-slide-img[src*="hero-coming"]    { transform: scale(1.20); }
+  .hero-slide-img[src*="truevoice-hero"] {
+    transform: scale(1.18);
+  }
 
-  .hero-arrow { display: none; } /* too cramped on small phones — swipe only */
+  .hero-arrow {
+    display: none; /* too cramped on small phones — swipe only */
+  }
 }
 
 /* ── Pigskin Frenzy slide ── */
-
 .hero-pigskin {
   position: relative;
   width: min(1120px, 96%);

@@ -4,6 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "./Hero.css";
 import HeroMerchSlide from "./HeroMerchSlide.jsx";
 import HeroPigskinSlide from "./HeroPigskinSlide.jsx";
+import HeroRyanSlide from "./HeroRyanSlide.jsx";
+import HeroScottSlide from "./HeroScottSlide.jsx";
+import HeroDeepEndSlide from "./HeroDeepEndSlide.jsx";
 
 // Minimum px travel before we count it as a swipe (not a tap)
 const SWIPE_THRESHOLD = 40;
@@ -11,38 +14,52 @@ const SWIPE_THRESHOLD = 40;
 export default function Hero() {
   const slides = useMemo(
     () => [
+      // 1 — Legacy cover
       {
-        src:      "/images/truevoice-hero.jpg",
-        alt:      "TrueVoice Digital — Faithful Voices. Inspired Content.",
-        fit:      "cover",
+        src: "/images/truevoice-hero.jpg",
+        alt: "TrueVoice Digital — Faithful Voices. Inspired Content.",
+        fit: "cover",
         position: "center center",
-        cover:    true,
-        kind:     "legacy",
+        cover: true,
+        kind: "legacy",
       },
+      // 2 — Ryan Kliesch (new)
       {
-        kind:      "component",
+        kind: "component",
+        component: HeroRyanSlide,
+        alt: "Ryan Kliesch on TrueVoice Digital — Coming Soon",
+      },
+      // 3 — Scott Ritchie (new)
+      {
+        kind: "component",
+        component: HeroScottSlide,
+        alt: "Scott Ritchie on TrueVoice Digital — Coming Soon",
+      },
+      // 4 — Merch
+      {
+        kind: "component",
         component: HeroMerchSlide,
-        alt:       "TrueVoice Gear — Coming Soon",
+        alt: "TrueVoice Gear — Coming Soon",
       },
+      // 5 — Pigskin Frenzy
       {
-        kind:      "component",
+        kind: "component",
         component: HeroPigskinSlide,
-        alt:       "Pigskin Frenzy with Joel Norris",
+        alt: "Pigskin Frenzy with Joel Norris",
       },
+      // 6 — Poster slide
       {
-        src:      "/images/hero-slide-4.png",
-        alt:      "TrueVoice Digital — Featured",
-        fit:      "contain",
+        src: "/images/hero-slide-4.png",
+        alt: "TrueVoice Digital — Featured",
+        fit: "contain",
         position: "center",
-        kind:     "poster",
+        kind: "poster",
       },
+      // 7 — The Deep End (replaces hero-coming.png)
       {
-        src:      "/images/hero-coming.png",
-        alt:      "He is coming back. Let's get ready.",
-        fit:      "cover",
-        position: "center center",
-        cover:    true,
-        kind:     "poster",
+        kind: "component",
+        component: HeroDeepEndSlide,
+        alt: "The Deep End with Scott & Ryan — Coming Soon",
       },
     ],
     []
@@ -52,7 +69,7 @@ export default function Hero() {
   const intervalRef = useRef(null);
 
   // Touch / mouse drag state
-  const dragStart  = useRef(null);   // { x, y } at pointer down
+  const dragStart = useRef(null); // { x, y } at pointer down
   const isDragging = useRef(false);
 
   const startAutoPlay = () => {
@@ -81,7 +98,7 @@ export default function Hero() {
   const goNext = () => goTo((active + 1) % slides.length);
   const goPrev = () => goTo((active - 1 + slides.length) % slides.length);
 
-  // ── Pointer events (works for both touch and mouse) ──────────────────────
+  // ── Pointer events (works for both touch and mouse) ────────────────────────
   const handlePointerDown = (e) => {
     // Only track left mouse button or touch
     if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -100,15 +117,13 @@ export default function Hero() {
     if (!dragStart.current) return;
     const dx = e.clientX - dragStart.current.x;
     dragStart.current = null;
-
     if (Math.abs(dx) < SWIPE_THRESHOLD) return; // not a real swipe
-
     if (dx < 0) goNext(); // swiped left → next
-    else goPrev();         // swiped right → prev
+    else goPrev();        // swiped right → prev
   };
 
   const handlePointerCancel = () => {
-    dragStart.current  = null;
+    dragStart.current = null;
     isDragging.current = false;
   };
 
@@ -154,12 +169,12 @@ export default function Hero() {
 
           const mediaStyle = s.cover
             ? {
-                width:        "100%",
-                height:       "100%",
-                padding:      0,
+                width: "100%",
+                height: "100%",
+                padding: 0,
                 borderRadius: 0,
-                background:   "none",
-                boxShadow:    "none",
+                background: "none",
+                boxShadow: "none",
               }
             : {};
 
@@ -179,10 +194,10 @@ export default function Hero() {
                   decoding="async"
                   draggable="false"
                   style={{
-                    objectFit:      s.fit      || "contain",
+                    objectFit: s.fit || "contain",
                     objectPosition: s.position || "center",
-                    borderRadius:   s.cover ? 0 : undefined,
-                    pointerEvents:  "none", // prevent img drag interfering
+                    borderRadius: s.cover ? 0 : undefined,
+                    pointerEvents: "none", // prevent img drag interfering
                   }}
                 />
               </div>
@@ -194,7 +209,10 @@ export default function Hero() {
         <button
           type="button"
           className="hero-arrow hero-arrow--prev"
-          onClick={(e) => { e.stopPropagation(); goPrev(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            goPrev();
+          }}
           aria-label="Previous slide"
         >
           ‹
@@ -202,7 +220,10 @@ export default function Hero() {
         <button
           type="button"
           className="hero-arrow hero-arrow--next"
-          onClick={(e) => { e.stopPropagation(); goNext(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            goNext();
+          }}
           aria-label="Next slide"
         >
           ›
@@ -217,7 +238,10 @@ export default function Hero() {
               className={`hero-dot ${idx === active ? "is-active" : ""}`}
               aria-label={`Go to slide ${idx + 1}`}
               aria-pressed={idx === active}
-              onClick={(e) => { e.stopPropagation(); goTo(idx); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                goTo(idx);
+              }}
             />
           ))}
         </div>
