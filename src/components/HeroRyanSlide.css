@@ -1,6 +1,24 @@
 .hero-std-slide{position:relative;width:100%;height:100%;overflow:hidden;background:#050816;}
-.hero-std-img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none;user-select:none;}
-.hero-std-badge{position:absolute;bottom:48px;right:32px;width:fit-content;display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;border-radius:100px;padding:7px 20px;backdrop-filter:blur(6px);}
+.hero-std-img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block;pointer-events:none;user-select:none;}
+.hero-std-badge {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: fit-content;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-radius: 100px;
+  padding: 7px 20px;
+  backdrop-filter: blur(6px);
+  z-index: 3;
+}
 .hero-std-badge--gold{color:#d4af37;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.35);}
 .hero-std-badge--blue{color:#7eb8ff;background:rgba(126,184,255,0.12);border:1px solid rgba(126,184,255,0.35);}
 .hero-std-badge--cyan{color:#4db8ff;background:rgba(77,184,255,0.1);border:1px solid rgba(77,184,255,0.32);}
