@@ -1,4 +1,4 @@
-// src/App.jsx  — v6  (Pigskin Frenzy + Church in Shorts Connect handlers)
+// src/App.jsx  — v7  (MediaSession station lock + duplicate error handler removed)
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 
@@ -19,8 +19,6 @@ import { videoFeed, VIDEO_SECTIONS } from "./data/videoFeed";
 // ─── Stream URLs ─────────────────────────────────────────────────────────────
 const LIVE365_STREAM_URL =
   "https://streaming.live365.com/a61535";
-const AZURACAST_FALLBACK_URL =
-  "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
 const LIVE_STREAM_URL =
   import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL;
@@ -47,8 +45,8 @@ const STRIPE = {
 };
 
 // ─── Media Session helpers ────────────────────────────────────────────────────
-const DEFAULT_MEDIA_TITLE = "TrueVoice Digital";
-const DEFAULT_MEDIA_ART   = "/truevoice-favicon.png";
+const STATION_NAME    = "TrueVoice Digital";
+const DEFAULT_MEDIA_ART = "/truevoice-favicon.png";
 
 function safeText(v) {
   return (v ?? "").toString().trim();
@@ -64,12 +62,12 @@ function buildArtworkList(src) {
   ];
 }
 
-function setMediaSessionMetadata({ title, artist, album, artUrl }) {
+function setMediaSessionMetadata({ title, artist, artUrl }) {
   if (!("mediaSession" in navigator) || !("MediaMetadata" in window)) return;
   navigator.mediaSession.metadata = new MediaMetadata({
-    title:   safeText(title)  || DEFAULT_MEDIA_TITLE,
+    title:   safeText(title)  || STATION_NAME,
     artist:  safeText(artist) || "Now Playing",
-    album:   safeText(album)  || DEFAULT_MEDIA_TITLE,
+    album:   STATION_NAME,          // always locked to station name
     artwork: buildArtworkList(artUrl),
   });
 }
@@ -191,11 +189,11 @@ const InstagramIcon = () => (
 function App() {
   const playerRef = useRef(null);
 
-  const [currentStation, setCurrentStation] = useState("TrueVoice Digital");
+  const [currentStation, setCurrentStation] = useState(STATION_NAME);
   const [showDebug,      setShowDebug]      = useState(false);
 
   const [nowPlaying, setNowPlaying] = useState({
-    title: "", artist: "", album: "", artUrl: "",
+    title: "", artist: "", artUrl: "",
   });
 
   const [videoOpen,   setVideoOpen]   = useState(false);
@@ -228,17 +226,15 @@ function App() {
     if (s) {
       const title  = safeText(s.title)  || safeText(s.text) || "";
       const artist = safeText(s.artist) || "";
-      const album  = safeText(s.album)  || "";
       const artUrl = safeText(s.art)    || safeText(s.artUrl) || "";
 
       setNowPlaying((prev) => {
         if (
           prev.title  === title  &&
           prev.artist === artist &&
-          prev.album  === album  &&
           prev.artUrl === artUrl
         ) return prev;
-        return { title, artist, album, artUrl };
+        return { title, artist, artUrl };
       });
     }
   }, []);
@@ -282,39 +278,25 @@ function App() {
   }, []);
 
   // Wire audio + media session
+  // Note: fallback on stream error is handled inside NowPlayingPanel via the
+  // audio element's error event. No duplicate handler needed here.
   useEffect(() => {
     const audioEl = playerRef.current;
     if (!audioEl) return;
-    if (!audioEl.src) audioEl.src = LIVE_STREAM_URL;
-
-    const handleAudioError = () => {
-      try {
-        const current = (audioEl.currentSrc || audioEl.src || "").toString();
-        if (current.includes("streaming.live365.com")) {
-          audioEl.src = AZURACAST_FALLBACK_URL;
-        }
-      } catch { /* ignore */ }
-    };
-
-    audioEl.addEventListener("error", handleAudioError);
     const cleanup = wireMediaSessionControls(audioEl);
-    return () => {
-      audioEl.removeEventListener("error", handleAudioError);
-      cleanup?.();
-    };
+    return () => { cleanup?.(); };
   }, []);
 
-  // Update media session metadata
+  // Update media session metadata whenever song changes
   useEffect(() => {
     setMediaSessionMetadata({
-      title:  nowPlaying.title  || DEFAULT_MEDIA_TITLE,
+      title:  nowPlaying.title  || STATION_NAME,
       artist: nowPlaying.artist || "Streaming",
-      album:  nowPlaying.album  || DEFAULT_MEDIA_TITLE,
       artUrl: nowPlaying.artUrl || DEFAULT_MEDIA_ART,
     });
   }, [nowPlaying]);
 
-  // Video feed grouped by section — includes all 5 sections
+  // Video feed grouped by section
   const feedBySection = useMemo(() => {
     const active  = (videoFeed || []).filter((v) => v?.active);
     const grouped = {
