@@ -5,7 +5,6 @@ import "./Hero.css";
 import HeroMerchSlide from "./HeroMerchSlide.jsx";
 import HeroPigskinSlide from "./HeroPigskinSlide.jsx";
 import HeroRyanSlide from "./HeroRyanSlide.jsx";
-import HeroScottSlide from "./HeroScottSlide.jsx";
 import HeroDeepEndSlide from "./HeroDeepEndSlide.jsx";
 
 // Minimum px travel before we count it as a swipe (not a tap)
@@ -29,13 +28,7 @@ export default function Hero() {
         component: HeroRyanSlide,
         alt: "Ryan Kliesch on TrueVoice Digital — Coming Soon",
       },
-      // 3 — Scott Ritchie (new)
-      {
-        kind: "component",
-        component: HeroScottSlide,
-        alt: "Scott Ritchie on TrueVoice Digital — Coming Soon",
-      },
-      // 4 — Merch
+      // 3 — Merch
       {
         kind: "component",
         component: HeroMerchSlide,
