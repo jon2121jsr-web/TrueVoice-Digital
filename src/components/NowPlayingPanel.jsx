@@ -3,6 +3,7 @@
 // ✅ Song metadata updates correctly without page refresh
 // ✅ All pending song tracking via refs — no stale closure bug
 // ✅ Floating player always shows compact radio mode
+// ✅ Audio glitch fix: fallback via error event, not setTimeout; no redundant el.load()
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 import { LIVE_CONFIG } from "../data/liveConfig";
@@ -47,9 +48,10 @@ export function NowPlayingPanel({
   const AZURACAST_FALLBACK = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
   // ── All mutable tracking in refs so polling closure never goes stale ──────
-  const displaySongRef  = useRef(null);   // current displayed song
-  const pendingSongRef  = useRef(null);   // { song } waiting to flip
-  const pendingFlipRef  = useRef(null);   // ms timestamp to flip at
+  const displaySongRef  = useRef(null);
+  const pendingSongRef  = useRef(null);
+  const pendingFlipRef  = useRef(null);
+  const isPlayingRef    = useRef(false);
 
   /* ── Poll AzuraCast every 15 seconds ──────────────────────────────────── */
   useEffect(() => {
@@ -62,7 +64,6 @@ export function NowPlayingPanel({
 
         const song = result?.now_playing?.song || null;
 
-        // Listeners
         const rawL = result?.listeners;
         if (rawL != null) {
           const c = typeof rawL === "object"
@@ -78,16 +79,12 @@ export function NowPlayingPanel({
         const pendingId  = pendingSongRef.current?.song?.id || pendingSongRef.current?.song?.title;
 
         if (!displaySongRef.current) {
-          // First load — show immediately
           displaySongRef.current = song;
           setDisplaySong(song);
         } else if (incomingId !== currentId && incomingId !== pendingId) {
-          // New song — queue it with delay
           pendingSongRef.current  = { song };
           pendingFlipRef.current  = Date.now() + (STREAM_DELAY_SEC * 1000);
         } else if (incomingId === currentId) {
-          // Same song still playing — clear any stale pending for a different song
-          // that may have been queued during a transition
           if (pendingId && pendingId !== incomingId) {
             // keep — different song is legitimately queued
           }
@@ -105,7 +102,7 @@ export function NowPlayingPanel({
     load();
     const id = window.setInterval(load, 15_000);
     return () => { alive = false; window.clearInterval(id); };
-  }, []); // empty deps — refs ensure we always read current values
+  }, []);
 
   /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {
@@ -116,11 +113,11 @@ export function NowPlayingPanel({
         displaySongRef.current = next;
         pendingSongRef.current = null;
         pendingFlipRef.current = null;
-        setDisplaySong(next);   // triggers re-render with new song
+        setDisplaySong(next);
       }
     }, 1_000);
     return () => window.clearInterval(id);
-  }, []); // empty deps — reads refs directly, never stale
+  }, []);
 
   /* ── Derived display values ────────────────────────────────────────────── */
   const title  = displaySong?.title  || (loading ? "Loading…" : "Live Stream");
@@ -154,16 +151,42 @@ export function NowPlayingPanel({
     const el = audioRef?.current;
     if (!el) return;
     el.preload = "none";
-    const onPlay  = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
-    const onEnded = () => setIsPlaying(false);
+
+    const onPlay  = () => { setIsPlaying(true);  isPlayingRef.current = true; };
+    const onPause = () => { setIsPlaying(false); isPlayingRef.current = false; };
+    const onEnded = () => { setIsPlaying(false); isPlayingRef.current = false; };
+
+    // If the primary stream errors mid-play, silently try the AzuraCast fallback.
+    // Using the error event (not a setTimeout) avoids interrupting a stream
+    // that is still buffering normally.
+    const onError = () => {
+      if (!isPlayingRef.current) return;
+      const fallback = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
+      if (el.src.includes(fallback)) {
+        // Fallback itself failed — surface the error
+        setError("Stream unavailable. Tap to retry.");
+        setIsPlaying(false);
+        isPlayingRef.current = false;
+        return;
+      }
+      el.src = fallback;
+      el.load();
+      el.play().catch(() => {
+        setError("Stream unavailable. Tap to retry.");
+        setIsPlaying(false);
+        isPlayingRef.current = false;
+      });
+    };
+
     el.addEventListener("play",  onPlay);
     el.addEventListener("pause", onPause);
     el.addEventListener("ended", onEnded);
+    el.addEventListener("error", onError);
     return () => {
       el.removeEventListener("play",  onPlay);
       el.removeEventListener("pause", onPause);
       el.removeEventListener("ended", onEnded);
+      el.removeEventListener("error", onError);
     };
   }, [audioRef]);
 
@@ -176,27 +199,23 @@ export function NowPlayingPanel({
   };
 
   /* ── Stream control ────────────────────────────────────────────────────── */
-  const startStream = (el, url) => {
-    el.src = url;
-    el.load();
-    const p = el.play();
-    if (p?.catch) p.catch(() => {
-      setError("Tap again to start audio.");
-      setIsPlaying(false);
-    });
-  };
-
   const handleTogglePlay = () => {
     const el = audioRef?.current;
     if (!el) return;
     try {
       if (!isPlaying) {
         setError(null);
-        startStream(el, streamUrl);
-        window.setTimeout(() => {
-          try { if (el.paused) startStream(el, AZURACAST_FALLBACK); }
-          catch { /* ignore */ }
-        }, 600);
+        // Only assign src + load if the element doesn't already have this URL.
+        // Re-assigning the same src resets the buffer and causes the stutter.
+        if (el.src !== streamUrl) {
+          el.src = streamUrl;
+          el.load();
+        }
+        const p = el.play();
+        if (p?.catch) p.catch(() => {
+          setError("Tap again to start audio.");
+          setIsPlaying(false);
+        });
         setIsPlaying(true);
       } else {
         el.pause();
