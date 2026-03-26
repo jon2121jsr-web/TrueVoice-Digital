@@ -1,7 +1,7 @@
 // src/components/ReelsGrid.jsx
-// ✅ YouTube Data API v3 auto-updates each channel with newest video
-// ✅ The Cut with Erica uses dedicated playlist
-// ✅ Live fetch prepends as new card — static backlog fully preserved
+// ✅ TrueVoice Channels shows full episodes only — no Shorts
+// ✅ Pigskin Frenzy filters uploads playlist to episodes (title starts with "Episode")
+// ✅ Dynamic hook prepends newest episode; static backlog is fallback
 import { useState } from "react";
 import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
 import { GMAA_REELS } from "../data/gmaaReels";
@@ -18,28 +18,27 @@ const CHANNEL_IDS = {
 
 const CHURCH_PLAYLIST_ID = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
 
-// Prepends live API data as a new card in front of the full static backlog.
-// Falls back to static data unchanged if API is loading, errored, or the
-// live video ID already exists anywhere in the static array (no duplicates).
-function mergeLatest(staticReels, apiData) {
-  if (!apiData?.videoId || apiData.loading || apiData.error) return staticReels;
+// Pigskin Frenzy: full episodes have titles starting with "Episode"
+const pigskinEpisodeFilter = (snippet) =>
+  snippet?.title?.trim().startsWith("Episode");
 
-  // If this video is already in the static backlog, don't duplicate it
+// Merges live API result in front of static backlog.
+// Skips if already present (no duplicates).
+function mergeLatest(staticReels, apiData, refFields = {}) {
+  if (!apiData?.videoId || apiData.loading || apiData.error) return staticReels;
   if (staticReels.some((v) => v.id === apiData.videoId)) return staticReels;
 
   const ref = staticReels[0] ?? {};
-
   const liveCard = {
     id:           apiData.videoId,
-    title:        apiData.title       || "Latest Episode",
-    thumbnailUrl: apiData.thumbnail   || ref.thumbnailUrl || null,
+    title:        apiData.title     || "Latest Episode",
+    thumbnailUrl: apiData.thumbnail || ref.thumbnailUrl || null,
     embedUrl:     `https://www.youtube.com/embed/${apiData.videoId}?autoplay=1`,
     videoUrl:     `https://www.youtube.com/watch?v=${apiData.videoId}`,
-    // Context fields inherited from static slot 0
-    speaker:      ref.speaker      || null,
-    topic:        ref.topic        || null,
-    source:       ref.source       || null,
-    description:  ref.description  || null,
+    speaker:      refFields.speaker      || ref.speaker      || null,
+    topic:        refFields.topic        || ref.topic        || null,
+    source:       refFields.source       || ref.source       || null,
+    description:  refFields.description  || ref.description  || null,
   };
 
   return [liveCard, ...staticReels];
@@ -48,15 +47,25 @@ function mergeLatest(staticReels, apiData) {
 function ReelsGrid() {
   const [activeVideo, setActiveVideo] = useState(null);
 
-  const pigskinRss = useYouTubeLatest({ channelId:  CHANNEL_IDS.PIGSKIN });
-  const churchRss  = useYouTubeLatest({ playlistId: CHURCH_PLAYLIST_ID });
-  const gmaaRss    = useYouTubeLatest({ channelId:  CHANNEL_IDS.GMAA });
-  const bpRss      = useYouTubeLatest({ channelId:  CHANNEL_IDS.BIBLEPROJECT });
+  // Pigskin: filter to full episodes only
+  const pigskinRss = useYouTubeLatest({
+    channelId: CHANNEL_IDS.PIGSKIN,
+    filterFn:  pigskinEpisodeFilter,
+  });
+  const churchRss = useYouTubeLatest({ playlistId: CHURCH_PLAYLIST_ID });
+  const gmaaRss   = useYouTubeLatest({ channelId:  CHANNEL_IDS.GMAA });
+  const bpRss     = useYouTubeLatest({ channelId:  CHANNEL_IDS.BIBLEPROJECT });
 
-  const pigskinReels = mergeLatest(PIGSKIN_REELS,       pigskinRss);
-  const churchReels  = mergeLatest(CHURCH_SHORTS_REELS, churchRss);
-  const gmaaReels    = mergeLatest(GMAA_REELS,          gmaaRss);
-  const bpReels      = mergeLatest(BIBLEPROJECT_REELS,  bpRss);
+  const pigskinReels = mergeLatest(PIGSKIN_REELS, pigskinRss, {
+    speaker: "Joel Norris", topic: "College Football", source: "Pigskin Frenzy",
+    description: "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
+  });
+  const churchReels = mergeLatest(CHURCH_SHORTS_REELS, churchRss, {
+    speaker: "Pastor Erica (FCC)", topic: "Faith & Church", source: "The Cut with Erica",
+    description: "Real Truth. Real Church. In Short Video.",
+  });
+  const gmaaReels = mergeLatest(GMAA_REELS, gmaaRss);
+  const bpReels   = mergeLatest(BIBLEPROJECT_REELS, bpRss);
 
   const handleOpen  = (video) => setActiveVideo(video);
   const handleClose = () => setActiveVideo(null);
@@ -112,10 +121,10 @@ function ReelsGrid() {
         Short-form, high-impact teaching and Q&amp;A content from trusted voices.
       </p>
 
-      {renderChannel("Pigskin Frenzy",       pigskinReels)}
+      {renderChannel("Pigskin Frenzy",    pigskinReels)}
       {renderChannel("The Cut with Erica", churchReels)}
-      {renderChannel("Give Me an Answer",    gmaaReels)}
-      {renderChannel("BibleProject",         bpReels)}
+      {renderChannel("Give Me an Answer",  gmaaReels)}
+      {renderChannel("BibleProject",       bpReels)}
 
       {activeVideo && (
         <div className="reel-modal-backdrop" onClick={handleClose}>
