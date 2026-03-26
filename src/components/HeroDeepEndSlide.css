@@ -1,56 +1,8 @@
-.hero-deepend-slide {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #040d1c;
-  overflow: hidden;
-}
-.hero-deepend-inner {
-  position: relative;
-  height: 100%;
-  aspect-ratio: 16 / 9;
-  max-width: 100%;
-}
-.hero-deepend-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center top;
-  display: block;
-  pointer-events: none;
-  user-select: none;
-}
-.hero-deepend-coming-soon {
-  position: absolute;
-  bottom: 44px;
-  right: 24px;
-  width: fit-content;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #4db8ff;
-  background: rgba(77, 184, 255, 0.1);
-  border: 1px solid rgba(77, 184, 255, 0.32);
-  border-radius: 100px;
-  padding: 6px 18px;
-  backdrop-filter: blur(6px);
-}
-.hero-deepend-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #4db8ff;
-  flex-shrink: 0;
-  animation: deepend-pulse 2s ease-in-out infinite;
-}
-@keyframes deepend-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(0.7); }
-}
+.hero-std-slide{position:relative;width:100%;height:100%;overflow:hidden;background:#050816;}
+.hero-std-img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none;user-select:none;}
+.hero-std-badge{position:absolute;bottom:48px;right:32px;width:fit-content;display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;border-radius:100px;padding:7px 20px;backdrop-filter:blur(6px);}
+.hero-std-badge--gold{color:#d4af37;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.35);}
+.hero-std-badge--blue{color:#7eb8ff;background:rgba(126,184,255,0.12);border:1px solid rgba(126,184,255,0.35);}
+.hero-std-badge--cyan{color:#4db8ff;background:rgba(77,184,255,0.1);border:1px solid rgba(77,184,255,0.32);}
+.hero-std-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;animation:std-pulse 2s ease-in-out infinite;}
+@keyframes std-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}

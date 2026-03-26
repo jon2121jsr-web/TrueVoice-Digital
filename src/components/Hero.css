@@ -50,20 +50,13 @@
   opacity: 1;
 }
 
-/* ── Component slides (Ryan, Scott, Merch, Deep End) ──
-   Fill the full slide area so their internal CSS controls height.
-   NOTE: HeroPigskinSlide manages its own sizing via .hero-pigskin,
-   so we exclude it from the stretch rule using a sibling selector trick —
-   we instead apply stretch only when the direct child is NOT .hero-pigskin */
+/* ── Component slides ── fill the full slide area */
 .hero-slide[data-kind="component"] {
   align-items: center;
 }
 
-/* Slides whose root element fills the full container (Ryan, Scott, Merch, Deep End) */
-.hero-slide[data-kind="component"] > .hero-ryan-slide,
-.hero-slide[data-kind="component"] > .hero-scott-slide,
-.hero-slide[data-kind="component"] > .hero-merch-slide,
-.hero-slide[data-kind="component"] > .hero-deepend-slide {
+.hero-slide[data-kind="component"] > .hero-std-slide,
+.hero-slide[data-kind="component"] > .hero-merch-slide {
   width: 100%;
   height: 100%;
 }
@@ -299,13 +292,3 @@
   }
 }
 
-/* ── Pigskin Frenzy slide ── */
-.hero-pigskin {
-  position: relative;
-  width: min(1120px, 96%);
-  height: 96%;
-  border-radius: 22px;
-  overflow: hidden;
-  padding-bottom: 44px;
-  box-sizing: border-box;
-}
