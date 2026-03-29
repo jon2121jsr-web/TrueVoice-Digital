@@ -6,3 +6,24 @@
 .hero-std-badge--cyan{color:#4db8ff;background:rgba(77,184,255,0.1);border:1px solid rgba(77,184,255,0.32);}
 .hero-std-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;animation:std-pulse 2s ease-in-out infinite;}
 @keyframes std-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}
+.hero-deepend-badge {
+  position: absolute;
+  top: 18%;
+  right: 28%;
+  width: fit-content;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #4db8ff;
+  background: rgba(77, 184, 255, 0.1);
+  border: 1px solid rgba(77, 184, 255, 0.32);
+  border-radius: 100px;
+  padding: 7px 20px;
+  backdrop-filter: blur(6px);
+  z-index: 3;
+}
