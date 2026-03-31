@@ -1,5 +1,7 @@
-// src/App.jsx  — v7  (MediaSession station lock + duplicate error handler removed)
+// src/App.jsx  — v8  (react-router-dom: BrowserRouter in main.jsx, Routes here)
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Routes, Route } from "react-router-dom";
+import AdminDashboard from "./pages/AdminDashboard";
 import "./App.css";
 
 import Hero from "./components/Hero";
@@ -362,6 +364,9 @@ function App() {
   }, []);
 
   return (
+    <Routes>
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="*" element={
     <div className="app-container tv-app">
 
       {/* ── HEADER ── */}
@@ -512,6 +517,8 @@ function App() {
 
       <VideoModal open={videoOpen} onClose={closeVideo} video={activeVideo} />
     </div>
+      } />
+    </Routes>
   );
 }
 
