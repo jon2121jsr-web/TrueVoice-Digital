@@ -51,6 +51,7 @@ export async function fetchNowPlaying() {
     : payload?.now_playing
     ? payload
     : { now_playing: payload };
+  console.log('nowplaying response:', JSON.stringify({ song: root?.now_playing?.song, art: root?.now_playing?.song?.art }, null, 2));
 
   const np   = root.now_playing || {};
   const song = np.song          || {};

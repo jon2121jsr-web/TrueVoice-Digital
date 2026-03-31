@@ -298,7 +298,14 @@ export function NowPlayingPanel({
                   style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit', display: 'block' }}
                 />
               ) : (
-                <div style={{ width: '100%', height: '100%', background: '#111', borderRadius: 'inherit' }} />
+                <div style={{
+                  width: '100%', height: '100%',
+                  background: 'linear-gradient(135deg, #0d1f14 0%, #1a3a24 100%)',
+                  borderRadius: 'inherit',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <img src="/icon-512.png" alt="TrueVoice" style={{ width: '60%', opacity: 0.6 }} />
+                </div>
               )}
               <p className="tv-live-placeholder-music">♪ Music streaming now</p>
             </div>
