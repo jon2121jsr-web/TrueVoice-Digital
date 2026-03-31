@@ -291,15 +291,15 @@ export function NowPlayingPanel({
         <div className="tv-live-video-block">
           {showPlaceholder ? (
             <div className="tv-live-placeholder">
-              <h2 className="tv-live-placeholder-title">
-                TrueVoice <span>LIVE</span>
-              </h2>
-              <p className="tv-live-placeholder-sub">
-                Where Truth and Faith Come Together
-              </p>
-              <div className="tv-live-placeholder-pill">
-                Live programming coming soon
-              </div>
+              {art ? (
+                <img
+                  src={art}
+                  alt={title}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit', display: 'block' }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: '#111', borderRadius: 'inherit' }} />
+              )}
               <p className="tv-live-placeholder-music">♪ Music streaming now</p>
             </div>
           ) : (
