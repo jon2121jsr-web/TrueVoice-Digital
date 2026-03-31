@@ -295,7 +295,15 @@ export function NowPlayingPanel({
                 <img
                   src={art}
                   alt={title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit', display: 'block' }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    objectPosition: 'center',
+                    borderRadius: 'inherit',
+                    display: 'block',
+                    background: '#000'
+                  }}
                 />
               ) : (
                 <div style={{
