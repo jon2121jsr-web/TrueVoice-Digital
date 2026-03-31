@@ -27,10 +27,9 @@ import { useSiteAnalytics }    from '../hooks/useSiteAnalytics';
 
 // ─── Simple PIN gate ─────────────────────────────────────────────────────────
 
-const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN || 'tv2024admin';
+const ADMIN_PIN = 'tv2024admin';
 
 function PinGate({ onUnlock }) {
-  console.log('PIN env:', import.meta.env.VITE_ADMIN_PIN);
   const [pin, setPin]   = useState('');
   const [err, setErr]   = useState(false);
   const submit = () => {
