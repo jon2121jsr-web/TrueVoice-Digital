@@ -15,7 +15,6 @@ import RecentTracksBar from "./components/RecentTracksBar.jsx";
 import VideoModal from "./components/VideoModal.jsx";
 import MerchSection from "./components/MerchSection.jsx";
 import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
-import PWAInstallPrompt from "./components/PWAInstallPrompt.jsx";
 
 import { videoFeed, VIDEO_SECTIONS } from "./data/videoFeed";
 
@@ -537,7 +536,6 @@ function App() {
           <VideoModal open={videoOpen} onClose={closeVideo} video={activeVideo} />
         </div>
       } />
-      <PWAInstallPrompt />
     </Routes>
   );
 }
