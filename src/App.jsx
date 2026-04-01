@@ -80,7 +80,11 @@ function wireMediaSessionControls(audioEl) {
   try {
     navigator.mediaSession.setActionHandler("play", async () => {
       try {
+        // src is kept intact on pause, so just load + play.
+        // Call load() first to re-establish the stream connection,
+        // then play() — this is what makes lock screen resume work.
         if (!audioEl.src) audioEl.src = LIVE_STREAM_URL;
+        audioEl.load();
         await audioEl.play();
       } catch { /* ignore */ }
     });

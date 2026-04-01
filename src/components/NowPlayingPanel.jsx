@@ -4,6 +4,8 @@
 // ✅ All pending song tracking via refs — no stale closure bug
 // ✅ Floating player always shows compact radio mode
 // ✅ Audio glitch fix: fallback via error event, not setTimeout; no redundant el.load()
+// ✅ Lock screen Play fix: pause keeps src intact so MediaSession can resume
+// ✅ Fast start: src pre-warmed on mount so buffer is ready when user hits play
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 import { LIVE_CONFIG } from "../data/liveConfig";
@@ -52,6 +54,21 @@ export function NowPlayingPanel({
   const pendingSongRef  = useRef(null);
   const pendingFlipRef  = useRef(null);
   const isPlayingRef    = useRef(false);
+  const streamUrlRef    = useRef(streamUrl);
+  useEffect(() => { streamUrlRef.current = streamUrl; }, [streamUrl]);
+
+  /* ── Pre-warm stream connection on mount ───────────────────────────────── */
+  // Sets src early so the browser opens the connection and begins buffering
+  // before the user hits play — dramatically reduces cold-start delay.
+  // preload="metadata" fetches just enough to establish the connection
+  // without downloading significant audio data.
+  useEffect(() => {
+    const el = audioRef?.current;
+    if (!el || el.src) return;
+    el.preload = "metadata";
+    el.src = streamUrl;
+    // Do NOT call el.load() or el.play() here — just set src
+  }, [audioRef, streamUrl]);
 
   /* ── Poll AzuraCast every 15 seconds ──────────────────────────────────── */
   useEffect(() => {
@@ -150,20 +167,15 @@ export function NowPlayingPanel({
   useEffect(() => {
     const el = audioRef?.current;
     if (!el) return;
-    el.preload = "none";
 
     const onPlay  = () => { setIsPlaying(true);  isPlayingRef.current = true; };
     const onPause = () => { setIsPlaying(false); isPlayingRef.current = false; };
     const onEnded = () => { setIsPlaying(false); isPlayingRef.current = false; };
 
-    // If the primary stream errors mid-play, silently try the AzuraCast fallback.
-    // Using the error event (not a setTimeout) avoids interrupting a stream
-    // that is still buffering normally.
     const onError = () => {
       if (!isPlayingRef.current) return;
-      const fallback = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
+      const fallback = AZURACAST_FALLBACK;
       if (el.src.includes(fallback)) {
-        // Fallback itself failed — surface the error
         setError("Stream unavailable. Tap to retry.");
         setIsPlaying(false);
         isPlayingRef.current = false;
@@ -205,10 +217,9 @@ export function NowPlayingPanel({
     try {
       if (!isPlaying) {
         setError(null);
-        // Only assign src + load if the element doesn't already have this URL.
-        // Re-assigning the same src resets the buffer and causes the stutter.
-        if (el.src !== streamUrl) {
-          el.src = streamUrl;
+        // If src was cleared or changed, reset it
+        if (!el.src || !el.src.includes("live365") && !el.src.includes("truevoice")) {
+          el.src = streamUrlRef.current;
           el.load();
         }
         const p = el.play();
@@ -218,9 +229,8 @@ export function NowPlayingPanel({
         });
         setIsPlaying(true);
       } else {
+        // Pause only — keep src intact so lock screen Play can resume
         el.pause();
-        el.removeAttribute("src");
-        el.load();
         setIsPlaying(false);
       }
     } catch {
