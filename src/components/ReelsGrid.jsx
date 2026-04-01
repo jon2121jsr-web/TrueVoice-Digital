@@ -1,13 +1,8 @@
 // src/components/ReelsGrid.jsx
-// ✅ TrueVoice Channels shows full episodes only — no Shorts
-// ✅ Pigskin Frenzy filters uploads playlist to episodes (title starts with "Episode")
-// ✅ Dynamic hook prepends newest episode; static backlog is fallback
+// Fully dynamic — all 4 sections pull directly from YouTube API.
+// No static data files required.
 import { useState } from "react";
-import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
-import { GMAA_REELS } from "../data/gmaaReels";
-import { BIBLEPROJECT_REELS } from "../data/bibleProjectReels";
-import { PIGSKIN_REELS } from "../data/pigskinReels";
-import { CHURCH_SHORTS_REELS } from "../data/churchShortsReels";
+import { useYouTubeFeed } from "../hooks/useYouTubeFeed";
 import "./ReelsGrid.css";
 
 const CHANNEL_IDS = {
@@ -18,99 +13,114 @@ const CHANNEL_IDS = {
 
 const CHURCH_PLAYLIST_ID = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
 
-// Pigskin Frenzy: full episodes have titles starting with "Episode"
-const pigskinEpisodeFilter = (snippet) =>
-  snippet?.title?.trim().startsWith("Episode");
+// Module-level constant — stable reference across renders
+const pigskinFilter = (title) => title?.trim().startsWith("Episode");
 
-// Merges live API result in front of static backlog.
-// Skips if already present (no duplicates).
-function mergeLatest(staticReels, apiData, refFields = {}) {
-  if (!apiData?.videoId || apiData.loading || apiData.error) return staticReels;
-  if (staticReels.some((v) => v.id === apiData.videoId)) return staticReels;
+function enrichVideos(videos, defaults) {
+  return videos.map(v => ({ ...defaults, ...v }));
+}
 
-  const ref = staticReels[0] ?? {};
-  const liveCard = {
-    id:           apiData.videoId,
-    title:        apiData.title     || "Latest Episode",
-    thumbnailUrl: apiData.thumbnail || ref.thumbnailUrl || null,
-    embedUrl:     `https://www.youtube.com/embed/${apiData.videoId}?autoplay=1`,
-    videoUrl:     `https://www.youtube.com/watch?v=${apiData.videoId}`,
-    speaker:      refFields.speaker      || ref.speaker      || null,
-    topic:        refFields.topic        || ref.topic        || null,
-    source:       refFields.source       || ref.source       || null,
-    description:  refFields.description  || ref.description  || null,
-  };
-
-  return [liveCard, ...staticReels];
+function SkeletonRow() {
+  return (
+    <div className="reels-scroller-wrap">
+      <div className="reels-scroller">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="reel-card reel-card--skeleton">
+            <div className="reel-thumb-wrap reel-thumb-wrap--skeleton" />
+            <div className="reel-meta">
+              <div className="reel-skeleton-line reel-skeleton-line--title" />
+              <div className="reel-skeleton-line reel-skeleton-line--sub" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function ReelsGrid() {
   const [activeVideo, setActiveVideo] = useState(null);
 
-  // Pigskin: filter to full episodes only
-  const pigskinRss = useYouTubeLatest({
-    channelId: CHANNEL_IDS.PIGSKIN,
-    filterFn:  pigskinEpisodeFilter,
-  });
-  const churchRss = useYouTubeLatest({ playlistId: CHURCH_PLAYLIST_ID });
-  const gmaaRss   = useYouTubeLatest({ channelId:  CHANNEL_IDS.GMAA });
-  const bpRss     = useYouTubeLatest({ channelId:  CHANNEL_IDS.BIBLEPROJECT });
+  const pigskinFeed = useYouTubeFeed({ channelId:  CHANNEL_IDS.PIGSKIN,      maxResults: 10, filterFn: pigskinFilter });
+  const churchFeed  = useYouTubeFeed({ playlistId: CHURCH_PLAYLIST_ID,        maxResults: 10 });
+  const gmaaFeed    = useYouTubeFeed({ channelId:  CHANNEL_IDS.GMAA,          maxResults: 10 });
+  const bpFeed      = useYouTubeFeed({ channelId:  CHANNEL_IDS.BIBLEPROJECT,  maxResults: 10 });
 
-  const pigskinReels = mergeLatest(PIGSKIN_REELS, pigskinRss, {
-    speaker: "Joel Norris", topic: "College Football", source: "Pigskin Frenzy",
+  const pigskinReels = enrichVideos(pigskinFeed.videos, {
+    speaker:     "Joel Norris",
+    topic:       "College Football",
+    source:      "Pigskin Frenzy",
     description: "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
   });
-  const churchReels = mergeLatest(CHURCH_SHORTS_REELS, churchRss, {
-    speaker: "Pastor Erica (FCC)", topic: "Faith & Church", source: "The Cut with Erica",
+  const churchReels = enrichVideos(churchFeed.videos, {
+    speaker:     "Pastor Erica (FCC)",
+    topic:       "Faith & Church",
+    source:      "The Cut with Erica",
     description: "Real Truth. Real Church. In Short Video.",
   });
-  const gmaaReels = mergeLatest(GMAA_REELS, gmaaRss);
-  const bpReels   = mergeLatest(BIBLEPROJECT_REELS, bpRss);
+  const gmaaReels = enrichVideos(gmaaFeed.videos, {
+    speaker:     "Cliffe Knechtle",
+    topic:       "Apologetics",
+    source:      "Give Me An Answer",
+    description: "Real answers to real questions about faith, Jesus, and the Bible.",
+  });
+  const bpReels = enrichVideos(bpFeed.videos, {
+    speaker:     "BibleProject",
+    topic:       "Bible Overview",
+    source:      "BibleProject",
+    description: "Animated videos exploring the story and themes of the Bible.",
+  });
 
   const handleOpen  = (video) => setActiveVideo(video);
   const handleClose = () => setActiveVideo(null);
 
-  const renderChannel = (channelTitle, items) => (
+  const renderChannel = (channelTitle, items, feedState) => (
     <section className="reels-channel" key={channelTitle}>
       <div className="reels-channel-header">
         <h3 className="reels-channel-title">{channelTitle}</h3>
-        <span className="reels-channel-count">
-          {items.length} video{items.length !== 1 ? "s" : ""}
-        </span>
+        {!feedState.loading && (
+          <span className="reels-channel-count">
+            {items.length} video{items.length !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
 
-      <div className="reels-scroller-wrap">
-        <div className="reels-scroller">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              className="reel-card"
-              type="button"
-              onClick={() => handleOpen(item)}
-            >
-              <div className="reel-thumb-wrap">
-                <img
-                  src={item.thumbnailUrl}
-                  alt={item.title}
-                  className="reel-thumb"
-                  loading="lazy"
-                />
-                <div className="reel-play-pill">Watch</div>
-              </div>
-              <div className="reel-meta">
-                <h4 className="reel-title">{item.title}</h4>
-                <p className="reel-speaker">
-                  {item.speaker} •{" "}
-                  <span className="reel-topic">{item.topic}</span>
-                </p>
-                {item.source && (
-                  <p className="reel-source">Source: {item.source}</p>
-                )}
-              </div>
-            </button>
-          ))}
+      {feedState.loading ? (
+        <SkeletonRow />
+      ) : (
+        <div className="reels-scroller-wrap">
+          <div className="reels-scroller">
+            {items.map((item) => (
+              <button
+                key={item.id}
+                className="reel-card"
+                type="button"
+                onClick={() => handleOpen(item)}
+              >
+                <div className="reel-thumb-wrap">
+                  <img
+                    src={item.thumbnailUrl}
+                    alt={item.title}
+                    className="reel-thumb"
+                    loading="lazy"
+                  />
+                  <div className="reel-play-pill">Watch</div>
+                </div>
+                <div className="reel-meta">
+                  <h4 className="reel-title">{item.title}</h4>
+                  <p className="reel-speaker">
+                    {item.speaker} •{" "}
+                    <span className="reel-topic">{item.topic}</span>
+                  </p>
+                  {item.source && (
+                    <p className="reel-source">Source: {item.source}</p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 
@@ -121,10 +131,10 @@ function ReelsGrid() {
         Short-form, high-impact teaching and Q&amp;A content from trusted voices.
       </p>
 
-      {renderChannel("Pigskin Frenzy",    pigskinReels)}
-      {renderChannel("The Cut with Erica", churchReels)}
-      {renderChannel("Give Me an Answer",  gmaaReels)}
-      {renderChannel("BibleProject",       bpReels)}
+      {renderChannel("Pigskin Frenzy",     pigskinReels, pigskinFeed)}
+      {renderChannel("The Cut with Erica", churchReels,  churchFeed)}
+      {renderChannel("Give Me an Answer",  gmaaReels,    gmaaFeed)}
+      {renderChannel("BibleProject",       bpReels,      bpFeed)}
 
       {activeVideo && (
         <div className="reel-modal-backdrop" onClick={handleClose}>

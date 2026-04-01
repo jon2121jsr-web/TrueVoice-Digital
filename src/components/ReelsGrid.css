@@ -278,6 +278,35 @@
 
 .reel-modal-link:hover { text-decoration: underline; }
 
+/* ─── SKELETON ────────────────────────────────────────────────────────────── */
+
+.reel-card--skeleton {
+  pointer-events: none;
+}
+
+.reel-thumb-wrap--skeleton {
+  padding-top: 56.25%;
+  background: #e2e8f0;
+  animation: reel-shimmer 1.4s ease-in-out infinite;
+}
+
+.reel-skeleton-line {
+  height: 13px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  margin-bottom: 7px;
+  animation: reel-shimmer 1.4s ease-in-out infinite;
+}
+
+.reel-skeleton-line--title { width: 80%; }
+.reel-skeleton-line--sub   { width: 50%; }
+
+@keyframes reel-shimmer {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+
 /* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {

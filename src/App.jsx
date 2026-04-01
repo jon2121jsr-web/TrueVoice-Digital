@@ -1,5 +1,5 @@
 // src/App.jsx  — v9  (MediaSession wired after first play; audio pre-warm)
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import AdminDashboard from "./pages/AdminDashboard";
 import "./App.css";
@@ -16,7 +16,21 @@ import VideoModal from "./components/VideoModal.jsx";
 import MerchSection from "./components/MerchSection.jsx";
 import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
 
-import { videoFeed, VIDEO_SECTIONS } from "./data/videoFeed";
+import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
+
+// ─── Video sections ───────────────────────────────────────────────────────────
+const VIDEO_SECTIONS = {
+  WATCH_LIVE:       'WATCH_LIVE',
+  NEW_EPISODES:     'NEW_EPISODES',
+  SHORTS_AND_REELS: 'SHORTS_AND_REELS',
+  PIGSKIN_FRENZY:   'PIGSKIN_FRENZY',
+  CHURCH_IN_SHORTS: 'CHURCH_IN_SHORTS',
+};
+
+const TRUEVOICE_CHANNEL_ID = "UCWpVof-rd5hs1xpchwj1MAQ";
+const PIGSKIN_CHANNEL_ID   = "UC_khbgasHiiwUxPHOMfbR0A";
+const CHURCH_PLAYLIST_ID   = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
+const pigskinEpisodeFilter = (title) => title?.trim().startsWith("Episode");
 
 // ─── Stream URLs ──────────────────────────────────────────────────────────────
 const LIVE365_STREAM_URL =
@@ -313,32 +327,19 @@ function App() {
     });
   }, [nowPlaying]);
 
-  // Video feed grouped by section
-  const feedBySection = useMemo(() => {
-    const active  = (videoFeed || []).filter((v) => v?.active);
-    const grouped = {
-      [VIDEO_SECTIONS.WATCH_LIVE]:       [],
-      [VIDEO_SECTIONS.NEW_EPISODES]:     [],
-      [VIDEO_SECTIONS.SHORTS_AND_REELS]: [],
-      [VIDEO_SECTIONS.PIGSKIN_FRENZY]:   [],
-      [VIDEO_SECTIONS.CHURCH_IN_SHORTS]: [],
-    };
+  // Dynamic video feeds — each section pulls live from YouTube API
+  const newEpisodesFeed = useYouTubeFeed({ channelId:  TRUEVOICE_CHANNEL_ID, maxResults: 5 });
+  const shortsFeed      = useYouTubeFeed({ channelId:  TRUEVOICE_CHANNEL_ID, maxResults: 5 });
+  const pigskinFeed     = useYouTubeFeed({ channelId:  PIGSKIN_CHANNEL_ID,   maxResults: 1, filterFn: pigskinEpisodeFilter });
+  const churchFeed      = useYouTubeFeed({ playlistId: CHURCH_PLAYLIST_ID,   maxResults: 1 });
 
-    for (const item of active) {
-      if (grouped[item.section]) grouped[item.section].push(item);
-    }
-
-    for (const k of Object.keys(grouped)) {
-      grouped[k].sort((a, b) => {
-        const af = a.featured ? 1 : 0;
-        const bf = b.featured ? 1 : 0;
-        if (af !== bf) return bf - af;
-        return new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0);
-      });
-    }
-
-    return grouped;
-  }, []);
+  const feedBySection = {
+    [VIDEO_SECTIONS.NEW_EPISODES]:     newEpisodesFeed.videos,
+    [VIDEO_SECTIONS.SHORTS_AND_REELS]: shortsFeed.videos,
+    [VIDEO_SECTIONS.PIGSKIN_FRENZY]:   pigskinFeed.videos,
+    [VIDEO_SECTIONS.CHURCH_IN_SHORTS]: churchFeed.videos,
+    [VIDEO_SECTIONS.WATCH_LIVE]:       [],
+  };
 
   const openVideoForSection = (sectionKey) => {
     const chosen = (feedBySection[sectionKey] || [])[0] || null;
