@@ -5,6 +5,17 @@
 
 export const PIGSKIN_REELS = [
   {
+    id:           "2yASg53Y9iw",
+    title:        "Episode 310: 2026 Spring Outlooks: Kentucky, Arkansas, UCLA, & Ole Miss",
+    speaker:      "Joel Norris",
+    topic:        "College Football",
+    description:  "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
+    thumbnailUrl: "https://img.youtube.com/vi/2yASg53Y9iw/maxresdefault.jpg",
+    embedUrl:     "https://www.youtube.com/embed/2yASg53Y9iw?autoplay=1",
+    videoUrl:     "https://www.youtube.com/watch?v=2yASg53Y9iw",
+    source:       "Pigskin Frenzy",
+  },
+  {
     id:           "KmHm6zbdMe8",
     title:        "Episode 309: 2026 Spring Outlooks: Texas Tech, Oklahoma State, Houston, & BYU",
     speaker:      "Joel Norris",
