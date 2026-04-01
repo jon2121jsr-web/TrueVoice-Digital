@@ -78,13 +78,19 @@ function wireMediaSessionControls(audioEl) {
   if (!audioEl || !("mediaSession" in navigator)) return;
 
   try {
-    navigator.mediaSession.setActionHandler("play", async () => {
+    navigator.mediaSession.setActionHandler("play", () => {
       try {
-        // Do NOT call load() here — iOS treats it as a new autoplay
-        // request and blocks it. src is kept intact from pause,
-        // so play() alone is sufficient to resume.
-        if (!audioEl.src) audioEl.src = LIVE_STREAM_URL;
-        await audioEl.play();
+        // Live streams go stale when paused — must reconnect.
+        // Append cache-buster to force a fresh connection.
+        const base = LIVE_STREAM_URL.split("?")[0];
+        audioEl.src = `${base}?_=${Date.now()}`;
+        audioEl.load();
+        audioEl.play().catch(() => {
+          // If Live365 fails, fall back to AzuraCast
+          audioEl.src = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
+          audioEl.load();
+          audioEl.play().catch(() => {});
+        });
       } catch { /* ignore */ }
     });
 
