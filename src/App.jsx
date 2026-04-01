@@ -1,4 +1,4 @@
-// src/App.jsx  — v8  (react-router-dom: BrowserRouter in main.jsx, Routes here)
+// src/App.jsx  — v9  (MediaSession wired after first play; audio pre-warm)
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -18,12 +18,15 @@ import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
 
 import { videoFeed, VIDEO_SECTIONS } from "./data/videoFeed";
 
-// ─── Stream URLs ─────────────────────────────────────────────────────────────
+// ─── Stream URLs ──────────────────────────────────────────────────────────────
 const LIVE365_STREAM_URL =
   "https://streaming.live365.com/a61535";
 
 const LIVE_STREAM_URL =
   import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL;
+
+const AZURACAST_FALLBACK_URL =
+  "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
 // ─── Social links ─────────────────────────────────────────────────────────────
 const SOCIAL = {
@@ -47,7 +50,7 @@ const STRIPE = {
 };
 
 // ─── Media Session helpers ────────────────────────────────────────────────────
-const STATION_NAME    = "TrueVoice Digital";
+const STATION_NAME      = "TrueVoice Digital";
 const DEFAULT_MEDIA_ART = "/truevoice-favicon.png";
 
 function safeText(v) {
@@ -69,8 +72,22 @@ function setMediaSessionMetadata({ title, artist, artUrl }) {
   navigator.mediaSession.metadata = new MediaMetadata({
     title:   safeText(title)  || STATION_NAME,
     artist:  safeText(artist) || "Now Playing",
-    album:   STATION_NAME,          // always locked to station name
+    album:   STATION_NAME,
     artwork: buildArtworkList(artUrl),
+  });
+}
+
+// Reconnects the audio element to a live stream and plays.
+// Live streams go stale when paused — this is the only reliable resume path.
+function reconnectAndPlay(audioEl) {
+  if (!audioEl) return;
+  audioEl.src = LIVE_STREAM_URL;
+  audioEl.load();
+  audioEl.play().catch(() => {
+    // Live365 failed — fall back to AzuraCast
+    audioEl.src = AZURACAST_FALLBACK_URL;
+    audioEl.load();
+    audioEl.play().catch(() => {});
   });
 }
 
@@ -78,31 +95,19 @@ function wireMediaSessionControls(audioEl) {
   if (!audioEl || !("mediaSession" in navigator)) return;
 
   try {
+    // Play: always reconnect — live streams can't be "unpaused" like files
     navigator.mediaSession.setActionHandler("play", () => {
-      try {
-        // Live streams go stale when paused — must reconnect.
-        // Append cache-buster to force a fresh connection.
-        const base = LIVE_STREAM_URL.split("?")[0];
-        audioEl.src = `${base}?_=${Date.now()}`;
-        audioEl.load();
-        audioEl.play().catch(() => {
-          // If Live365 fails, fall back to AzuraCast
-          audioEl.src = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
-          audioEl.load();
-          audioEl.play().catch(() => {});
-        });
-      } catch { /* ignore */ }
+      reconnectAndPlay(audioEl);
     });
 
     navigator.mediaSession.setActionHandler("pause", () => {
       try { audioEl.pause(); } catch { /* ignore */ }
     });
 
-    ["previoustrack", "nexttrack", "seekbackward", "seekforward", "seekto"].forEach(
-      (action) => {
+    ["previoustrack", "nexttrack", "seekbackward", "seekforward", "seekto"]
+      .forEach((action) => {
         try { navigator.mediaSession.setActionHandler(action, null); } catch { /* ignore */ }
-      }
-    );
+      });
   } catch { /* ignore */ }
 
   const syncPlaybackState = () => {
@@ -136,16 +141,10 @@ function SocialIconLink({ href, label, children }) {
   const url = safeText(href);
 
   const handleClick = (e) => {
-    if (!url || url === "#") {
-      e.preventDefault();
-      return;
-    }
+    if (!url || url === "#") { e.preventDefault(); return; }
     if (isRunningAsIOSPWA() && navigator.share) {
       e.preventDefault();
-      navigator.share({ url }).catch(() => {
-        window.location.href = url;
-      });
-      return;
+      navigator.share({ url }).catch(() => { window.location.href = url; });
     }
   };
 
@@ -158,17 +157,11 @@ function SocialIconLink({ href, label, children }) {
       aria-label={label}
       title={label}
       style={{
-        pointerEvents: "auto",
-        position: "relative",
-        zIndex: 50,
-        cursor: "pointer",
-        WebkitTapHighlightColor: "transparent",
-        touchAction: "manipulation",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minWidth: "44px",
-        minHeight: "44px",
+        pointerEvents: "auto", position: "relative", zIndex: 50,
+        cursor: "pointer", WebkitTapHighlightColor: "transparent",
+        touchAction: "manipulation", display: "inline-flex",
+        alignItems: "center", justifyContent: "center",
+        minWidth: "44px", minHeight: "44px",
       }}
       onClick={handleClick}
     >
@@ -288,17 +281,30 @@ function App() {
     return () => window.clearTimeout(t);
   }, []);
 
-  // Wire audio + media session
-  // Note: fallback on stream error is handled inside NowPlayingPanel via the
-  // audio element's error event. No duplicate handler needed here.
+  // Wire MediaSession AFTER first user-initiated play.
+  // iOS will not grant lock screen control until the audio session
+  // has been activated by a direct user gesture.
   useEffect(() => {
     const audioEl = playerRef.current;
     if (!audioEl) return;
-    const cleanup = wireMediaSessionControls(audioEl);
-    return () => { cleanup?.(); };
+
+    let cleanupFn = null;
+    let wired = false;
+
+    const onFirstPlay = () => {
+      if (wired) return;
+      wired = true;
+      cleanupFn = wireMediaSessionControls(audioEl);
+    };
+
+    audioEl.addEventListener("play", onFirstPlay);
+    return () => {
+      audioEl.removeEventListener("play", onFirstPlay);
+      cleanupFn?.();
+    };
   }, []);
 
-  // Update media session metadata whenever song changes
+  // Update MediaSession metadata whenever song changes
   useEffect(() => {
     setMediaSessionMetadata({
       title:  nowPlaying.title  || STATION_NAME,
@@ -376,156 +382,159 @@ function App() {
     <Routes>
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="*" element={
-    <div className="app-container tv-app">
+        <div className="app-container tv-app">
 
-      {/* ── HEADER ── */}
-      <header className="tv-header">
-        <div className="tv-header-inner">
-          <div className="tv-brand">TrueVoice.Digital</div>
+          {/* ── HEADER ── */}
+          <header className="tv-header">
+            <div className="tv-header-inner">
+              <div className="tv-brand">TrueVoice.Digital</div>
 
-          <div className="tv-header-actions">
-            <div
-              className="tv-social-row"
-              aria-label="TrueVoice social links"
-              style={{ pointerEvents: "auto", position: "relative", zIndex: 50 }}
-            >
-              <SocialIconLink href={SOCIAL.youtube}   label="YouTube">   <YoutubeIcon />   </SocialIconLink>
-              <SocialIconLink href={SOCIAL.x}         label="X">         <XIcon />         </SocialIconLink>
-              <SocialIconLink href={SOCIAL.instagram} label="Instagram"> <InstagramIcon /> </SocialIconLink>
+              <div className="tv-header-actions">
+                <div
+                  className="tv-social-row"
+                  aria-label="TrueVoice social links"
+                  style={{ pointerEvents: "auto", position: "relative", zIndex: 50 }}
+                >
+                  <SocialIconLink href={SOCIAL.youtube}   label="YouTube">   <YoutubeIcon />   </SocialIconLink>
+                  <SocialIconLink href={SOCIAL.x}         label="X">         <XIcon />         </SocialIconLink>
+                  <SocialIconLink href={SOCIAL.instagram} label="Instagram"> <InstagramIcon /> </SocialIconLink>
+                </div>
+
+                <button
+                  type="button"
+                  className="tv-header-give"
+                  onClick={handleHeaderGiveClick}
+                  style={{ touchAction: "manipulation" }}
+                >
+                  Give
+                </button>
+              </div>
             </div>
+          </header>
 
-            <button
-              type="button"
-              className="tv-header-give"
-              onClick={handleHeaderGiveClick}
-              style={{ touchAction: "manipulation" }}
-            >
-              Give
-            </button>
-          </div>
-        </div>
-      </header>
+          {/* ── HERO ── */}
+          <Hero />
 
-      {/* ── HERO ── */}
-      <Hero />
-      <audio ref={playerRef} preload="none" playsInline />
+          {/* preload="metadata" pre-warms the connection so play starts fast.
+              NowPlayingPanel sets src on mount; this tag must not override it. */}
+          <audio ref={playerRef} preload="metadata" playsInline />
 
-      <main className={`tv-main ${isFloatingPlayer ? "tv-main--player-floating" : ""}`}>
+          <main className={`tv-main ${isFloatingPlayer ? "tv-main--player-floating" : ""}`}>
 
-        {showThanks && (
-          <div style={{
-            margin: "14px auto 0", maxWidth: "1100px", padding: "12px 14px",
-            borderRadius: "14px", background: "rgba(37,99,235,0.10)",
-            border: "1px solid rgba(37,99,235,0.18)", fontWeight: 600,
-          }}>
-            Thank you for supporting TrueVoice Digital. Your gift is received.
-          </div>
-        )}
-
-        <div className="tv-hero">
-          <div className={`tv-player-dock ${isFloatingPlayer ? "is-floating" : ""}`}>
-            <div ref={sentinelRef} className="tv-player-sentinel" aria-hidden="true" />
-
-            {isFloatingPlayer && (
-              <div
-                className="tv-player-spacer"
-                style={{ height: dockHeight || 0 }}
-                aria-hidden="true"
-              />
+            {showThanks && (
+              <div style={{
+                margin: "14px auto 0", maxWidth: "1100px", padding: "12px 14px",
+                borderRadius: "14px", background: "rgba(37,99,235,0.10)",
+                border: "1px solid rgba(37,99,235,0.18)", fontWeight: 600,
+              }}>
+                Thank you for supporting TrueVoice Digital. Your gift is received.
+              </div>
             )}
 
-            <div ref={surfaceRef} className="tv-player-surface">
-              <NowPlayingPanel
-                streamUrl={LIVE_STREAM_URL}
-                audioRef={playerRef}
-                showHistory={false}
-                onStatusChange={handleStatusChange}
-                isFloating={isFloatingPlayer}
+            <div className="tv-hero">
+              <div className={`tv-player-dock ${isFloatingPlayer ? "is-floating" : ""}`}>
+                <div ref={sentinelRef} className="tv-player-sentinel" aria-hidden="true" />
+
+                {isFloatingPlayer && (
+                  <div
+                    className="tv-player-spacer"
+                    style={{ height: dockHeight || 0 }}
+                    aria-hidden="true"
+                  />
+                )}
+
+                <div ref={surfaceRef} className="tv-player-surface">
+                  <NowPlayingPanel
+                    streamUrl={LIVE_STREAM_URL}
+                    audioRef={playerRef}
+                    showHistory={false}
+                    onStatusChange={handleStatusChange}
+                    isFloating={isFloatingPlayer}
+                  />
+                </div>
+              </div>
+
+              <div className="tv-verse-card">
+                <VerseOfTheDay />
+              </div>
+            </div>
+
+            <RecentTracksBar />
+
+            <section className="tv-section tv-section--stacked">
+              <TrueVoiceConnect
+                onWatchLive={()        => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
+                onNewEpisodes={()      => openVideoForSection(VIDEO_SECTIONS.NEW_EPISODES)}
+                onShortsAndReels={()   => openVideoForSection(VIDEO_SECTIONS.SHORTS_AND_REELS)}
+                onPigskinFrenzy={()    => openVideoForSection(VIDEO_SECTIONS.PIGSKIN_FRENZY)}
+                onChurchInShorts={()   => openVideoForSection(VIDEO_SECTIONS.CHURCH_IN_SHORTS)}
               />
-            </div>
-          </div>
+            </section>
 
-          <div className="tv-verse-card">
-            <VerseOfTheDay />
-          </div>
+            <section className="tv-section tv-section--stacked"><ReelsGrid /></section>
+            <section className="tv-section tv-section--stacked"><PodcastList /></section>
+
+            {/* ── SUPPORT THE MISSION ── */}
+            <section id="tv-support-section" className="tv-section">
+              <h2 className="tv-section-title">Support the Mission</h2>
+              <p className="tv-support-copy">
+                Your generosity helps keep TrueVoice Digital streaming worldwide.
+              </p>
+
+              <div className="tv-donate-row">
+                {[
+                  { href: STRIPE.monthly,   label: "Monthly Gift",  sub: "Become a monthly partner." },
+                  { href: STRIPE.oneTime10, label: "One-Time $10",  sub: "Seed Gift" },
+                  { href: STRIPE.oneTime25, label: "One-Time $25",  sub: "Supporter Gift" },
+                  { href: STRIPE.oneTime50, label: "One-Time $50",  sub: "Impact Gift" },
+                ].map(({ href, label, sub }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    className="tv-support-btn tv-support-btn-primary tv-donate-btn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                  >
+                    <span>{label}</span>
+                    <span className="tv-support-subtext">{sub}</span>
+                  </a>
+                ))}
+              </div>
+            </section>
+
+            <MerchSection />
+
+            {/* ── FOOTER ── */}
+            <footer className="tv-footer">
+              <div className="tv-footer-social">
+                <span className="tv-footer-follow">Follow TrueVoice Digital</span>
+                <div
+                  className="tv-social-row"
+                  aria-label="TrueVoice social links"
+                  style={{ pointerEvents: "auto", position: "relative", zIndex: 50 }}
+                >
+                  <SocialIconLink href={SOCIAL.youtube}   label="YouTube">   <YoutubeIcon />   </SocialIconLink>
+                  <SocialIconLink href={SOCIAL.x}         label="X">         <XIcon />         </SocialIconLink>
+                  <SocialIconLink href={SOCIAL.instagram} label="Instagram"> <InstagramIcon /> </SocialIconLink>
+                </div>
+              </div>
+
+              <p>© {new Date().getFullYear()} TrueVoice.Digital. All rights reserved.</p>
+              <p className="tv-footer-attrib">POWERED BY OUTPUT DIGITAL</p>
+            </footer>
+          </main>
+
+          {showDebug && (
+            <NowPlayingDebug
+              playerRef={playerRef}
+              currentStation={currentStation}
+              liveUrl={LIVE_STREAM_URL}
+            />
+          )}
+
+          <VideoModal open={videoOpen} onClose={closeVideo} video={activeVideo} />
         </div>
-
-        <RecentTracksBar />
-
-        <section className="tv-section tv-section--stacked">
-          <TrueVoiceConnect
-            onWatchLive={()        => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
-            onNewEpisodes={()      => openVideoForSection(VIDEO_SECTIONS.NEW_EPISODES)}
-            onShortsAndReels={()   => openVideoForSection(VIDEO_SECTIONS.SHORTS_AND_REELS)}
-            onPigskinFrenzy={()    => openVideoForSection(VIDEO_SECTIONS.PIGSKIN_FRENZY)}
-            onChurchInShorts={()   => openVideoForSection(VIDEO_SECTIONS.CHURCH_IN_SHORTS)}
-          />
-        </section>
-
-        <section className="tv-section tv-section--stacked"><ReelsGrid /></section>
-        <section className="tv-section tv-section--stacked"><PodcastList /></section>
-
-        {/* ── SUPPORT THE MISSION ── */}
-        <section id="tv-support-section" className="tv-section">
-          <h2 className="tv-section-title">Support the Mission</h2>
-          <p className="tv-support-copy">
-            Your generosity helps keep TrueVoice Digital streaming worldwide.
-          </p>
-
-          <div className="tv-donate-row">
-            {[
-              { href: STRIPE.monthly,   label: "Monthly Gift",  sub: "Become a monthly partner." },
-              { href: STRIPE.oneTime10, label: "One-Time $10",  sub: "Seed Gift" },
-              { href: STRIPE.oneTime25, label: "One-Time $25",  sub: "Supporter Gift" },
-              { href: STRIPE.oneTime50, label: "One-Time $50",  sub: "Impact Gift" },
-            ].map(({ href, label, sub }) => (
-              <a
-                key={label}
-                href={href}
-                className="tv-support-btn tv-support-btn-primary tv-donate-btn"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-              >
-                <span>{label}</span>
-                <span className="tv-support-subtext">{sub}</span>
-              </a>
-            ))}
-          </div>
-        </section>
-
-        <MerchSection />
-
-        {/* ── FOOTER ── */}
-        <footer className="tv-footer">
-          <div className="tv-footer-social">
-            <span className="tv-footer-follow">Follow TrueVoice Digital</span>
-            <div
-              className="tv-social-row"
-              aria-label="TrueVoice social links"
-              style={{ pointerEvents: "auto", position: "relative", zIndex: 50 }}
-            >
-              <SocialIconLink href={SOCIAL.youtube}   label="YouTube">   <YoutubeIcon />   </SocialIconLink>
-              <SocialIconLink href={SOCIAL.x}         label="X">         <XIcon />         </SocialIconLink>
-              <SocialIconLink href={SOCIAL.instagram} label="Instagram"> <InstagramIcon /> </SocialIconLink>
-            </div>
-          </div>
-
-          <p>© {new Date().getFullYear()} TrueVoice.Digital. All rights reserved.</p>
-          <p className="tv-footer-attrib">POWERED BY OUTPUT DIGITAL</p>
-        </footer>
-      </main>
-
-      {showDebug && (
-        <NowPlayingDebug
-          playerRef={playerRef}
-          currentStation={currentStation}
-          liveUrl={LIVE_STREAM_URL}
-        />
-      )}
-
-      <VideoModal open={videoOpen} onClose={closeVideo} video={activeVideo} />
-    </div>
       } />
     </Routes>
   );
