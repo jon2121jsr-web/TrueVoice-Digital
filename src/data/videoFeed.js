@@ -68,13 +68,24 @@ export const videoFeed = [
   // PIGSKIN FRENZY — newest first
   // ═══════════════════════════════════════════════════════════════════════════
   {
+    id:           '2yASg53Y9iw',
+    title:        'Episode 310: 2026 Spring Outlooks: Kentucky, Arkansas, UCLA, & Ole Miss',
+    description:  'The boldest takes in College Football. Unfiltered analysis. Unashamed faith.',
+    youtubeId:    '2yASg53Y9iw',
+    thumbnailUrl: 'https://img.youtube.com/vi/2yASg53Y9iw/maxresdefault.jpg',
+    section:      'PIGSKIN_FRENZY',
+    featured:     true,
+    active:       true,
+    publishedAt:  '2026-03-31T10:00:00Z',
+  },
+  {
     id:           'gC4VikZ0dcA',
     title:        'Pigskin Frenzy — Latest Episode',
     description:  'The boldest takes in College Football. Unfiltered analysis. Unashamed faith.',
     youtubeId:    'gC4VikZ0dcA',
     thumbnailUrl: 'https://img.youtube.com/vi/gC4VikZ0dcA/maxresdefault.jpg',
     section:      'PIGSKIN_FRENZY',
-    featured:     true,
+    featured:     false,
     active:       true,
     publishedAt:  '2025-03-17T10:00:00Z',
   },

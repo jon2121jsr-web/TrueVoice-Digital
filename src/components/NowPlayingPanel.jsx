@@ -290,19 +290,18 @@ export function NowPlayingPanel({
 
         <div className="tv-live-video-block">
           {showPlaceholder ? (
-            <div className="tv-live-placeholder">
+            <div className="tv-live-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
               {art ? (
                 <img
                   src={art}
                   alt={title}
                   style={{
-                    width: '100%',
                     height: '100%',
+                    width: 'auto',
+                    maxWidth: '100%',
                     objectFit: 'contain',
-                    objectPosition: 'center',
-                    borderRadius: 'inherit',
                     display: 'block',
-                    background: '#000'
+                    margin: '0 auto'
                   }}
                 />
               ) : (
