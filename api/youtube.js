@@ -6,7 +6,9 @@ export default async function handler(req, res) {
   const qs = new URLSearchParams({ ...params, key: API_KEY }).toString();
   const url = `https://www.googleapis.com/youtube/v3/${endpoint}?${qs}`;
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, {
+      headers: { 'Referer': 'https://www.truevoice.digital/' }
+    });
     const data = await r.json();
     res.status(r.status).json(data);
   } catch (e) {
