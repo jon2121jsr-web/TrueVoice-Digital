@@ -300,24 +300,24 @@ export function NowPlayingPanel({
 
         <div className="tv-live-video-block">
           {showPlaceholder ? (
-            <div className="tv-live-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+            <div className="tv-live-placeholder" style={{ position: 'relative', background: '#07091a', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0', overflow: 'hidden', minHeight: '200px' }}>
               {art ? (
                 <img
                   src={art}
                   alt={title}
                   style={{
-                    height: '100%',
-                    width: 'auto',
-                    maxWidth: '100%',
-                    objectFit: 'contain',
                     display: 'block',
-                    margin: '0 auto'
+                    width: '180px',
+                    height: '180px',
+                    objectFit: 'cover',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                   }}
                 />
               ) : (
-                <div style={{ width: '100%', height: '100%', background: '#000' }} />
+                <div style={{ width: '180px', height: '180px', background: '#111', borderRadius: '12px' }} />
               )}
-              <p className="tv-live-placeholder-music">♪ Music streaming now</p>
+              <p className="tv-live-placeholder-music" style={{ marginTop: '14px', textAlign: 'center', zIndex: 1 }}>♪ Music streaming now</p>
             </div>
           ) : (
             <>
