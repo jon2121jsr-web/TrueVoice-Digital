@@ -10,13 +10,17 @@ import { useEffect, useState } from "react";
 const API_KEY      = import.meta.env.VITE_YOUTUBE_API_KEY;
 const BASE_URL     = "https://www.googleapis.com/youtube/v3";
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const IS_PROD      = import.meta.env.PROD;
 
 const uploadsCache = {};  // channelId  → uploadsPlaylistId
 const rawCache     = {};  // cacheKey   → { videos, at }
 
 async function resolveUploadsPlaylistId(channelId) {
   if (uploadsCache[channelId]) return uploadsCache[channelId];
-  const res  = await fetch(`${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${API_KEY}`);
+  const url  = IS_PROD
+    ? `/api/youtube?endpoint=channels&part=contentDetails&id=${channelId}`
+    : `${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${API_KEY}`;
+  const res  = await fetch(url);
   if (!res.ok) throw new Error(`channels API ${res.status}`);
   const data = await res.json();
   const id   = data?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
@@ -26,7 +30,9 @@ async function resolveUploadsPlaylistId(channelId) {
 }
 
 async function fetchRawVideos(playlistId, maxResults) {
-  const url = `${BASE_URL}/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResults}&key=${API_KEY}`;
+  const url = IS_PROD
+    ? `/api/youtube?endpoint=playlistItems&part=snippet&playlistId=${playlistId}&maxResults=${maxResults}`
+    : `${BASE_URL}/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResults}&key=${API_KEY}`;
   const res  = await fetch(url);
   if (!res.ok) throw new Error(`playlistItems API ${res.status}`);
   const data = await res.json();
