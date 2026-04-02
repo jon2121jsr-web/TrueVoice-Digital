@@ -21,7 +21,7 @@ export default defineConfig({
       // previous build until their next launch — which is
       // perfectly acceptable for a streaming PWA.
       // =====================================================
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
 
       includeAssets: [
         'truevoice-favicon.png',
@@ -83,15 +83,9 @@ export default defineConfig({
       },
 
       workbox: {
-        // =====================================================
-        // FIX: skipWaiting and clientsClaim are now explicitly
-        // false. Previously these were implicitly true under
-        // 'autoUpdate' mode. Setting them false here makes the
-        // intent unambiguous and prevents any plugin version
-        // differences from silently re-enabling them.
-        // =====================================================
-        skipWaiting: false,
-        clientsClaim: false,
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
 
         runtimeCaching: [
           {
