@@ -217,11 +217,14 @@ export function NowPlayingPanel({
     try {
       if (!isPlaying) {
         setError(null);
-        // If src was cleared or changed, reset it
-        if (!el.src || !el.src.includes("live365") && !el.src.includes("truevoice")) {
+        // Always reload the live stream src before playing to snap to
+        // the live edge — prevents the stale-buffer glitch after pause.
+        // Preserve the correct src (fallback or primary) if already set.
+        const currentSrc = el.src;
+        if (!currentSrc || (!currentSrc.includes("live365") && !currentSrc.includes("truevoice"))) {
           el.src = streamUrlRef.current;
-          el.load();
         }
+        el.load();
         const p = el.play();
         if (p?.catch) p.catch(() => {
           setError("Tap again to start audio.");
