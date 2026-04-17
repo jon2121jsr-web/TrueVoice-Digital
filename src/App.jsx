@@ -1,4 +1,4 @@
-// src/App.jsx  — v9  (MediaSession wired after first play; audio pre-warm)
+// src/App.jsx  — v10  (Capturing Christianity, The Beat by Allen Parr, Cold Case Christianity added April 2026)
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -20,16 +20,17 @@ import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
 
 // ─── Video sections ───────────────────────────────────────────────────────────
 const VIDEO_SECTIONS = {
-  WATCH_LIVE:       'WATCH_LIVE',
-  NEW_EPISODES:     'NEW_EPISODES',
-  SHORTS_AND_REELS: 'SHORTS_AND_REELS',
-  PIGSKIN_FRENZY:   'PIGSKIN_FRENZY',
-  CHURCH_IN_SHORTS: 'CHURCH_IN_SHORTS',
+  WATCH_LIVE:              'WATCH_LIVE',
+  PIGSKIN_FRENZY:          'PIGSKIN_FRENZY',
+  CAPTURING_CHRISTIANITY:  'CAPTURING_CHRISTIANITY',
+  BEAT_ALLEN_PARR:         'BEAT_ALLEN_PARR',
+  COLD_CASE_CHRISTIANITY:  'COLD_CASE_CHRISTIANITY',
 };
 
-const TRUEVOICE_CHANNEL_ID = "UCWpVof-rd5hs1xpchwj1MAQ";
-const PIGSKIN_CHANNEL_ID   = "UC_khbgasHiiwUxPHOMfbR0A";
-const CHURCH_PLAYLIST_ID   = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
+const PIGSKIN_CHANNEL_ID          = "UC_khbgasHiiwUxPHOMfbR0A";
+const CAPTURING_CHRISTIANITY_ID   = "UCux-_Fze30tFuI_5CArwSmg";
+const BEAT_ALLEN_PARR_ID          = "UCm_RMW_fQk-ELpPYUzor8lw";
+const COLD_CASE_CHRISTIANITY_ID   = "UCVFe7xhG6rl0ruoMQCJDtnw";
 const pigskinEpisodeFilter = (title) => title?.trim().startsWith("Episode");
 
 // ─── Stream URLs ──────────────────────────────────────────────────────────────
@@ -91,14 +92,11 @@ function setMediaSessionMetadata({ title, artist, artUrl }) {
   });
 }
 
-// Reconnects the audio element to a live stream and plays.
-// Live streams go stale when paused — this is the only reliable resume path.
 function reconnectAndPlay(audioEl) {
   if (!audioEl) return;
   audioEl.src = LIVE_STREAM_URL;
   audioEl.load();
   audioEl.play().catch(() => {
-    // Live365 failed — fall back to AzuraCast
     audioEl.src = AZURACAST_FALLBACK_URL;
     audioEl.load();
     audioEl.play().catch(() => {});
@@ -109,7 +107,6 @@ function wireMediaSessionControls(audioEl) {
   if (!audioEl || !("mediaSession" in navigator)) return;
 
   try {
-    // Play: always reconnect — live streams can't be "unpaused" like files
     navigator.mediaSession.setActionHandler("play", () => {
       reconnectAndPlay(audioEl);
     });
@@ -295,9 +292,7 @@ function App() {
     return () => window.clearTimeout(t);
   }, []);
 
-  // Wire MediaSession AFTER first user-initiated play.
-  // iOS will not grant lock screen control until the audio session
-  // has been activated by a direct user gesture.
+  // Wire MediaSession AFTER first user-initiated play
   useEffect(() => {
     const audioEl = playerRef.current;
     if (!audioEl) return;
@@ -327,18 +322,18 @@ function App() {
     });
   }, [nowPlaying]);
 
-  // Dynamic video feeds — each section pulls live from YouTube API
-  const newEpisodesFeed = useYouTubeFeed({ channelId:  TRUEVOICE_CHANNEL_ID, maxResults: 5 });
-  const shortsFeed      = useYouTubeFeed({ channelId:  TRUEVOICE_CHANNEL_ID, maxResults: 5 });
-  const pigskinFeed     = useYouTubeFeed({ channelId:  PIGSKIN_CHANNEL_ID,   maxResults: 1, filterFn: pigskinEpisodeFilter });
-  const churchFeed      = useYouTubeFeed({ playlistId: CHURCH_PLAYLIST_ID,   maxResults: 1 });
+  // Dynamic video feeds
+  const pigskinFeed           = useYouTubeFeed({ channelId:  PIGSKIN_CHANNEL_ID,         maxResults: 1, filterFn: pigskinEpisodeFilter });
+const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANITY_ID,  maxResults: 1 });
+  const beatFeed              = useYouTubeFeed({ channelId:  BEAT_ALLEN_PARR_ID,         maxResults: 1 });
+  const coldCaseFeed          = useYouTubeFeed({ channelId:  COLD_CASE_CHRISTIANITY_ID,  maxResults: 1 });
 
   const feedBySection = {
-    [VIDEO_SECTIONS.NEW_EPISODES]:     newEpisodesFeed.videos,
-    [VIDEO_SECTIONS.SHORTS_AND_REELS]: shortsFeed.videos,
-    [VIDEO_SECTIONS.PIGSKIN_FRENZY]:   pigskinFeed.videos,
-    [VIDEO_SECTIONS.CHURCH_IN_SHORTS]: churchFeed.videos,
-    [VIDEO_SECTIONS.WATCH_LIVE]:       [],
+    [VIDEO_SECTIONS.WATCH_LIVE]:             [],
+    [VIDEO_SECTIONS.PIGSKIN_FRENZY]:         pigskinFeed.videos,
+[VIDEO_SECTIONS.CAPTURING_CHRISTIANITY]: capturingFeed.videos,
+    [VIDEO_SECTIONS.BEAT_ALLEN_PARR]:        beatFeed.videos,
+    [VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY]: coldCaseFeed.videos,
   };
 
   const openVideoForSection = (sectionKey) => {
@@ -416,8 +411,6 @@ function App() {
           {/* ── HERO ── */}
           <Hero />
 
-          {/* preload="metadata" pre-warms the connection so play starts fast.
-              NowPlayingPanel sets src on mount; this tag must not override it. */}
           <audio ref={playerRef} preload="metadata" playsInline />
 
           <main className={`tv-main ${isFloatingPlayer ? "tv-main--player-floating" : ""}`}>
@@ -464,11 +457,11 @@ function App() {
 
             <section className="tv-section tv-section--stacked">
               <TrueVoiceConnect
-                onWatchLive={()        => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
-                onNewEpisodes={()      => openVideoForSection(VIDEO_SECTIONS.NEW_EPISODES)}
-                onShortsAndReels={()   => openVideoForSection(VIDEO_SECTIONS.SHORTS_AND_REELS)}
-                onPigskinFrenzy={()    => openVideoForSection(VIDEO_SECTIONS.PIGSKIN_FRENZY)}
-                onChurchInShorts={()   => openVideoForSection(VIDEO_SECTIONS.CHURCH_IN_SHORTS)}
+                onWatchLive={()               => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
+                onPigskinFrenzy={()           => openVideoForSection(VIDEO_SECTIONS.PIGSKIN_FRENZY)}
+onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CHRISTIANITY)}
+                onBeatAllenParr={()           => openVideoForSection(VIDEO_SECTIONS.BEAT_ALLEN_PARR)}
+                onColdCaseChristianity={()    => openVideoForSection(VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY)}
               />
             </section>
 

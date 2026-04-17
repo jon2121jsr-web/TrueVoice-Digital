@@ -1,17 +1,20 @@
 // src/components/ReelsGrid.jsx
-// Fully dynamic — all 4 sections pull directly from YouTube API.
+// Fully dynamic — all sections pull directly from YouTube API.
 // No static data files required.
+// ✅ The Cut with Erica removed April 2026
+// ✅ Capturing Christianity, The Beat by Allen Parr, Cold Case Christianity added April 2026
 import { useState } from "react";
 import { useYouTubeFeed } from "../hooks/useYouTubeFeed";
 import "./ReelsGrid.css";
 
 const CHANNEL_IDS = {
-  PIGSKIN:      "UC_khbgasHiiwUxPHOMfbR0A",
-  GMAA:         "UCKr-liguaGWMf3f94eQXsug",
-  BIBLEPROJECT: "UCVfwlh9XpX2Y_tQfjeln9QA",
+  PIGSKIN:                "UC_khbgasHiiwUxPHOMfbR0A",
+  GMAA:                   "UCKr-liguaGWMf3f94eQXsug",
+  BIBLEPROJECT:           "UCVfwlh9XpX2Y_tQfjeln9QA",
+  CAPTURING_CHRISTIANITY: "UCux-_Fze30tFuI_5CArwSmg",
+  BEAT_ALLEN_PARR:        "UCm_RMW_fQk-ELpPYUzor8lw",
+  COLD_CASE_CHRISTIANITY: "UCVFe7xhG6rl0ruoMQCJDtnw",
 };
-
-const CHURCH_PLAYLIST_ID = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
 
 // Module-level constant — stable reference across renders
 const pigskinFilter = (title) => title?.trim().startsWith("Episode");
@@ -41,22 +44,18 @@ function SkeletonRow() {
 function ReelsGrid() {
   const [activeVideo, setActiveVideo] = useState(null);
 
-  const pigskinFeed = useYouTubeFeed({ channelId:  CHANNEL_IDS.PIGSKIN,      maxResults: 10, filterFn: pigskinFilter });
-  const churchFeed  = useYouTubeFeed({ playlistId: CHURCH_PLAYLIST_ID,        maxResults: 10 });
-  const gmaaFeed    = useYouTubeFeed({ channelId:  CHANNEL_IDS.GMAA,          maxResults: 10 });
-  const bpFeed      = useYouTubeFeed({ channelId:  CHANNEL_IDS.BIBLEPROJECT,  maxResults: 10 });
+  const pigskinFeed   = useYouTubeFeed({ channelId: CHANNEL_IDS.PIGSKIN,                maxResults: 10, filterFn: pigskinFilter });
+  const gmaaFeed      = useYouTubeFeed({ channelId: CHANNEL_IDS.GMAA,                   maxResults: 10 });
+  const bpFeed        = useYouTubeFeed({ channelId: CHANNEL_IDS.BIBLEPROJECT,            maxResults: 10 });
+  const capturingFeed = useYouTubeFeed({ channelId: CHANNEL_IDS.CAPTURING_CHRISTIANITY,  maxResults: 10 });
+  const beatFeed      = useYouTubeFeed({ channelId: CHANNEL_IDS.BEAT_ALLEN_PARR,         maxResults: 10 });
+  const coldCaseFeed  = useYouTubeFeed({ channelId: CHANNEL_IDS.COLD_CASE_CHRISTIANITY,  maxResults: 10 });
 
   const pigskinReels = enrichVideos(pigskinFeed.videos, {
     speaker:     "Joel Norris",
     topic:       "College Football",
     source:      "Pigskin Frenzy",
     description: "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
-  });
-  const churchReels = enrichVideos(churchFeed.videos, {
-    speaker:     "Pastor Erica (FCC)",
-    topic:       "Faith & Church",
-    source:      "The Cut with Erica",
-    description: "Real Truth. Real Church. In Short Video.",
   });
   const gmaaReels = enrichVideos(gmaaFeed.videos, {
     speaker:     "Cliffe Knechtle",
@@ -69,6 +68,24 @@ function ReelsGrid() {
     topic:       "Bible Overview",
     source:      "BibleProject",
     description: "Animated videos exploring the story and themes of the Bible.",
+  });
+  const capturingReels = enrichVideos(capturingFeed.videos, {
+    speaker:     "Cameron Bertuzzi",
+    topic:       "Apologetics",
+    source:      "Capturing Christianity",
+    description: "Apologetics, philosophy & theology — the rational case for Christian faith.",
+  });
+  const beatReels = enrichVideos(beatFeed.videos, {
+    speaker:     "Allen Parr",
+    topic:       "Bible Teaching",
+    source:      "The Beat by Allen Parr",
+    description: "Biblical Encouragement And Truth — tackling hard theological questions with clarity and grace.",
+  });
+  const coldCaseReels = enrichVideos(coldCaseFeed.videos, {
+    speaker:     "J. Warner Wallace",
+    topic:       "Apologetics",
+    source:      "Cold Case Christianity",
+    description: "Cold-case detective methodology applied to the evidence for the Christian worldview.",
   });
 
   const handleOpen  = (video) => setActiveVideo(video);
@@ -131,10 +148,12 @@ function ReelsGrid() {
         Short-form, high-impact teaching and Q&amp;A content from trusted voices.
       </p>
 
-      {renderChannel("Pigskin Frenzy",     pigskinReels, pigskinFeed)}
-      {renderChannel("The Cut with Erica", churchReels,  churchFeed)}
-      {renderChannel("Give Me an Answer",  gmaaReels,    gmaaFeed)}
-      {renderChannel("BibleProject",       bpReels,      bpFeed)}
+      {renderChannel("Pigskin Frenzy",          pigskinReels,   pigskinFeed)}
+      {renderChannel("Give Me an Answer",        gmaaReels,      gmaaFeed)}
+      {renderChannel("Capturing Christianity",   capturingReels, capturingFeed)}
+      {renderChannel("The Beat by Allen Parr",   beatReels,      beatFeed)}
+      {renderChannel("Cold Case Christianity",   coldCaseReels,  coldCaseFeed)}
+      {renderChannel("BibleProject",             bpReels,        bpFeed)}
 
       {activeVideo && (
         <div className="reel-modal-backdrop" onClick={handleClose}>

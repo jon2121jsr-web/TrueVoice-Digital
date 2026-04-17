@@ -1,66 +1,68 @@
 // src/components/TrueVoiceConnect.jsx
-// ✅ RSS auto-thumbnails for TrueVoice channel and Pigskin Frenzy
-// ✅ Church in Shorts pulls from dedicated playlist
 // ✅ All cards open video modal on click
+// ✅ Capturing Christianity, The Beat by Allen Parr, Cold Case Christianity added April 2026
+// ✅ The Cut with Erica removed April 2026
+// ✅ New Episodes and Shorts & Reels removed April 2026 (re-enable when needed)
 import React from "react";
 import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
 
 const CHANNEL_IDS = {
-  TRUEVOICE: "UCWpVof-rd5hs1xpchwj1MAQ",
-  PIGSKIN:   "UC_khbgasHiiwUxPHOMfbR0A",
+  PIGSKIN:                "UC_khbgasHiiwUxPHOMfbR0A",
+  CAPTURING_CHRISTIANITY: "UCux-_Fze30tFuI_5CArwSmg",
+  BEAT_ALLEN_PARR:        "UCm_RMW_fQk-ELpPYUzor8lw",
+  COLD_CASE_CHRISTIANITY: "UCVFe7xhG6rl0ruoMQCJDtnw",
 };
 
-// The Cut with Erica playlist on TrueVoice channel
-const CHURCH_PLAYLIST_ID = "PLPq8uhR5C2XRyO0tvkJpW18OeplMh3Ggc";
-
 const FALLBACKS = {
-  truevoice: "https://img.youtube.com/vi/hIgy8zgcLH0/maxresdefault.jpg",
-  pigskin:   "https://img.youtube.com/vi/gC4VikZ0dcA/maxresdefault.jpg",
-  church:    "/images/The-Church-Hero-2500x900-FULL__2_.png",
+  pigskin:               "https://img.youtube.com/vi/gC4VikZ0dcA/maxresdefault.jpg",
+  capturingChristianity: "https://img.youtube.com/vi/default/maxresdefault.jpg",
+  beatAllenParr:         "https://img.youtube.com/vi/default/maxresdefault.jpg",
+  coldCase:              "https://img.youtube.com/vi/default/maxresdefault.jpg",
 };
 
 export default function TrueVoiceConnect({
-  onNewEpisodes,
-  onShortsAndReels,
   onPigskinFrenzy,
-  onChurchInShorts,
+  onCapturingChristianity,
+  onBeatAllenParr,
+  onColdCaseChristianity,
 }) {
-  const tvLatest      = useYouTubeLatest({ channelId:  CHANNEL_IDS.TRUEVOICE });
-  const pigskinLatest = useYouTubeLatest({ channelId:  CHANNEL_IDS.PIGSKIN });
-  const churchLatest  = useYouTubeLatest({ playlistId: CHURCH_PLAYLIST_ID });
+  const pigskinLatest   = useYouTubeLatest({ channelId: CHANNEL_IDS.PIGSKIN });
+  const capturingLatest = useYouTubeLatest({ channelId: CHANNEL_IDS.CAPTURING_CHRISTIANITY });
+  const beatLatest      = useYouTubeLatest({ channelId: CHANNEL_IDS.BEAT_ALLEN_PARR });
+  const coldCaseLatest  = useYouTubeLatest({ channelId: CHANNEL_IDS.COLD_CASE_CHRISTIANITY });
 
   const cards = [
-    {
-      id:          "new-episodes",
-      label:       "New Episodes",
-      description: "Catch the latest episodes and messages.",
-      tag:         "NEW",
-      onClick:     onNewEpisodes,
-      thumbnail:   tvLatest.thumbnail      || FALLBACKS.truevoice,
-    },
-    {
-      id:          "shorts-reels",
-      label:       "Shorts & Reels",
-      description: "Quick encouragement and stories of faith.",
-      tag:         "SHORTS",
-      onClick:     onShortsAndReels,
-      thumbnail:   tvLatest.thumbnail      || FALLBACKS.truevoice,
-    },
-    {
-      id:          "the-cut-with-erica",
-      label:       "The Cut with Erica",
-      description: "Real Truth. Real Church. In Short Video.",
-      tag:         "SHORTS",
-      onClick:     onChurchInShorts,
-      thumbnail:   churchLatest.thumbnail  || FALLBACKS.church,
-    },
     {
       id:          "pigskin-frenzy",
       label:       "Pigskin Frenzy",
       description: "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
       tag:         "CFB",
       onClick:     onPigskinFrenzy,
-      thumbnail:   pigskinLatest.thumbnail || FALLBACKS.pigskin,
+      thumbnail:   pigskinLatest.thumbnail   || FALLBACKS.pigskin,
+    },
+    {
+      id:          "capturing-christianity",
+      label:       "Capturing Christianity",
+      description: "Apologetics, philosophy & theology with Cameron Bertuzzi — the rational case for Christian faith.",
+      tag:         "APOLOGETICS",
+      onClick:     onCapturingChristianity,
+      thumbnail:   capturingLatest.thumbnail || FALLBACKS.capturingChristianity,
+    },
+    {
+      id:          "beat-allen-parr",
+      label:       "The Beat by Allen Parr",
+      description: "Biblical Encouragement And Truth — tackling hard theological questions with clarity and grace.",
+      tag:         "BIBLE",
+      onClick:     onBeatAllenParr,
+      thumbnail:   beatLatest.thumbnail      || FALLBACKS.beatAllenParr,
+    },
+    {
+      id:          "cold-case-christianity",
+      label:       "Cold Case Christianity",
+      description: "J. Warner Wallace applies cold-case detective methodology to examine the evidence for the Christian worldview.",
+      tag:         "APOLOGETICS",
+      onClick:     onColdCaseChristianity,
+      thumbnail:   coldCaseLatest.thumbnail  || FALLBACKS.coldCase,
     },
   ];
 
