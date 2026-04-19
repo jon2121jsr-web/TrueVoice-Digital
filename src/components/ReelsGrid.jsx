@@ -17,7 +17,7 @@ const CHANNEL_IDS = {
 };
 
 // Module-level constant — stable reference across renders
-const pigskinFilter = (title) => title?.trim().startsWith("Episode");
+const pigskinFilter = (title) => typeof title === "string" && title.toLowerCase().includes("episode");
 
 function enrichVideos(videos, defaults) {
   return videos.map(v => ({ ...defaults, ...v }));
@@ -44,7 +44,7 @@ function SkeletonRow() {
 function ReelsGrid() {
   const [activeVideo, setActiveVideo] = useState(null);
 
-  const pigskinFeed   = useYouTubeFeed({ channelId: CHANNEL_IDS.PIGSKIN,                maxResults: 10, filterFn: pigskinFilter });
+  const pigskinFeed   = useYouTubeFeed({ channelId: CHANNEL_IDS.PIGSKIN,                maxResults: 50, filterFn: pigskinFilter });
   const gmaaFeed      = useYouTubeFeed({ channelId: CHANNEL_IDS.GMAA,                   maxResults: 10 });
   const bpFeed        = useYouTubeFeed({ channelId: CHANNEL_IDS.BIBLEPROJECT,            maxResults: 10 });
   const capturingFeed = useYouTubeFeed({ channelId: CHANNEL_IDS.CAPTURING_CHRISTIANITY,  maxResults: 10 });

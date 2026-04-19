@@ -51,7 +51,7 @@
   right: 0;
   width: 60px;
   height: calc(100% - 12px);          /* stop before scrollbar */
-  background: linear-gradient(to right, transparent, white);
+  background: linear-gradient(to right, transparent, var(--tv-bg, white));
   pointer-events: none;
   z-index: 1;
   border-radius: 0 12px 12px 0;
@@ -65,7 +65,7 @@
   left: 0;
   width: 0;
   height: calc(100% - 12px);
-  background: linear-gradient(to left, transparent, white);
+  background: linear-gradient(to left, transparent, var(--tv-bg, white));
   pointer-events: none;
   z-index: 1;
   transition: width 0.2s ease;
@@ -90,7 +90,7 @@
 
 /* More visible scrollbar — thicker and colored */
 .reels-scroller::-webkit-scrollbar {
-  height: 5px;
+  height: 8px;
 }
 .reels-scroller::-webkit-scrollbar-track {
   background: rgba(39, 95, 219, 0.08);
@@ -99,7 +99,7 @@
 }
 .reels-scroller::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(39, 95, 219, 0.35);
+  background: rgba(39, 95, 219, 0.55);
 }
 .reels-scroller::-webkit-scrollbar-thumb:hover {
   background: rgba(39, 95, 219, 0.55);

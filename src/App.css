@@ -796,9 +796,11 @@ button {
   scroll-snap-type: x mandatory;
 }
 
-.tv-history-strip::-webkit-scrollbar       { height: 6px; }
-.tv-history-strip::-webkit-scrollbar-track { background: transparent; }
-.tv-history-strip::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(0, 0, 0, 0.12); }
+.tv-history-strip::-webkit-scrollbar { height: 8px; }
+.tv-history-strip::-webkit-scrollbar-track { background: rgba(39, 95, 219, 0.08); border-radius: 999px; }
+.tv-history-strip::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(39, 95, 219, 0.55); }
+.tv-history-strip::-webkit-scrollbar-thumb:hover { background: rgba(39, 95, 219, 0.75); }
+.tv-history-strip { scrollbar-width: thin; scrollbar-color: rgba(39, 95, 219, 0.55) rgba(39, 95, 219, 0.08); }
 
 .tv-history-chip {
   scroll-snap-align: start;
