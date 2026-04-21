@@ -22,6 +22,7 @@ import { useState, useEffect } from 'react';
 const API_KEY    = import.meta.env.VITE_YOUTUBE_API_KEY;
 const CHANNEL_ID = import.meta.env.VITE_YOUTUBE_CHANNEL_ID;
 const BASE       = 'https://www.googleapis.com/youtube/v3';
+const IS_PROD    = import.meta.env.PROD;
 
 // Map playlist names / title keywords → show slugs
 // Adjust these to match your actual show names / playlist IDs
@@ -52,20 +53,20 @@ async function fetchChannelVideos(maxResults = 50) {
   // Derive uploads playlist ID directly from channel ID (UC… → UU…)
   // This skips the channels API call entirely, avoiding domain-restriction errors.
   const uploadsId = CHANNEL_ID.replace(/^UC/, 'UU');
-  console.log('[useYouTubeAnalytics] using uploads playlist:', uploadsId);
 
-  // 2. Get recent video IDs
-  const playlistData = await fetchJson(
-    `${BASE}/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=${maxResults}&key=${API_KEY}`
-  );
+  const playlistUrl = IS_PROD
+    ? `/api/youtube?endpoint=playlistItems&part=snippet&playlistId=${uploadsId}&maxResults=${maxResults}`
+    : `${BASE}/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=${maxResults}&key=${API_KEY}`;
+  const playlistData = await fetchJson(playlistUrl);
+
   const items = playlistData.items ?? [];
   const videoIds = items.map(i => i.snippet.resourceId.videoId).join(',');
   if (!videoIds) return [];
 
-  // 3. Get statistics for all videos in one call
-  const statsData = await fetchJson(
-    `${BASE}/videos?part=snippet,statistics&id=${videoIds}&key=${API_KEY}`
-  );
+  const videosUrl = IS_PROD
+    ? `/api/youtube?endpoint=videos&part=snippet,statistics&id=${videoIds}`
+    : `${BASE}/videos?part=snippet,statistics&id=${videoIds}&key=${API_KEY}`;
+  const statsData = await fetchJson(videosUrl);
 
   return (statsData.items ?? []).map(v => ({
     id:           v.id,
