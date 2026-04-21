@@ -5,6 +5,7 @@
 // ✅ Capturing Christianity, The Beat by Allen Parr, Cold Case Christianity added April 2026
 import { useState } from "react";
 import { useYouTubeFeed } from "../hooks/useYouTubeFeed";
+import { trackVideoPlay } from '../lib/analytics.js';
 import "./ReelsGrid.css";
 
 const CHANNEL_IDS = {
@@ -88,7 +89,10 @@ function ReelsGrid() {
     description: "Cold-case detective methodology applied to the evidence for the Christian worldview.",
   });
 
-  const handleOpen  = (video) => setActiveVideo(video);
+  const handleOpen = (video) => {
+    setActiveVideo(video);
+    trackVideoPlay(video.youtubeId, video.title);
+  };
   const handleClose = () => setActiveVideo(null);
 
   const renderChannel = (channelTitle, items, feedState) => (

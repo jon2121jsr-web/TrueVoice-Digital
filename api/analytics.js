@@ -69,6 +69,14 @@ export default async function handler(req, res) {
           ?? null;
   const ua = req.headers['user-agent'] ?? null;
 
+  let geo = null;
+  if (ip && ip !== '127.0.0.1' && ip !== '::1') {
+    try {
+      const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=country,regionName,city,lat,lon`);
+      if (geoRes.ok) geo = await geoRes.json();
+    } catch { /* geo is optional — never block the event */ }
+  }
+
   const { error: sbErr } = await supabase.from('analytics_events').insert({
     site:     site ?? 'truevoice',
     event,
@@ -81,6 +89,7 @@ export default async function handler(req, res) {
     amount:   amount ?? null,
     props:    Object.keys(rest).length ? rest : null,
     ip,
+    geo:  geo ?? null,
     ua,
     ts:       ts ? new Date(ts).toISOString() : new Date().toISOString(),
   });

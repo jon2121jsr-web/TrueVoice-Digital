@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 import { LIVE_CONFIG } from "../data/liveConfig";
+import { trackStreamPlay } from '../lib/analytics.js';
 import "./NowPlayingPanel.css";
 
 function toNum(v, fallback = 0) {
@@ -226,6 +227,7 @@ export function NowPlayingPanel({
         }
         el.load();
         const p = el.play();
+        trackStreamPlay(displaySong?.title ?? 'TrueVoice Radio');
         if (p?.catch) p.catch(() => {
           setError("Tap again to start audio.");
           setIsPlaying(false);
