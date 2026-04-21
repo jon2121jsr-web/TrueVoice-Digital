@@ -33,14 +33,12 @@ function send(eventName, props = {}) {
     ...props,
   };
 
-  // Use sendBeacon so events fire even on page unload
-  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(ENDPOINT, blob);
-  } else {
-    fetch(ENDPOINT, { method: 'POST', body: JSON.stringify(payload), keepalive: true })
-      .catch(() => {}); // silent fail — analytics should never break the app
-  }
+  fetch(ENDPOINT, {
+    method:    'POST',
+    headers:   { 'Content-Type': 'application/json' },
+    body:      JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => {});
 }
 
 // ─── Page view tracking ──────────────────────────────────────────────────────
