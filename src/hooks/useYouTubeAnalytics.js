@@ -64,7 +64,7 @@ async function fetchChannelVideos(maxResults = 50) {
   if (!videoIds) return [];
 
   const videosUrl = IS_PROD
-    ? `/api/youtube?endpoint=videos&part=snippet,statistics&id=${videoIds}`
+    ? `/api/youtube?endpoint=videos&part=snippet%2Cstatistics&id=${videoIds}`
     : `${BASE}/videos?part=snippet,statistics&id=${videoIds}&key=${API_KEY}`;
   const statsData = await fetchJson(videosUrl);
 

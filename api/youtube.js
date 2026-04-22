@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   const { endpoint, ...params } = req.query;
   if (!endpoint) return res.status(400).json({ error: 'Missing endpoint' });
-  const API_KEY = process.env.VITE_YOUTUBE_API_KEY;
+  const API_KEY = process.env.VITE_YOUTUBE_API_KEY || process.env.YOUTUBE_API_KEY;
   const qs = new URLSearchParams({ ...params, key: API_KEY }).toString();
   const url = `https://www.googleapis.com/youtube/v3/${endpoint}?${qs}`;
   try {
