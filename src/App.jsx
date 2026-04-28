@@ -15,6 +15,7 @@ import RecentTracksBar from "./components/RecentTracksBar.jsx";
 import VideoModal from "./components/VideoModal.jsx";
 import MerchSection from "./components/MerchSection.jsx";
 import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
+import PullToRefresh from "./components/PullToRefresh";
 
 import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
 
@@ -379,6 +380,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="*" element={
         <div className="app-container tv-app">
+          <PullToRefresh />
 
           {/* ── HEADER ── */}
           <header className="tv-header">

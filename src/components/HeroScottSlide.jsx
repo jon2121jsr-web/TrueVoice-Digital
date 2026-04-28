@@ -10,9 +10,6 @@ export default function HeroScottSlide() {
         decoding="async"
         draggable="false"
       />
-      <div className="hero-std-badge hero-std-badge--purple">
-        <span className="hero-std-dot" />COMING SOON
-      </div>
     </div>
   );
 }
