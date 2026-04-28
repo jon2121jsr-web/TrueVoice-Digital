@@ -130,7 +130,7 @@
 .tv-merch-visual {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  height: 260px;
   overflow: hidden;
 }
 
@@ -279,4 +279,15 @@
     .tv-merch-overlay { opacity: 0; }
     .tv-merch-card:active .tv-merch-overlay { opacity: 1; }
   }
+}
+
+.tv-merch-real-img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  border-radius: 12px 12px 0 0;
+  pointer-events: none;
+  user-select: none;
 }

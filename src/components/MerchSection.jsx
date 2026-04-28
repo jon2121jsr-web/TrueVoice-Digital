@@ -10,77 +10,76 @@ import "./MerchSection.css";
 // Each `href` should be your unique affiliate tracking link.
 const MERCH_PRODUCTS = [
   {
-    id: "tv-gear-01",
-    name: "No Weapon Formed Tee",
-    price: "$34",
-    tag: "BESTSELLER",
+    id: 1,
+    name: "TrueVoice Hoodie",
+    price: "$52",
+    tag: "LOUD FAITH",
     tagStyle: "gold",
-    href: "#",  // ← replace with affiliate link
-    // Use a real product image URL from the affiliate partner:
-    image: null,
-    colorway: "#1a0a00",
-    accent: "#ff6b00",
-    scripture: "Isaiah 54:17",
+    href: "#",
+    image: "/images/gear-hoodie.jpg",
+    colorway: "#1a1a2e",
+    accent: "#d4af37",
+    scripture: "Ps 96:1",
   },
   {
-    id: "tv-gear-02",
-    name: "Armour of God Hoodie",
-    price: "$68",
+    id: 2,
+    name: "Unmute Truth Tee",
+    price: "$34",
     tag: "NEW",
     tagStyle: "fire",
     href: "#",
-    image: null,
-    colorway: "#000000",
-    accent: "#e63946",
-    scripture: "Ephesians 6:11",
+    image: "/images/gear-unmute-tee.jpg",
+    colorway: "#f5f0e8",
+    accent: "#c0392b",
+    scripture: "John 8:32",
   },
   {
-    id: "tv-gear-03",
-    name: "Lion of Judah Heavyweight",
-    price: "$42",
-    tag: "LIMITED",
+    id: 3,
+    name: "Heaven Louder Tee",
+    price: "$34",
+    tag: "FAN FAVORITE",
     tagStyle: "purple",
     href: "#",
-    image: null,
-    colorway: "#0d0d0d",
-    accent: "#9d4edd",
-    scripture: "Revelation 5:5",
+    image: "/images/gear-heaven-tee.jpg",
+    colorway: "#1c1c2e",
+    accent: "#9b59b6",
+    scripture: "Rom 8:31",
   },
   {
-    id: "tv-gear-04",
-    name: "Faith Over Fear Crewneck",
-    price: "$58",
-    tag: "TRENDING",
+    id: 4,
+    name: "Knit Beanie",
+    price: "$28",
+    tag: "WINTER DROP",
     tagStyle: "blue",
     href: "#",
-    image: null,
-    colorway: "#050816",
-    accent: "#2563eb",
-    scripture: "2 Timothy 1:7",
+    image: "/images/gear-beanie.jpg",
+    colorway: "#1a1a2e",
+    accent: "#275fdb",
+    scripture: "Prov 3:5",
   },
   {
-    id: "tv-gear-05",
-    name: "I Am Not Ashamed Drop-Shoulder",
-    price: "$38",
-    tag: "BOLD",
-    tagStyle: "gold",
-    href: "#",
-    image: null,
-    colorway: "#1a1a1a",
-    accent: "#f4a261",
-    scripture: "Romans 1:16",
-  },
-  {
-    id: "tv-gear-06",
-    name: "Kingdom Come Oversized Tee",
-    price: "$36",
-    tag: "NEW",
+    id: 5,
+    name: "Speak Truth Tee",
+    price: "$34",
+    tag: "BESTSELLER",
     tagStyle: "fire",
     href: "#",
-    image: null,
+    image: "/images/gear-speak-tee.jpg",
+    colorway: "#1c1c2e",
+    accent: "#e67e22",
+    scripture: "Eph 4:15",
+  },
+  {
+    id: 6,
+    name: "TrueVoice Water Bottle",
+    price: "$38",
+    tag: "PREMIUM",
+    tagStyle: "gold",
+    href: "#",
+    image: "/images/gear-bottle.jpg",
     colorway: "#0a0a0a",
-    accent: "#e63946",
-    scripture: "Matthew 6:10",
+    accent: "#d4af37",
+    scripture: "John 4:14",
   },
 ];
 
@@ -128,14 +127,15 @@ function MerchCard({ product }) {
           <img
             src={product.image}
             alt={product.name}
-            className="tv-merch-img"
-            loading="lazy"
+            className="tv-merch-real-img"
+            draggable="false"
           />
         ) : (
-          // Placeholder until real product images are loaded
-          <div className="tv-merch-placeholder">
-            <div className="tv-merch-placeholder-cross" aria-hidden="true">✝</div>
-            <div className="tv-merch-placeholder-label">TrueVoice Gear</div>
+          <div className="tv-merch-placeholder" style={{"--card-accent": product.accent, "--card-color": product.colorway}}>
+            <svg viewBox="0 0 60 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="tv-merch-cross">
+              <rect x="24" y="0" width="12" height="80" rx="3" fill="currentColor"/>
+              <rect x="0" y="22" width="60" height="12" rx="3" fill="currentColor"/>
+            </svg>
           </div>
         )}
 
