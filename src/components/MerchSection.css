@@ -291,3 +291,60 @@
   pointer-events: none;
   user-select: none;
 }
+
+.tv-merch-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 8px;
+}
+
+.tv-merch-size-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1.5px solid #ccd6f2;
+  background: #fff;
+  color: #4d5a7a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.tv-merch-size-btn:hover {
+  border-color: #275fdb;
+  color: #275fdb;
+}
+
+.tv-merch-size-btn.selected {
+  font-weight: 800;
+}
+
+.tv-merch-buy-btn {
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: opacity 0.15s;
+}
+
+.tv-merch-buy-btn:hover {
+  opacity: 0.88;
+}
+
+.tv-merch-buy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tv-merch-error {
+  color: #c0392b;
+  font-size: 12px;
+  margin: 4px 0 0;
+}
