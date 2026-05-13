@@ -167,30 +167,68 @@
   50%       { opacity: 0.2; transform: scale(0.65); }
 }
 
-/* Mobile */
+/* Mobile — fits within 420px hero height at 400px wide */
 @media (max-width: 620px) {
+  /* LIVE NOW badge moves to top so it never overlaps slider dots */
+  .hrss-live-badge {
+    top: 10px;
+    bottom: auto;
+  }
+
   .hrss-content {
     flex-direction: column;
-    gap: 18px;
-    padding: 24px 28px;
+    align-items: center;
     text-align: center;
+    gap: 8px;
+    padding: 12px 20px 8px;
+  }
+
+  .hrss-logo-col {
+    flex-shrink: 0;
   }
 
   .hrss-logo-img {
-    width: 130px;
-    height: 130px;
+    width: auto;
+    height: auto;
+    max-height: 100px;
+    max-width: 100%;
+  }
+
+  .hrss-text-col {
+    gap: 5px;
+    align-items: center;
+  }
+
+  .hrss-eyebrow {
+    font-size: 0.72rem;
   }
 
   .hrss-headline {
-    font-size: 1.7rem;
+    font-size: 1.35rem;
+    line-height: 1.1;
   }
 
   .hrss-sched-card {
     max-width: 100%;
+    padding: 6px 12px;
     align-items: center;
   }
 
-  .hrss-live-badge {
-    bottom: 16px;
+  .hrss-sched-days {
+    font-size: 0.62rem;
+    padding-bottom: 3px;
+    margin-bottom: 3px;
+  }
+
+  .hrss-sched-times {
+    gap: 1px;
+  }
+
+  .hrss-sched-times span {
+    font-size: 0.82rem;
+  }
+
+  .hrss-subtext {
+    font-size: 0.68rem;
   }
 }
