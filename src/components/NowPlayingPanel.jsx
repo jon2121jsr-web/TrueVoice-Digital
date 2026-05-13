@@ -241,24 +241,35 @@ export function NowPlayingPanel({
   if (isFloating) {
     return (
       <div className="tv-now-playing tv-radio-card tv-radio-card--float">
-        <span className="tv-banner-wordmark tv-banner-wordmark--sm">
-          TrueVoice<span className="tv-banner-dot">.</span>Digital
-        </span>
+        {/* Album art thumbnail */}
+        <div className="tv-float-art">
+          {art ? (
+            <img src={art} alt={title} className="tv-float-art-img" />
+          ) : (
+            <div className="tv-float-art-fallback">
+              <img src="/truevoice-favicon.png" alt="" aria-hidden="true" className="tv-float-art-favicon" />
+            </div>
+          )}
+        </div>
+
+        {/* Track info */}
         <div className="tv-float-info">
-          <div className="tv-float-track">
-            <Waveform />
-            <span className="tv-float-title">{title}</span>
-          </div>
+          <span className="tv-float-title">{title}</span>
           <span className="tv-float-artist">{artist}</span>
         </div>
-        <button
-          type="button"
-          className="tv-btn-listen tv-btn-listen--sm"
-          onPointerUp={handleTogglePlay}
-          onClick={(e) => e.preventDefault()}
-        >
-          {isPlaying ? "Stop" : "Listen Live"}
-        </button>
+
+        {/* Controls */}
+        <div className="tv-float-controls">
+          {isPlaying && <Waveform />}
+          <button
+            type="button"
+            className="tv-btn-listen tv-btn-listen--sm"
+            onPointerUp={handleTogglePlay}
+            onClick={(e) => e.preventDefault()}
+          >
+            {isPlaying ? "Stop" : "Listen Live"}
+          </button>
+        </div>
       </div>
     );
   }
@@ -335,57 +346,28 @@ export function NowPlayingPanel({
           )}
         </div>
 
-        {/* Right panel */}
+        {/* Right panel — album art in all states */}
         <div className="tv-radio-right">
-          {!activeShow ? (
-            /* STATE 1 — Album art */
-            <>
-              <div className="tv-art-frame">
-                {art ? (
-                  <img
-                    src={art}
-                    alt={`${title} cover art`}
-                    className="tv-art-img"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="tv-art-fallback">
-                    <img
-                      src="/truevoice-favicon.png"
-                      alt=""
-                      className="tv-art-fallback-logo"
-                      aria-hidden="true"
-                    />
-                  </div>
-                )}
+          <div className="tv-art-frame">
+            {art ? (
+              <img
+                src={art}
+                alt={`${title} cover art`}
+                className="tv-art-img"
+                loading="lazy"
+              />
+            ) : (
+              <div className="tv-art-fallback">
+                <img
+                  src="/truevoice-favicon.png"
+                  alt=""
+                  className="tv-art-fallback-logo"
+                  aria-hidden="true"
+                />
               </div>
-              <span className="tv-art-label">Album Art</span>
-            </>
-          ) : (
-            /* STATES 2 & 3 — Show logo, locked (does not change between songs) */
-            <>
-              <div className="tv-show-logo-frame">
-                {activeShow.logo ? (
-                  <img
-                    src={activeShow.logo}
-                    alt={activeShow.name}
-                    className="tv-show-logo-img"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="tv-art-fallback">
-                    <img
-                      src="/truevoice-favicon.png"
-                      alt=""
-                      className="tv-art-fallback-logo"
-                      aria-hidden="true"
-                    />
-                  </div>
-                )}
-              </div>
-              <span className="tv-art-label">Show Logo</span>
-            </>
-          )}
+            )}
+          </div>
+          <span className="tv-art-label">Album Art</span>
         </div>
 
       </div>

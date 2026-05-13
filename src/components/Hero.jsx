@@ -7,6 +7,8 @@ import HeroScottSlide from "./HeroScottSlide.jsx";
 import HeroPigskinSlide from "./HeroPigskinSlide.jsx";
 import HeroRyanSlide from "./HeroRyanSlide.jsx";
 import HeroDeepEndSlide from "./HeroDeepEndSlide.jsx";
+import HeroRyanScheduleSlide from "./HeroRyanScheduleSlide.jsx";
+import HeroScottScheduleSlide from "./HeroScottScheduleSlide.jsx";
 
 // Minimum px travel before we count it as a swipe (not a tap)
 const SWIPE_THRESHOLD = 40;
@@ -29,17 +31,29 @@ export default function Hero() {
         component: HeroRyanSlide,
         alt: "Ryan Kliesch on TrueVoice Digital — Coming Soon",
       },
-      // 3 — Merch
+      // 3 — Ryan Kliesch schedule
+      {
+        kind: "component",
+        component: HeroRyanScheduleSlide,
+        alt: "The Ryan Kliesch Show-gram — Live Mon–Fri on TrueVoice Digital",
+      },
+      // 4 — Merch
       {
         kind: "component",
         component: HeroMerchSlide,
         alt: "TrueVoice Gear — Coming Soon",
       },
-      // 4 — Scott Ritchie
+      // 5 — Scott Ritchie
       {
         kind: "component",
         component: HeroScottSlide,
         alt: "Scott Ritchie on TrueVoice Digital — Coming Soon",
+      },
+      // 6 — Scott Ritchie schedule
+      {
+        kind: "component",
+        component: HeroScottScheduleSlide,
+        alt: "The Scott Ritchie Stream — Live Mon–Fri on TrueVoice Digital",
       },
       // 5 — Pigskin Frenzy
       {

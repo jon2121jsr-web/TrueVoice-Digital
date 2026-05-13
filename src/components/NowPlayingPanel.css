@@ -357,35 +357,54 @@
 .tv-radio-card--float {
   flex-direction: row;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  padding: 0 16px;
 }
 
-/* Small wordmark inside the dock */
-.tv-banner-wordmark--sm {
-  font-size: 12px;
-  letter-spacing: 0.5px;
+/* Album art thumbnail */
+.tv-float-art {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
   flex-shrink: 0;
-  white-space: nowrap;
+  background: #111c2e;
 }
 
-/* Center section: waveform + track + artist stacked */
+.tv-float-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tv-float-art-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0a1530, #1a2850);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tv-float-art-favicon {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+  opacity: 0.55;
+}
+
+/* Center: track title + artist stacked */
 .tv-float-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   flex: 1;
   min-width: 0;
 }
 
-.tv-float-track {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
 .tv-float-title {
-  font-size: 0.88rem;
+  font-size: 13px;
   font-weight: 600;
   color: #f1f5f9;
   white-space: nowrap;
@@ -394,11 +413,19 @@
 }
 
 .tv-float-artist {
-  font-size: 0.72rem;
+  font-size: 11px;
   color: #64748b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Right: waveform + button */
+.tv-float-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 /* Smaller button variant for the dock */
