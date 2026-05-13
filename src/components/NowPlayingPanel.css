@@ -1,212 +1,437 @@
 /* src/components/NowPlayingPanel.css */
 
-/* ── Live card modifier — no padding, overflow hidden ───────────────────────*/
-.tv-now-playing--live {
+/* ── Override App.css white-card defaults on the shared .tv-now-playing class ── */
+/* Two-class selector beats App.css's single-class .tv-now-playing rule          */
+.tv-now-playing.tv-radio-card {
   padding: 0 !important;
+  background: #0e1220 !important;
+  border: 1px solid #1e2840;
+  border-radius: 14px;
   overflow: hidden;
-}
-
-/* ── Live panel wrapper ─────────────────────────────────────────────────────*/
-.tv-live-panel {
   display: flex;
   flex-direction: column;
-  width: 100%;           /* must fill .tv-now-playing horizontally */
-  height: 100%;
+}
+
+/* ── Top banner ─────────────────────────────────────────────────────────────── */
+.tv-radio-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background: linear-gradient(90deg, #243b8f, #4a6ce0);
+  flex-shrink: 0;
+}
+
+.tv-banner-wordmark {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-weight: 900;
+  font-size: 20px;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.tv-banner-dot {
+  color: #f59e0b;
+}
+
+/* ── ON AIR pill ────────────────────────────────────────────────────────────── */
+.tv-onair-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.tv-onair-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e63946;
+  flex-shrink: 0;
+  animation: tv-dot-blink 1.2s infinite;
+}
+
+@keyframes tv-dot-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
+}
+
+/* ── Body row ───────────────────────────────────────────────────────────────── */
+.tv-radio-body {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex: 1;
   min-height: 0;
 }
 
-/* ── Video / placeholder block ──────────────────────────────────────────────*/
-.tv-live-video-block {
-  position: relative;
-  width: 100%;           /* explicit — flex children need this stated */
-  flex: 1;               /* grow to fill remaining card height */
-  min-height: 200px;
-  background: #07091a;
-  border-radius: var(--tv-radius-lg) var(--tv-radius-lg) 0 0;
+/* ── Left panel ─────────────────────────────────────────────────────────────── */
+.tv-radio-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 26px;
+  min-width: 0;
+  justify-content: center;
+}
+
+/* Eyebrow — "Now Playing" label with waveform */
+.tv-radio-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a6ce0;
+}
+
+/* Track / show title */
+.tv-radio-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+  white-space: nowrap;
   overflow: hidden;
-  display: block;        /* not flex/grid — children use position:absolute */
+  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
-/* YouTube iframe — fills block absolutely */
-.tv-live-iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+.tv-radio-title--show {
+  font-weight: 900;
+}
+
+/* Artist name */
+.tv-radio-artist {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Show tagline ("Live Now") */
+.tv-show-tagline {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #3d5299;
+  margin: 0;
+}
+
+/* ── Now Playing strip (State 2 only) ───────────────────────────────────────── */
+.tv-np-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(74, 108, 224, 0.10);
+  border: 1px solid rgba(74, 108, 224, 0.20);
+  border-radius: 8px;
+  padding: 7px 12px;
+  min-width: 0;
+  overflow: hidden;
+  color: #4a6ce0;
+}
+
+.tv-np-strip-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a6ce0;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tv-np-strip-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(74, 108, 224, 0.35);
+  flex-shrink: 0;
+}
+
+.tv-np-strip-track {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.tv-np-strip-artist {
+  color: #64748b;
+}
+
+/* ── Error message ──────────────────────────────────────────────────────────── */
+.tv-radio-error {
+  font-size: 0.78rem;
+  color: #e63946;
+  margin: 0;
+}
+
+/* ── Listen Live button ─────────────────────────────────────────────────────── */
+.tv-btn-listen {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 9px 20px;
+  border-radius: 999px;
   border: none;
-  display: block;
+  background: #243b8f;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  align-self: flex-start;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: background 0.15s ease, box-shadow 0.2s ease;
 }
 
-/* ── Placeholder (State 2) ──────────────────────────────────────────────────*/
-.tv-live-placeholder {
-  position: absolute;
-  inset: 0;              /* fills .tv-live-video-block 100% × 100% */
-  width: 100%;
+.tv-btn-listen:hover {
+  background: #4a6ce0;
+  box-shadow: 0 0 20px rgba(74, 108, 224, 0.5);
+}
+
+.tv-btn-listen:active {
+  transform: scale(0.97);
+}
+
+/* ── Waveform bars ──────────────────────────────────────────────────────────── */
+/* color inherits from parent — blue in eyebrow/strip, white in button          */
+.tv-waveform {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.tv-wave-bar {
+  display: block;
+  width: 3px;
   height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: center;
+  animation: tv-wave 1s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.15s);
+}
+
+@keyframes tv-wave {
+  0%, 100% { transform: scaleY(0.25); }
+  50%       { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-wave-bar { animation: none; transform: scaleY(0.5); }
+}
+
+/* ── Right panel ────────────────────────────────────────────────────────────── */
+.tv-radio-right {
+  width: 188px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  background: #000;
-  padding: 28px 24px;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.tv-live-placeholder-title {
-  font-size: clamp(1.6rem, 4vw, 2.2rem);
-  font-weight: 700;
-  color: #e879c4;
-  margin: 0;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-
-.tv-live-placeholder-title span {
-  color: #7db8f7;
-}
-
-.tv-live-placeholder-sub {
-  font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.45);
-  margin: 0;
-  letter-spacing: 0.04em;
-  line-height: 1.4;
-}
-
-.tv-live-placeholder-pill {
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
-  padding: 6px 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(124, 179, 247, 0.35);
-  color: #7db8f7;
-  background: rgba(124, 179, 247, 0.08);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  padding: 16px 14px;
+  background: #070c18;
+  border-left: 1px solid #1a2438;
 }
 
-.tv-live-placeholder-music {
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.3);
-  margin: 0;
-  letter-spacing: 0.06em;
+/* Album art frame (State 1) */
+.tv-art-frame {
+  width: 128px;
+  height: 128px;
+  border-radius: 11px;
+  overflow: hidden;
+  background: #111c2e;
+  flex-shrink: 0;
 }
 
-/* ── Live badge (State 3 overlay) ───────────────────────────────────────────*/
-.tv-live-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(230, 57, 70, 0.85);
-  color: white;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.tv-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.tv-live-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: white;
-  animation: tv-live-pulse 1.3s infinite;
-}
-
-/* ── Radio strip ────────────────────────────────────────────────────────────*/
-.tv-live-radio-strip {
+/* Show logo frame (States 2 & 3) */
+.tv-show-logo-frame {
+  width: 156px;
+  height: 140px;
+  border-radius: 11px;
+  overflow: hidden;
+  background: #0a1020;
+  padding: 12px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 20px;
-  width: 100%;
-  border-top: 1px solid var(--tv-border-subtle);
-  background: white;
-  border-radius: 0 0 var(--tv-radius-lg) var(--tv-radius-lg);
+  justify-content: center;
   flex-shrink: 0;
-  box-sizing: border-box;
 }
 
-.tv-live-radio-info {
+.tv-show-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Fallback gradient when no art/logo image */
+.tv-art-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0a1530, #1a2850);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tv-art-fallback-logo {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+  opacity: 0.6;
+}
+
+/* Small label under the art zone */
+.tv-art-label {
+  font-size: 9px;
+  color: #1e2d45;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+/* ── Floating compact variant ───────────────────────────────────────────────── */
+
+/* Override App.css bubble (right:16px, width:420px) with full-width bottom bar.
+   5-class specificity beats App.css's 3-class rule cleanly, no !important needed
+   on most properties — use it only where App.css forces values via its cascade. */
+.tv-player-dock.is-floating .tv-player-surface .tv-now-playing.tv-radio-card--float {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 56px !important;
+  border-radius: 0 !important;
+  padding: 0 20px !important;
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.5) !important;
+  border-top: 1px solid #1e2840;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  background: #0e1220 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 16px;
+  overflow: hidden;
+}
+
+/* Base class for the floating card element */
+.tv-radio-card--float {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Small wordmark inside the dock */
+.tv-banner-wordmark--sm {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Center section: waveform + track + artist stacked */
+.tv-float-info {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  min-width: 0;
   flex: 1;
+  min-width: 0;
 }
 
-.tv-live-radio-label {
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--tv-text-muted);
-}
-
-.tv-live-radio-song {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--tv-text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tv-live-radio-artist {
-  font-size: 0.8rem;
-  color: var(--tv-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tv-live-radio-controls {
+.tv-float-track {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
+  gap: 6px;
+  min-width: 0;
 }
 
-.tv-live-mute-btn {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--tv-border-subtle);
-  background: var(--tv-bg-alt);
-  color: var(--tv-text-muted);
-  font-size: 0.78rem;
-  font-weight: 500;
-  cursor: pointer;
+.tv-float-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #f1f5f9;
   white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.tv-live-mute-btn:hover    { background: var(--tv-bg); color: var(--tv-text-main); }
-.tv-live-mute-btn.is-muted { background: var(--tv-primary); color: white; border-color: var(--tv-primary); }
+.tv-float-artist {
+  font-size: 0.72rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-/* ── Mobile ─────────────────────────────────────────────────────────────────*/
-@media (max-width: 640px) {
-  .tv-live-video-block  { min-height: 160px; }
+/* Smaller button variant for the dock */
+.tv-btn-listen--sm {
+  margin-top: 0;
+  align-self: center;
+  padding: 7px 16px;
+  font-size: 0.78rem;
+}
 
-  .tv-live-radio-strip {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 12px 16px;
+/* ── Mobile ─────────────────────────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  .tv-radio-left {
+    padding: 16px 18px;
   }
 
-  .tv-live-radio-controls {
-    width: 100%;
-    justify-content: flex-end;
+  .tv-radio-title {
+    font-size: 18px;
+  }
+
+  .tv-radio-right {
+    width: 110px;
+    padding: 14px 10px;
+  }
+
+  .tv-art-frame {
+    width: 90px;
+    height: 90px;
+  }
+
+  .tv-show-logo-frame {
+    width: 86px;
+    height: 86px;
+    padding: 8px;
   }
 }
