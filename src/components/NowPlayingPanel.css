@@ -262,12 +262,14 @@
 
 /* Album art frame (State 1) */
 .tv-art-frame {
-  width: 128px;
-  height: 128px;
+  width: 156px;
+  height: 156px;
   border-radius: 11px;
   overflow: hidden;
   background: #111c2e;
   flex-shrink: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .tv-art-img {
@@ -444,8 +446,8 @@
   }
 
   .tv-art-frame {
-    width: 90px;
-    height: 90px;
+    width: 110px;
+    height: 110px;
   }
 
   .tv-show-logo-frame {
