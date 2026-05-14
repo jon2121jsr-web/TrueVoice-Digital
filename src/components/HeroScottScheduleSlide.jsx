@@ -24,8 +24,6 @@ export default function HeroScottScheduleSlide() {
           </div>
         </div>
         <div className="hsss-text-col">
-          <p className="hsss-eyebrow">The Scott Ritchie</p>
-          <h2 className="hsss-headline">STREAM</h2>
           <div className="hsss-sched-card">
             <div className="hsss-sched-days">MON – FRI</div>
             <div className="hsss-sched-times">
