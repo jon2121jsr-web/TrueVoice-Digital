@@ -168,6 +168,44 @@
   50%       { opacity: 0.2; transform: scale(0.65); }
 }
 
+/* Neon typographic title */
+.scott-schedule-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.sst-the {
+  font-size: 14px;
+  letter-spacing: 4px;
+  color: #ffffff;
+  opacity: 0.7;
+  font-family: sans-serif;
+  font-weight: 400;
+}
+
+.sst-name {
+  font-size: 48px;
+  font-weight: 900;
+  font-family: 'Arial Black', Arial, sans-serif;
+  color: #00aaff;
+  text-shadow: 0 0 20px #00aaff, 0 0 40px #00aaff, 0 0 80px #0066ff;
+  letter-spacing: 2px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sst-stream {
+  font-size: 16px;
+  letter-spacing: 6px;
+  color: #ffffff;
+  opacity: 0.8;
+  font-family: sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
 /* Mobile — fits within 420px hero height at 400px wide */
 @media (max-width: 620px) {
   /* LIVE NOW badge moves to top so it never overlaps slider dots */
@@ -198,6 +236,10 @@
   .hsss-text-col {
     gap: 5px;
     align-items: center;
+  }
+
+  .sst-name {
+    font-size: 32px;
   }
 
   .hsss-eyebrow {

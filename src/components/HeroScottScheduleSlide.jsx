@@ -17,14 +17,11 @@ export default function HeroScottScheduleSlide() {
       <div className="hsss-glow" aria-hidden="true" />
       <div className="hsss-content">
         <div className="hsss-logo-col">
-          <img
-            src="/images/shows/scott-ritchie-logo.png"
-            alt="The Scott Ritchie Stream"
-            className="hsss-logo-img"
-            loading="lazy"
-            decoding="async"
-            draggable="false"
-          />
+          <div className="scott-schedule-title">
+            <span className="sst-the">THE</span>
+            <span className="sst-name">SCOTT RITCHIE</span>
+            <span className="sst-stream">— STREAM —</span>
+          </div>
         </div>
         <div className="hsss-text-col">
           <p className="hsss-eyebrow">The Scott Ritchie</p>

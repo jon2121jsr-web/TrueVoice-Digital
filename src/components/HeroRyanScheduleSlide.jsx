@@ -26,8 +26,6 @@ export default function HeroRyanScheduleSlide() {
           />
         </div>
         <div className="hrss-text-col">
-          <p className="hrss-eyebrow">The Ryan Kliesch</p>
-          <h2 className="hrss-headline">SHOW-GRAM</h2>
           <div className="hrss-sched-card">
             <div className="hrss-sched-days">MON – FRI</div>
             <div className="hrss-sched-times">

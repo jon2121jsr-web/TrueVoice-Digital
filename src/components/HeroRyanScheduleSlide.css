@@ -45,8 +45,10 @@
 }
 
 .hrss-logo-img {
-  width: 210px;
-  height: 210px;
+  width: auto;
+  height: auto;
+  max-height: 220px;
+  max-width: 100%;
   object-fit: contain;
   filter: drop-shadow(0 8px 28px rgba(80, 40, 0, 0.38));
   pointer-events: none;
@@ -188,10 +190,7 @@
   }
 
   .hrss-logo-img {
-    width: auto;
-    height: auto;
-    max-height: 100px;
-    max-width: 100%;
+    max-height: 160px;
   }
 
   .hrss-text-col {

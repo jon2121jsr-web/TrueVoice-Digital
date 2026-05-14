@@ -316,14 +316,6 @@
   opacity: 0.6;
 }
 
-/* Small label under the art zone */
-.tv-art-label {
-  font-size: 9px;
-  color: #1e2d45;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 600;
-}
 
 /* ── Floating compact variant ───────────────────────────────────────────────── */
 

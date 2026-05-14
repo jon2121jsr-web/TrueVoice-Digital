@@ -367,7 +367,6 @@ export function NowPlayingPanel({
               </div>
             )}
           </div>
-          <span className="tv-art-label">Album Art</span>
         </div>
 
       </div>
