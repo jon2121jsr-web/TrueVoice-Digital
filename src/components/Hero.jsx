@@ -47,13 +47,13 @@ export default function Hero() {
       {
         kind: "component",
         component: HeroScottSlide,
-        alt: "Scott Ritchie on TrueVoice Digital — Coming Soon",
+        alt: "Scott Ritchie — Coming Soon",
       },
       // 6 — Scott Ritchie schedule
       {
         kind: "component",
         component: HeroScottScheduleSlide,
-        alt: "The Scott Ritchie Stream — Live Mon–Fri on TrueVoice Digital",
+        alt: "The Stream with Scott Ritchie — Live Mon–Fri on TrueVoice Digital",
       },
       // 5 — Pigskin Frenzy
       {

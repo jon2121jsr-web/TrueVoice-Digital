@@ -4,7 +4,7 @@ export default function HeroScottSlide() {
     <div className="hero-std-slide">
       <img
         src="/images/hero-scott.png"
-        alt="Scott Ritchie on TrueVoice Digital"
+        alt="Scott Ritchie"
         className="hero-std-img"
         loading="lazy"
         decoding="async"

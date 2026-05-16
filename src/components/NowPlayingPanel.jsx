@@ -35,12 +35,13 @@ export function NowPlayingPanel({
   onStatusChange,
   isFloating = false,
 }) {
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState(null);
-  const [isPlaying,   setIsPlaying]   = useState(false);
-  const [listeners,   setListeners]   = useState(null);
-  const [displaySong, setDisplaySong] = useState(null);
-  const [activeShow,  setActiveShow]  = useState(() => getActiveShow());
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState(null);
+  const [isPlaying,      setIsPlaying]      = useState(false);
+  const [listeners,      setListeners]      = useState(null);
+  const [displaySong,    setDisplaySong]    = useState(null);
+  const [activeShow,     setActiveShow]     = useState(() => getActiveShow());
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   const isOwner = useIsOwner();
 
@@ -193,15 +194,61 @@ export function NowPlayingPanel({
       });
     };
 
-    el.addEventListener("play",  onPlay);
-    el.addEventListener("pause", onPause);
-    el.addEventListener("ended", onEnded);
-    el.addEventListener("error", onError);
+    // Network handoff recovery: reload after 3 s if still meant to be playing
+    // and the primary error handler hasn't already recovered the stream.
+    const onErrorRecovery = () => {
+      if (!isPlayingRef.current) return;
+      setTimeout(() => {
+        if (!isPlayingRef.current || !el.paused) return;
+        el.load();
+        el.play().catch(() => {});
+      }, 3000);
+    };
+
+    const onStalled = () => {
+      if (!isPlayingRef.current) return;
+      setTimeout(() => {
+        if (!isPlayingRef.current || !el.paused) return;
+        el.load();
+        el.play().catch(() => {});
+      }, 3000);
+    };
+
+    // Reconnecting indicator while buffering
+    const onWaiting = () => { setIsReconnecting(true); };
+    const onPlaying = () => { setIsReconnecting(false); };
+
+    // Phone call / audio focus recovery
+    const onVisibilityChange = () => {
+      if (
+        document.visibilityState === "visible" &&
+        isPlayingRef.current &&
+        el.paused
+      ) {
+        el.play().catch(() => {});
+      }
+    };
+
+    el.addEventListener("play",    onPlay);
+    el.addEventListener("pause",   onPause);
+    el.addEventListener("ended",   onEnded);
+    el.addEventListener("error",   onError);
+    el.addEventListener("error",   onErrorRecovery);
+    el.addEventListener("stalled", onStalled);
+    el.addEventListener("waiting", onWaiting);
+    el.addEventListener("playing", onPlaying);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
-      el.removeEventListener("play",  onPlay);
-      el.removeEventListener("pause", onPause);
-      el.removeEventListener("ended", onEnded);
-      el.removeEventListener("error", onError);
+      el.removeEventListener("play",    onPlay);
+      el.removeEventListener("pause",   onPause);
+      el.removeEventListener("ended",   onEnded);
+      el.removeEventListener("error",   onError);
+      el.removeEventListener("error",   onErrorRecovery);
+      el.removeEventListener("stalled", onStalled);
+      el.removeEventListener("waiting", onWaiting);
+      el.removeEventListener("playing", onPlaying);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [audioRef]);
 
@@ -302,7 +349,7 @@ export function NowPlayingPanel({
                 <Waveform />
                 <span>Now Playing</span>
               </div>
-              <h2 className="tv-radio-title">{title}</h2>
+              <h2 className="tv-radio-title">{isReconnecting ? "Reconnecting…" : title}</h2>
               <p className="tv-radio-artist">{artist}</p>
             </>
           ) : (
@@ -317,10 +364,14 @@ export function NowPlayingPanel({
                   <span className="tv-np-strip-label">NOW PLAYING</span>
                   <span className="tv-np-strip-divider" aria-hidden="true" />
                   <span className="tv-np-strip-track">
-                    {displaySong.title}
-                    {displaySong.artist
-                      ? <span className="tv-np-strip-artist"> · {displaySong.artist}</span>
-                      : null}
+                    {isReconnecting ? "Reconnecting…" : (
+                      <>
+                        {displaySong.title}
+                        {displaySong.artist
+                          ? <span className="tv-np-strip-artist"> · {displaySong.artist}</span>
+                          : null}
+                      </>
+                    )}
                   </span>
                 </div>
               )}

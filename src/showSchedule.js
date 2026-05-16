@@ -6,9 +6,9 @@ function getNowInET() {
 }
 
 export const showSchedule = [
-  { id: 'scott', name: 'The Scott Ritchie Stream',    tagline: 'Live Now', logo: '/images/shows/scott-ritchie-logo.png', days: [1,2,3,4,5], startHour: 6,  startMin: 0, endHour: 9,  endMin: 0 },
-  { id: 'ryan',  name: 'The Ryan Kliesch Show-gram',  tagline: 'Live Now', logo: '/images/shows/ryan-kliesch-logo.png',  days: [1,2,3,4,5], startHour: 9,  startMin: 0, endHour: 12, endMin: 0 },
-  { id: 'scott', name: 'The Scott Ritchie Stream',    tagline: 'Live Now', logo: '/images/shows/scott-ritchie-logo.png', days: [1,2,3,4,5], startHour: 13, startMin: 0, endHour: 16, endMin: 0 },
+  { id: 'scott', name: 'The Stream with Scott Ritchie', tagline: 'Live Now', logo: '/images/shows/scott-ritchie-logo.png', days: [1,2,3,4,5], startHour: 6,  startMin: 0, endHour: 9,  endMin: 0 },
+  { id: 'ryan',  name: 'The Ryan Kliesch Show-gram',   tagline: 'Live Now', logo: '/images/shows/ryan-kliesch-logo.png',  days: [1,2,3,4,5], startHour: 9,  startMin: 0, endHour: 12, endMin: 0 },
+  { id: 'scott', name: 'The Stream with Scott Ritchie', tagline: 'Live Now', logo: '/images/shows/scott-ritchie-logo.png', days: [1,2,3,4,5], startHour: 13, startMin: 0, endHour: 16, endMin: 0 },
   { id: 'ryan',  name: 'The Ryan Kliesch Show-gram',  tagline: 'Live Now', logo: '/images/shows/ryan-kliesch-logo.png',  days: [1,2,3,4,5], startHour: 16, startMin: 0, endHour: 19, endMin: 0 },
 ];
 
