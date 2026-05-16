@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./Hero.css";
 import HeroMerchSlide from "./HeroMerchSlide.jsx";
-import HeroScottSlide from "./HeroScottSlide.jsx";
 import HeroPigskinSlide from "./HeroPigskinSlide.jsx";
 import HeroRyanSlide from "./HeroRyanSlide.jsx";
 import HeroDeepEndSlide from "./HeroDeepEndSlide.jsx";
@@ -42,12 +41,6 @@ export default function Hero() {
         kind: "component",
         component: HeroMerchSlide,
         alt: "TrueVoice Gear — Coming Soon",
-      },
-      // 5 — Scott Ritchie
-      {
-        kind: "component",
-        component: HeroScottSlide,
-        alt: "Scott Ritchie — Coming Soon",
       },
       // 6 — Scott Ritchie schedule
       {

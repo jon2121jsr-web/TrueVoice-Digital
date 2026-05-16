@@ -19,8 +19,8 @@ export default function HeroScottScheduleSlide() {
         <div className="hsss-logo-col">
           <div className="scott-schedule-title">
             <span className="sst-the">THE</span>
-            <span className="sst-name">SCOTT RITCHIE</span>
-            <span className="sst-stream">— STREAM —</span>
+            <span className="sst-name">STREAM</span>
+            <span className="sst-stream">— with Scott Ritchie —</span>
           </div>
         </div>
         <div className="hsss-text-col">
