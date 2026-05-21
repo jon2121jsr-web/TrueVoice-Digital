@@ -18,6 +18,7 @@ import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
 import PullToRefresh from "./components/PullToRefresh";
 
 import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
+import { useVisitorBeacon } from "./hooks/useVisitorBeacon";
 
 // ─── Video sections ───────────────────────────────────────────────────────────
 const VIDEO_SECTIONS = {
@@ -203,6 +204,8 @@ const InstagramIcon = () => (
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 function App() {
+  useVisitorBeacon();
+
   const playerRef = useRef(null);
 
   const [currentStation, setCurrentStation] = useState(STATION_NAME);

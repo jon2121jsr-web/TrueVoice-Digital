@@ -15,9 +15,10 @@
  *   npm install recharts
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { readAllVisits } from '../lib/visitorStore';
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, BarChart, Bar, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { useAzuraCast }       from '../hooks/useAzuraCast';
@@ -125,6 +126,93 @@ function ProgressRow({ label, value, max, color = C.green }) {
 
 function ErrorNote({ msg }) {
   return <p style={{ fontSize:12, color:'#A32D2D', padding:'8px 0' }}>⚠ {msg}</p>;
+}
+
+function VisitorsTab({ range }) {
+  const data = useMemo(() => {
+    const all = readAllVisits();
+    const now = Date.now();
+    const windowStart = now - range * 86_400_000;
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+
+    const inWindow = all.filter(v => {
+      const t = Date.parse(v.visited_at);
+      return Number.isFinite(t) && t >= windowStart;
+    });
+
+    const todayCount = inWindow.reduce((n, v) => {
+      const t = Date.parse(v.visited_at);
+      return t >= todayStart.getTime() ? n + 1 : n;
+    }, 0);
+
+    // Per-day buckets across the window
+    const buckets = {};
+    for (let i = range - 1; i >= 0; i--) {
+      const d = new Date(now - i * 86_400_000);
+      d.setHours(0, 0, 0, 0);
+      buckets[d.toISOString().slice(0, 10)] = 0;
+    }
+    inWindow.forEach(v => {
+      const key = v.visited_at.slice(0, 10);
+      if (key in buckets) buckets[key]++;
+    });
+    const labelFmt = range <= 7
+      ? { weekday: 'short' }
+      : { month: 'numeric', day: 'numeric' };
+    const dailyChart = Object.entries(buckets).map(([date, count]) => ({
+      label: new Date(date + 'T00:00:00').toLocaleDateString('en-US', labelFmt),
+      visits: count,
+    }));
+
+    // Top paths
+    const pathCounts = {};
+    inWindow.forEach(v => {
+      const p = v.path || '/';
+      pathCounts[p] = (pathCounts[p] ?? 0) + 1;
+    });
+    const topPaths = Object.entries(pathCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([path, count]) => ({ path, count }));
+
+    return {
+      total: inWindow.length,
+      today: todayCount,
+      dailyChart,
+      topPaths,
+    };
+  }, [range]);
+
+  return (
+    <>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom:20 }}>
+        <MetricCard label={`Total visits (${range}d)`} value={data.total.toLocaleString()} />
+        <MetricCard label="Visits today"               value={data.today.toLocaleString()} />
+      </div>
+      <p style={{ fontSize:12, color:'#888', marginBottom:14 }}>
+        Visit data is currently stored in this browser&apos;s localStorage (temporary — pending dedicated Supabase project).
+      </p>
+      <Panel title={`Visits per day (${range}d)`} style={{ marginBottom:16 }}>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={data.dailyChart}>
+            <XAxis dataKey="label" tick={{ fontSize:11, fill:'#888' }} interval={Math.max(0, Math.floor(data.dailyChart.length / 10))} />
+            <YAxis tick={{ fontSize:11, fill:'#888' }} allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="visits" fill={C.blue} radius={[4,4,0,0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </Panel>
+      <Panel title="Top pages">
+        {data.topPaths.length === 0 && <p style={{ fontSize:13, color:'#888' }}>No visits recorded yet.</p>}
+        {data.topPaths.map(p => (
+          <div key={p.path} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:'0.5px solid #f0f0f0', fontSize:13 }}>
+            <code style={{ color:'#333', fontSize:12 }}>{p.path}</code>
+            <span style={{ color:'#888' }}>{p.count.toLocaleString()}</span>
+          </div>
+        ))}
+      </Panel>
+    </>
+  );
 }
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
@@ -259,33 +347,21 @@ export default function AdminDashboard() {
 
         {/* ── LISTENERS ────────────────────────────────────────── */}
         {activeTab === 'Listeners' && (
-          <>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom:20 }}>
-              <MetricCard label="Active right now" value={listeners} deltaUp />
-              <MetricCard label="Peak (session)"   value={azura.peakToday} />
-              <MetricCard label="Data points"      value={azura.history.length} delta="30s intervals" />
-              <MetricCard label="Now playing"      value={nowPlaying} />
-            </div>
-            {azura.error && <ErrorNote msg={azura.error} />}
-            <Panel title="Listener count (live)" meta="Updates every 30s" style={{ marginBottom:16 }}>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={azura.chartData}>
-                  <XAxis dataKey="label" tick={{ fontSize:11, fill:'#888' }} />
-                  <YAxis tick={{ fontSize:11, fill:'#888' }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="value" stroke={C.green} strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </Panel>
-            <Panel title="Note on listener identity">
-              <p style={{ fontSize:13, color:'#888', lineHeight:1.6 }}>
-                AzuraCast provides aggregate listener counts, not individual user identities —
-                this is standard for audio streaming (privacy by design). The count above reflects
-                concurrent connections to your Live365 relay. For named listener data,
-                you would need an authenticated "Listen Now" sign-in flow.
-              </p>
-            </Panel>
-          </>
+          <Panel title="Live listener data">
+            <p style={{ fontSize:14, color:'#333', lineHeight:1.6, marginBottom:18 }}>
+              Live listener data is managed through Live365.
+              View your real-time stats, listener map, and
+              session data at your Live365 dashboard.
+            </p>
+            <a
+              href="https://dashboard.live365.com/stations/37793/overview"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display:'inline-block', padding:'10px 18px', background:'#1a5e3a', color:'#fff', borderRadius:8, fontSize:14, fontWeight:500, textDecoration:'none' }}
+            >
+              Open Live365 Dashboard
+            </a>
+          </Panel>
         )}
 
         {/* ── VIDEO ────────────────────────────────────────────── */}
@@ -337,57 +413,7 @@ export default function AdminDashboard() {
         )}
 
         {/* ── VISITORS ─────────────────────────────────────────── */}
-        {activeTab === 'Visitors' && (
-          <>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom:20 }}>
-              <MetricCard label="Active now"        value={analytics.activeNow} />
-              <MetricCard label="Unique visitors"   value={analytics.summary?.uniqueVisitors?.toLocaleString()} />
-              <MetricCard label="Page views"        value={analytics.summary?.pageviews?.toLocaleString()} />
-              <MetricCard label="Stream plays"      value={analytics.summary?.streamPlays?.toLocaleString()} deltaUp />
-            </div>
-            {analytics.error && <ErrorNote msg={analytics.error} />}
-            <Panel title="Daily visitors" style={{ marginBottom:16 }}>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={analytics.dailyChart}>
-                  <XAxis dataKey="label" tick={{ fontSize:11, fill:'#888' }} />
-                  <YAxis tick={{ fontSize:11, fill:'#888' }} />
-                  <Tooltip />
-                  <Bar dataKey="visitors" fill={C.blue} radius={[4,4,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Panel>
-            <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:16 }}>
-              <Panel title="Top pages">
-                {analytics.topPages.map(p => (
-                  <div key={p.path} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:'0.5px solid #f0f0f0', fontSize:13 }}>
-                    <code style={{ color:'#333', fontSize:12 }}>{p.path}</code>
-                    <span style={{ color:'#888' }}>{p.count.toLocaleString()}</span>
-                  </div>
-                ))}
-              </Panel>
-              <Panel title="Traffic sources">
-                <ResponsiveContainer width="100%" height={160}>
-                  <PieChart>
-                    <Pie data={analytics.sources} dataKey="value" cx="50%" cy="50%" outerRadius={60} innerRadius={38}>
-                      {analytics.sources.map((_, i) => (
-                        <Cell key={i} fill={[C.green, C.blue, C.amber, C.gray][i]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v, n) => [v, n]} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:12, fontSize:12, color:'#888' }}>
-                  {analytics.sources.map((s, i) => (
-                    <span key={s.label} style={{ display:'flex', alignItems:'center', gap:4 }}>
-                      <span style={{ width:10, height:10, borderRadius:2, background:[C.green,C.blue,C.amber,C.gray][i], display:'inline-block' }} />
-                      {s.label} {s.pct}%
-                    </span>
-                  ))}
-                </div>
-              </Panel>
-            </div>
-          </>
-        )}
+        {activeTab === 'Visitors' && <VisitorsTab range={range} />}
 
         {/* ── DONATIONS ────────────────────────────────────────── */}
         {activeTab === 'Donations' && (
