@@ -129,31 +129,49 @@ function ErrorNote({ msg }) {
 }
 
 function VisitorsTab({ range }) {
+  const [visits, setVisits]   = useState(null);
+  const [error,  setError]    = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setVisits(null);
+    setError(null);
+    readAllVisits(range)
+      .then(rows => {
+        if (cancelled) return;
+        if (!Array.isArray(rows)) {
+          setError('Unexpected response from page_visits');
+          setVisits([]);
+        } else {
+          setVisits(rows);
+        }
+      })
+      .catch(e => {
+        if (cancelled) return;
+        setError(e?.message || 'Failed to load visits');
+        setVisits([]);
+      });
+    return () => { cancelled = true; };
+  }, [range]);
+
   const data = useMemo(() => {
-    const all = readAllVisits();
+    if (!visits) return null;
     const now = Date.now();
-    const windowStart = now - range * 86_400_000;
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
-    const inWindow = all.filter(v => {
+    const todayCount = visits.reduce((n, v) => {
       const t = Date.parse(v.visited_at);
-      return Number.isFinite(t) && t >= windowStart;
-    });
-
-    const todayCount = inWindow.reduce((n, v) => {
-      const t = Date.parse(v.visited_at);
-      return t >= todayStart.getTime() ? n + 1 : n;
+      return Number.isFinite(t) && t >= todayStart.getTime() ? n + 1 : n;
     }, 0);
 
-    // Per-day buckets across the window
     const buckets = {};
     for (let i = range - 1; i >= 0; i--) {
       const d = new Date(now - i * 86_400_000);
       d.setHours(0, 0, 0, 0);
       buckets[d.toISOString().slice(0, 10)] = 0;
     }
-    inWindow.forEach(v => {
-      const key = v.visited_at.slice(0, 10);
+    visits.forEach(v => {
+      const key = (v.visited_at || '').slice(0, 10);
       if (key in buckets) buckets[key]++;
     });
     const labelFmt = range <= 7
@@ -164,9 +182,8 @@ function VisitorsTab({ range }) {
       visits: count,
     }));
 
-    // Top paths
     const pathCounts = {};
-    inWindow.forEach(v => {
+    visits.forEach(v => {
       const p = v.path || '/';
       pathCounts[p] = (pathCounts[p] ?? 0) + 1;
     });
@@ -175,13 +192,12 @@ function VisitorsTab({ range }) {
       .slice(0, 5)
       .map(([path, count]) => ({ path, count }));
 
-    return {
-      total: inWindow.length,
-      today: todayCount,
-      dailyChart,
-      topPaths,
-    };
-  }, [range]);
+    return { total: visits.length, today: todayCount, dailyChart, topPaths };
+  }, [visits, range]);
+
+  if (!data) {
+    return <p style={{ fontSize:13, color:'#888' }}>Loading visits…</p>;
+  }
 
   return (
     <>
@@ -189,9 +205,7 @@ function VisitorsTab({ range }) {
         <MetricCard label={`Total visits (${range}d)`} value={data.total.toLocaleString()} />
         <MetricCard label="Visits today"               value={data.today.toLocaleString()} />
       </div>
-      <p style={{ fontSize:12, color:'#888', marginBottom:14 }}>
-        Visit data is currently stored in this browser&apos;s localStorage (temporary — pending dedicated Supabase project).
-      </p>
+      {error && <ErrorNote msg={error} />}
       <Panel title={`Visits per day (${range}d)`} style={{ marginBottom:16 }}>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data.dailyChart}>
