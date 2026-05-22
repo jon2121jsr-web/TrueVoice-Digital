@@ -12,6 +12,33 @@ const BASE_URL     = "https://www.googleapis.com/youtube/v3";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const IS_PROD      = import.meta.env.PROD;
 
+const CACHE_VERSION = 'v1';
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function getCached(channelId) {
+  try {
+    const key = `yt_feed_${CACHE_VERSION}_${channelId}`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { data, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp > CACHE_TTL) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return data;
+  } catch { return null; }
+}
+
+function setCache(channelId, data) {
+  try {
+    const key = `yt_feed_${CACHE_VERSION}_${channelId}`;
+    localStorage.setItem(key, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+  } catch {} // silent fail if storage full
+}
+
 const uploadsCache = {};  // channelId  → uploadsPlaylistId
 const rawCache     = {};  // cacheKey   → { videos, at }
 
@@ -69,6 +96,14 @@ export function useYouTubeFeed({ channelId, playlistId, maxResults = 10, filterF
       return;
     }
 
+    const persisted = getCached(cacheKey);
+    if (persisted) {
+      rawCache[cacheKey] = { videos: persisted, at: Date.now() };
+      const videos = filterFn ? persisted.filter(v => filterFn(v.title)) : persisted;
+      setState({ videos, loading: false, error: null });
+      return;
+    }
+
     let alive = true;
 
     async function run() {
@@ -77,9 +112,16 @@ export function useYouTubeFeed({ channelId, playlistId, maxResults = 10, filterF
         if (channelId) pid = await resolveUploadsPlaylistId(channelId);
         const raw    = await fetchRawVideos(pid, maxResults);
         rawCache[cacheKey] = { videos: raw, at: Date.now() };
+        setCache(cacheKey, raw);
         const videos = filterFn ? raw.filter(v => filterFn(v.title)) : raw;
         if (alive) setState({ videos, loading: false, error: null });
       } catch (err) {
+        const stale = getCached(cacheKey);
+        if (stale) {
+          const videos = filterFn ? stale.filter(v => filterFn(v.title)) : stale;
+          if (alive) setState({ videos, loading: false, error: null });
+          return;
+        }
         if (alive) setState(s => ({ ...s, loading: false, error: err.message }));
       }
     }
