@@ -229,6 +229,21 @@ export function NowPlayingPanel({
       }
     };
 
+    // Network drop/restore recovery (WiFi<->cellular handoff, dead zones).
+    // `online` often fires when a silent stall never produced an "error" event.
+    const onOnline = () => {
+      if (!isPlayingRef.current || !el.paused) return; // only if user wants playback
+      setIsReconnecting(true);
+      el.src = streamUrlRef.current; // primary first
+      el.load();
+      el.play().catch(() => {
+        el.src = AZURACAST_FALLBACK; // then fallback
+        el.load();
+        el.play().catch(() => {});
+      });
+    };
+    const onOffline = () => { if (isPlayingRef.current) setIsReconnecting(true); };
+
     el.addEventListener("play",    onPlay);
     el.addEventListener("pause",   onPause);
     el.addEventListener("ended",   onEnded);
@@ -238,6 +253,8 @@ export function NowPlayingPanel({
     el.addEventListener("waiting", onWaiting);
     el.addEventListener("playing", onPlaying);
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("online",  onOnline);
+    window.addEventListener("offline", onOffline);
 
     return () => {
       el.removeEventListener("play",    onPlay);
@@ -249,6 +266,8 @@ export function NowPlayingPanel({
       el.removeEventListener("waiting", onWaiting);
       el.removeEventListener("playing", onPlaying);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("online",  onOnline);
+      window.removeEventListener("offline", onOffline);
     };
   }, [audioRef]);
 
