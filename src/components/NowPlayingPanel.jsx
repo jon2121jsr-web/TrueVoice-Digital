@@ -53,6 +53,7 @@ export function NowPlayingPanel({
   const pendingSongRef = useRef(null);
   const pendingFlipRef = useRef(null);
   const isPlayingRef   = useRef(false);
+  const wantsPlaybackRef = useRef(false); // user INTENT (set only in handleTogglePlay)
   const streamUrlRef   = useRef(streamUrl);
   useEffect(() => { streamUrlRef.current = streamUrl; }, [streamUrl]);
 
@@ -173,7 +174,26 @@ export function NowPlayingPanel({
     if (!el) return;
 
     const onPlay  = () => { setIsPlaying(true);  isPlayingRef.current = true; };
-    const onPause = () => { setIsPlaying(false); isPlayingRef.current = false; };
+    const onPause = () => {
+      // Element state always reflects the pause.
+      setIsPlaying(false);
+      isPlayingRef.current = false;
+      // But if the user still WANTS playback, this was an OS-driven pause
+      // (audio route change: earbuds unplugged, switch to car Bluetooth).
+      // Recover after a short delay if we're still paused.
+      if (!wantsPlaybackRef.current) return;
+      setTimeout(() => {
+        if (!wantsPlaybackRef.current || !el.paused) return;
+        setIsReconnecting(true);
+        el.src = streamUrlRef.current; // primary first
+        el.load();
+        el.play().catch(() => {
+          el.src = AZURACAST_FALLBACK; // then fallback
+          el.load();
+          el.play().catch(() => {});
+        });
+      }, 800);
+    };
     const onEnded = () => { setIsPlaying(false); isPlayingRef.current = false; };
 
     const onError = () => {
@@ -197,18 +217,18 @@ export function NowPlayingPanel({
     // Network handoff recovery: reload after 3 s if still meant to be playing
     // and the primary error handler hasn't already recovered the stream.
     const onErrorRecovery = () => {
-      if (!isPlayingRef.current) return;
+      if (!wantsPlaybackRef.current) return;
       setTimeout(() => {
-        if (!isPlayingRef.current || !el.paused) return;
+        if (!wantsPlaybackRef.current || !el.paused) return;
         el.load();
         el.play().catch(() => {});
       }, 3000);
     };
 
     const onStalled = () => {
-      if (!isPlayingRef.current) return;
+      if (!wantsPlaybackRef.current) return;
       setTimeout(() => {
-        if (!isPlayingRef.current || !el.paused) return;
+        if (!wantsPlaybackRef.current || !el.paused) return;
         el.load();
         el.play().catch(() => {});
       }, 3000);
@@ -222,7 +242,7 @@ export function NowPlayingPanel({
     const onVisibilityChange = () => {
       if (
         document.visibilityState === "visible" &&
-        isPlayingRef.current &&
+        wantsPlaybackRef.current &&
         el.paused
       ) {
         el.play().catch(() => {});
@@ -232,7 +252,11 @@ export function NowPlayingPanel({
     // Network drop/restore recovery (WiFi<->cellular handoff, dead zones).
     // `online` often fires when a silent stall never produced an "error" event.
     const onOnline = () => {
-      if (!isPlayingRef.current || !el.paused) return; // only if user wants playback
+      // Connection restored — if playback survived the blip, clear the indicator.
+      // Must run BEFORE the paused guard, else a never-paused element stays
+      // stuck on "Reconnecting…" forever.
+      setIsReconnecting(false);
+      if (!wantsPlaybackRef.current || !el.paused) return; // only if user wants playback
       setIsReconnecting(true);
       el.src = streamUrlRef.current; // primary first
       el.load();
@@ -242,7 +266,7 @@ export function NowPlayingPanel({
         el.play().catch(() => {});
       });
     };
-    const onOffline = () => { if (isPlayingRef.current) setIsReconnecting(true); };
+    const onOffline = () => { if (wantsPlaybackRef.current) setIsReconnecting(true); };
 
     el.addEventListener("play",    onPlay);
     el.addEventListener("pause",   onPause);
@@ -278,6 +302,7 @@ export function NowPlayingPanel({
     try {
       if (!isPlaying) {
         setError(null);
+        wantsPlaybackRef.current = true; // user wants playback
         // Always reload the live stream src before playing to snap to
         // the live edge — prevents the stale-buffer glitch after pause.
         const currentSrc = el.src;
@@ -293,6 +318,7 @@ export function NowPlayingPanel({
         });
         setIsPlaying(true);
       } else {
+        wantsPlaybackRef.current = false; // user stopped playback
         // Pause only — keep src intact so lock screen Play can resume
         el.pause();
         setIsPlaying(false);
