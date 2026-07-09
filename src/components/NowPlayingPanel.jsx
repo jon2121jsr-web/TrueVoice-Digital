@@ -54,7 +54,6 @@ export function NowPlayingPanel({
   const pendingFlipRef = useRef(null);
   const isPlayingRef   = useRef(false);
   const wantsPlaybackRef = useRef(false); // user INTENT (set only in handleTogglePlay)
-  const pauseStartRef  = useRef(0); // timestamp of the most recent pause event
   const streamUrlRef   = useRef(streamUrl);
   useEffect(() => { streamUrlRef.current = streamUrl; }, [streamUrl]);
 
@@ -176,34 +175,8 @@ export function NowPlayingPanel({
 
     const onPlay  = () => { setIsPlaying(true);  isPlayingRef.current = true; };
     const onPause = () => {
-      // Element state always reflects the pause.
       setIsPlaying(false);
       isPlayingRef.current = false;
-      pauseStartRef.current = Date.now();
-      // But if the user still WANTS playback, this was an OS-driven pause
-      // (audio route change: earbuds unplugged, switch to car Bluetooth).
-      // Recover after a short delay if we're still paused.
-      if (!wantsPlaybackRef.current) return;
-      setTimeout(() => {
-        if (!wantsPlaybackRef.current || !el.paused) return;
-        // Route changes (earbuds swap, Bluetooth handoff) settle within
-        // 800ms. If the OS media session is still reporting "paused" and
-        // we've been paused for over 2s, this is a longer interruption
-        // (phone call) rather than a route change — stand down instead of
-        // resuming playback into an active call.
-        const pausedElapsed = Date.now() - pauseStartRef.current;
-        if (navigator.mediaSession?.playbackState === "paused" && pausedElapsed > 2000) {
-          return;
-        }
-        setIsReconnecting(true);
-        el.src = streamUrlRef.current; // primary first
-        el.load();
-        el.play().catch(() => {
-          el.src = AZURACAST_FALLBACK; // then fallback
-          el.load();
-          el.play().catch(() => {});
-        });
-      }, 800);
     };
     const onEnded = () => { setIsPlaying(false); isPlayingRef.current = false; };
 
@@ -267,16 +240,6 @@ export function NowPlayingPanel({
       }
     };
 
-    // MediaSession pause action (lock screen / call UI) — flip intent
-    // before letting pause proceed, so recovery logic sees it as intentional.
-    const onMediaSessionPause = () => {
-      wantsPlaybackRef.current = false;
-      el.pause();
-    };
-    if (navigator.mediaSession) {
-      navigator.mediaSession.setActionHandler("pause", onMediaSessionPause);
-    }
-
     // Network drop/restore recovery (WiFi<->cellular handoff, dead zones).
     // `online` often fires when a silent stall never produced an "error" event.
     const onOnline = () => {
@@ -309,9 +272,6 @@ export function NowPlayingPanel({
     window.addEventListener("offline", onOffline);
 
     return () => {
-      if (navigator.mediaSession) {
-        navigator.mediaSession.setActionHandler("pause", null);
-      }
       el.removeEventListener("play",    onPlay);
       el.removeEventListener("pause",   onPause);
       el.removeEventListener("ended",   onEnded);
