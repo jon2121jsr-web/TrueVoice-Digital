@@ -16,6 +16,7 @@ import VideoModal from "./components/VideoModal.jsx";
 import MerchSection from "./components/MerchSection.jsx";
 import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
 import PullToRefresh from "./components/PullToRefresh";
+import ChimeIn from "./components/ChimeIn";
 
 import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
 import { useVisitorBeacon } from "./hooks/useVisitorBeacon";
@@ -533,6 +534,8 @@ onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CH
           )}
 
           <VideoModal open={videoOpen} onClose={closeVideo} video={activeVideo} />
+
+          <ChimeIn />
         </div>
       } />
     </Routes>

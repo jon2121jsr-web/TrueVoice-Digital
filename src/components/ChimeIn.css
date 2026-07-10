@@ -1,0 +1,342 @@
+/* src/components/ChimeIn.css */
+
+:root {
+  --tv-chime-primary: #1a56db;
+  --tv-chime-primary-hover: #2563eb;
+  --tv-chime-gold: #f5a623;
+  --tv-chime-bg: #0f172a;
+  --tv-chime-bubble-bg: #1e293b;
+  --tv-chime-text: #f1f5f9;
+  --tv-chime-text-muted: #94a3b8;
+  --tv-chime-radius: 12px;
+}
+
+/* ── Closed tab — pinned to right edge, vertically centered ─────────────────── */
+.chime-tab {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  background: var(--tv-chime-primary);
+  color: var(--tv-chime-text);
+  padding: 16px 9px;
+  border-radius: 10px 0 0 10px;
+  box-shadow: -2px 0 14px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  user-select: none;
+  z-index: 1000;
+  transition: background 0.15s ease;
+}
+
+.chime-tab:hover,
+.chime-tab:focus-visible {
+  background: var(--tv-chime-primary-hover);
+}
+
+.chime-tab:focus-visible {
+  outline: 2px solid var(--tv-chime-gold);
+  outline-offset: 2px;
+}
+
+/* ── Backdrop ─────────────────────────────────────────────────────────────── */
+.chime-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+/* ── Drawer shell — slides in from the right on desktop ──────────────────── */
+.chime-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  max-width: 92vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--tv-chime-bg);
+  color: var(--tv-chime-text);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
+  transform: translateX(100%);
+  transition: transform 0.28s ease;
+  z-index: 1001;
+}
+
+.chime-drawer.open {
+  transform: translateX(0);
+}
+
+.chime-drawer.closed {
+  transform: translateX(100%);
+  pointer-events: none;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.chime-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 16px 20px;
+  background: linear-gradient(90deg, var(--tv-chime-primary), var(--tv-chime-primary-hover));
+}
+
+.chime-header-title {
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  color: var(--tv-chime-text);
+}
+
+.chime-close-btn {
+  background: none;
+  border: none;
+  color: var(--tv-chime-text);
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.chime-close-btn:hover,
+.chime-close-btn:focus-visible {
+  color: var(--tv-chime-gold);
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────────── */
+.chime-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  overflow: hidden;
+}
+
+/* ── Signed-in user bar ───────────────────────────────────────────────────── */
+.chime-user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--tv-chime-text-muted);
+}
+
+.chime-signout-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--tv-chime-primary-hover);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.chime-signout-btn:hover,
+.chime-signout-btn:focus-visible {
+  color: var(--tv-chime-gold);
+}
+
+/* ── Message feed ─────────────────────────────────────────────────────────── */
+.chime-feed {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.chime-message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  background: var(--tv-chime-bubble-bg);
+  border-radius: var(--tv-chime-radius);
+  padding: 8px 12px;
+}
+
+.chime-message-name {
+  color: var(--tv-chime-gold);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.chime-message-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--tv-chime-text);
+  font-size: 0.85rem;
+  word-break: break-word;
+}
+
+.chime-message-time {
+  flex-shrink: 0;
+  color: var(--tv-chime-text-muted);
+  font-size: 0.68rem;
+}
+
+/* ── Send form ────────────────────────────────────────────────────────────── */
+.chime-send-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chime-send-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--tv-chime-bubble-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: var(--tv-chime-text);
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.chime-send-input:focus {
+  outline: none;
+  border-color: var(--tv-chime-primary);
+}
+
+.chime-char-count {
+  flex-shrink: 0;
+  color: var(--tv-chime-text-muted);
+  font-size: 0.65rem;
+}
+
+.chime-send-btn {
+  flex-shrink: 0;
+  background: var(--tv-chime-primary);
+  color: var(--tv-chime-text);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.chime-send-btn:hover:not(:disabled) {
+  background: var(--tv-chime-primary-hover);
+}
+
+.chime-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Auth form (not signed in) ────────────────────────────────────────────── */
+.chime-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.chime-auth-copy {
+  margin: 0;
+  color: var(--tv-chime-text-muted);
+  font-size: 0.85rem;
+}
+
+.chime-email-input {
+  background: var(--tv-chime-bubble-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--tv-chime-text);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.chime-email-input:focus {
+  outline: none;
+  border-color: var(--tv-chime-primary);
+}
+
+.chime-auth-btn {
+  background: var(--tv-chime-primary);
+  color: var(--tv-chime-text);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.chime-auth-btn:hover:not(:disabled) {
+  background: var(--tv-chime-primary-hover);
+}
+
+.chime-auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chime-auth-error {
+  margin: 0;
+  color: #f87171;
+  font-size: 0.78rem;
+}
+
+.chime-auth-success {
+  margin: 0;
+  color: var(--tv-chime-gold);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ── Mobile — bottom tab + bottom sheet drawer ────────────────────────────── */
+@media (max-width: 768px) {
+  .chime-tab {
+    top: auto;
+    right: 50%;
+    bottom: 0;
+    transform: translateX(50%);
+    writing-mode: horizontal-tb;
+    text-orientation: initial;
+    border-radius: 10px 10px 0 0;
+    padding: 9px 20px;
+    box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.35);
+  }
+
+  .chime-drawer {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 78vh;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+  }
+
+  .chime-drawer.open {
+    transform: translateY(0);
+  }
+
+  .chime-drawer.closed {
+    transform: translateY(100%);
+  }
+}
