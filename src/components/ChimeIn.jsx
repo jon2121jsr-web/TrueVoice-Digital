@@ -42,6 +42,10 @@ export default function ChimeIn() {
 
   /* ── Auth session bootstrap + subscription ─────────────────────────────── */
   useEffect(() => {
+    if (window.location.hash.includes("access_token")) {
+      setIsOpen(true);
+    }
+
     supabaseRealtime.auth.getSession().then(({ data }) => {
       setSession(data?.session ?? null);
     });
