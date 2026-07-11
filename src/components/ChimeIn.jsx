@@ -144,7 +144,7 @@ export default function ChimeIn() {
     setAuthLoading(true);
     const { error } = await supabaseRealtime.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: "https://truevoice.digital" },
     });
     setAuthLoading(false);
     if (error) { setAuthError(error.message); return; }
