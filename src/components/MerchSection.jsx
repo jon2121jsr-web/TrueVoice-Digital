@@ -1,4 +1,3 @@
-import { useState } from "react";
 import "./MerchSection.css";
 
 const MERCH_PRODUCTS = [
@@ -64,46 +63,7 @@ const MERCH_PRODUCTS = [
   },
 ];
 
-const SIZES = ["S", "M", "L", "XL", "2XL", "3XL"];
-
 function MerchCard({ product }) {
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  async function handleBuy() {
-    if (!selectedSize) {
-      setError("Please select a size.");
-      return;
-    }
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          size: selectedSize,
-          productName: product.name,
-          price: product.price,
-          image: product.image
-            ? `https://truevoice.digital${product.image}`
-            : null,
-        }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
-    } catch (err) {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="tv-merch-card">
       <div className="tv-merch-visual">
@@ -134,28 +94,12 @@ function MerchCard({ product }) {
         <h3 className="tv-merch-name">{product.name}</h3>
         <p className="tv-merch-price">{product.price}</p>
 
-        <div className="tv-merch-sizes">
-          {SIZES.map((size) => (
-            <button
-              key={size}
-              className={`tv-merch-size-btn${selectedSize === size ? " selected" : ""}`}
-              onClick={() => { setSelectedSize(size); setError(null); }}
-              style={selectedSize === size ? { borderColor: product.accent, color: product.accent } : {}}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-
-        {error && <p className="tv-merch-error">{error}</p>}
-
         <button
           className="tv-merch-buy-btn"
-          onClick={handleBuy}
-          disabled={loading}
+          onClick={() => window.open("https://shop.truevoice.digital", "_blank", "noopener,noreferrer")}
           style={{ background: product.accent }}
         >
-          {loading ? "Loading…" : "Buy Now →"}
+          Shop Now →
         </button>
       </div>
     </div>
