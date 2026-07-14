@@ -1,6 +1,15 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://truevoice.digital/$1",
+      "permanent": true,
+      "has": [{ "type": "host", "value": "www.truevoice.digital" }]
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
+
