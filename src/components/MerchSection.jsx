@@ -4,7 +4,7 @@ const MERCH_PRODUCTS = [
   {
     id: 1,
     name: "TrueVoice Hoodie",
-    price: "$52",
+    price: "$30.29",
     tag: "LOUD FAITH",
     tagStyle: "gold",
     image: "/images/gear-hoodie.jpg",
@@ -14,7 +14,7 @@ const MERCH_PRODUCTS = [
   {
     id: 2,
     name: "Unmute Truth Tee",
-    price: "$34",
+    price: "$14.75",
     tag: "NEW",
     tagStyle: "fire",
     image: "/images/gear-unmute-tee.jpg",
@@ -24,7 +24,7 @@ const MERCH_PRODUCTS = [
   {
     id: 3,
     name: "Heaven Louder Tee",
-    price: "$34",
+    price: "$14.75",
     tag: "FAN FAVORITE",
     tagStyle: "purple",
     image: "/images/gear-heaven-tee.jpg",
@@ -34,7 +34,7 @@ const MERCH_PRODUCTS = [
   {
     id: 4,
     name: "Knit Beanie",
-    price: "$28",
+    price: "$16.79",
     tag: "WINTER DROP",
     tagStyle: "blue",
     image: "/images/gear-beanie.jpg",
@@ -44,7 +44,7 @@ const MERCH_PRODUCTS = [
   {
     id: 5,
     name: "Speak Truth Tee",
-    price: "$34",
+    price: "$14.75",
     tag: "BESTSELLER",
     tagStyle: "fire",
     image: "/images/gear-speak-tee.jpg",
@@ -54,7 +54,7 @@ const MERCH_PRODUCTS = [
   {
     id: 6,
     name: "TrueVoice Water Bottle",
-    price: "$38",
+    price: "$23.35",
     tag: "PREMIUM",
     tagStyle: "gold",
     image: "/images/gear-bottle.jpg",
