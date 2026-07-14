@@ -39,7 +39,23 @@ function setCache(channelId, data) {
   } catch {} // silent fail if storage full
 }
 
-const uploadsCache = {};  // channelId  → uploadsPlaylistId
+const UPLOADS_CACHE_KEY = 'yt_uploads_cache_v1';
+
+function loadUploadsCache() {
+  try {
+    const raw = localStorage.getItem(UPLOADS_CACHE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch { return {}; }
+}
+
+function saveUploadsCache(cache) {
+  try {
+    localStorage.setItem(UPLOADS_CACHE_KEY, JSON.stringify(cache));
+  } catch {}
+}
+
+const uploadsCache = loadUploadsCache();  // channelId  → uploadsPlaylistId
 const rawCache     = {};  // cacheKey   → { videos, at }
 
 async function resolveUploadsPlaylistId(channelId) {
@@ -53,6 +69,7 @@ async function resolveUploadsPlaylistId(channelId) {
   const id   = data?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
   if (!id) throw new Error(`No uploads playlist for ${channelId}`);
   uploadsCache[channelId] = id;
+  saveUploadsCache(uploadsCache);
   return id;
 }
 
