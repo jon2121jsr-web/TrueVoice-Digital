@@ -124,11 +124,6 @@ export default function MerchSection() {
           <MerchCard key={product.id} product={product} />
         ))}
       </div>
-
-      <div className="tv-gear-footer">
-        <span className="tv-gear-dot" />
-        TrueVoice original gear dropping soon — stay tuned
-      </div>
     </section>
   );
 }

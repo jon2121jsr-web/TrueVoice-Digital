@@ -14,3 +14,33 @@
   pointer-events: none;
   user-select: none;
 }
+.hero-merch-slide-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.hero-merch-cta {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+.hero-merch-btn {
+  background: #f5a623;
+  color: #0f172a;
+  border: none;
+  border-radius: 6px;
+  padding: 14px 32px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.hero-merch-btn:hover {
+  background: #e09400;
+  transform: scale(1.03);
+}

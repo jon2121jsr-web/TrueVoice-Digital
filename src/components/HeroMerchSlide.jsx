@@ -12,15 +12,22 @@ export default function HeroMerchSlide({ onShopClick }) {
   };
 
   return (
-    <div className="hero-std-slide" onClick={handleClick} style={{ cursor: "pointer" }}>
-      <img
-        src="/images/hero-merch.png"
-        alt="TrueVoice Gear — Wear Your Faith Loud"
-        className="hero-std-img"
-        loading="lazy"
-        decoding="async"
-        draggable="false"
-      />
+    <div className="hero-std-slide">
+      <div className="hero-merch-slide-inner">
+        <img
+          src="/images/hero-merch.png"
+          alt="TrueVoice Gear — Wear Your Faith Loud"
+          className="hero-std-img"
+          loading="lazy"
+          decoding="async"
+          draggable="false"
+        />
+        <div className="hero-merch-cta">
+          <button className="hero-merch-btn" onClick={handleClick}>
+            Shop TrueVoice Gear →
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
