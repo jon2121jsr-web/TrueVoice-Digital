@@ -1,16 +1,6 @@
 import "./HeroMerchSlide.css";
 
-export default function HeroMerchSlide({ onShopClick }) {
-  const handleClick = () => {
-    const merchSection = document.querySelector(".tv-gear-section");
-    if (merchSection) {
-      const top = merchSection.getBoundingClientRect().top + window.pageYOffset - 80;
-      window.scrollTo({ top, behavior: "smooth" });
-    } else if (typeof onShopClick === "function") {
-      onShopClick();
-    }
-  };
-
+export default function HeroMerchSlide() {
   return (
     <div className="hero-std-slide">
       <div className="hero-merch-slide-inner">
@@ -23,9 +13,15 @@ export default function HeroMerchSlide({ onShopClick }) {
           draggable="false"
         />
         <div className="hero-merch-cta">
-          <button className="hero-merch-btn" onClick={(e) => { e.stopPropagation(); handleClick(); }}>
+          <a
+            href="https://shop.truevoice.digital"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hero-merch-btn"
+            onClick={(e) => e.stopPropagation()}
+          >
             Shop TrueVoice Gear →
-          </button>
+          </a>
         </div>
       </div>
     </div>
