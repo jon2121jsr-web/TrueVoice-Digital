@@ -23,7 +23,7 @@ export default function HeroMerchSlide({ onShopClick }) {
           draggable="false"
         />
         <div className="hero-merch-cta">
-          <button className="hero-merch-btn" onClick={handleClick}>
+          <button className="hero-merch-btn" onClick={(e) => { e.stopPropagation(); handleClick(); }}>
             Shop TrueVoice Gear →
           </button>
         </div>

@@ -39,7 +39,7 @@ export default function Hero() {
       {
         kind: "component",
         component: HeroMerchSlide,
-        alt: "TrueVoice Gear — Coming Soon",
+        alt: "TrueVoice Gear — Shop Now",
       },
       // 5 — Pigskin Frenzy
       {
@@ -161,6 +161,7 @@ export default function Hero() {
                 className={`hero-slide ${isActive ? "is-active" : ""}`}
                 aria-hidden={isActive ? "false" : "true"}
                 data-kind="component"
+                onClick={(e) => e.stopPropagation()}
               >
                 <Component />
               </div>
