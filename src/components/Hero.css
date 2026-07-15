@@ -53,6 +53,7 @@
 /* ── Component slides ── fill the full slide area */
 .hero-slide[data-kind="component"] {
   align-items: center;
+  pointer-events: none;
 }
 
 .hero-slide[data-kind="component"] > .hero-std-slide,
