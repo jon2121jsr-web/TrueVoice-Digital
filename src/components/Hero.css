@@ -65,6 +65,7 @@
 .hero-media {
   display: grid;
   place-items: center;
+  pointer-events: none;
 }
 
 .hero-slide[data-kind="legacy"] .hero-media {
