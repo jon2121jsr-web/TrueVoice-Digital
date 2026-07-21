@@ -100,6 +100,7 @@ export default function Hero() {
 
   // ── Pointer events (works for both touch and mouse) ────────────────────────
   const handlePointerDown = (e) => {
+    if (e.target.closest('.hero-merch-link')) return;
     // Only track left mouse button or touch
     if (e.pointerType === "mouse" && e.button !== 0) return;
     dragStart.current = { x: e.clientX, y: e.clientY };
@@ -114,6 +115,7 @@ export default function Hero() {
   };
 
   const handlePointerUp = (e) => {
+    if (e.target.closest('.hero-merch-link')) return;
     if (!dragStart.current) return;
     const dx = e.clientX - dragStart.current.x;
     dragStart.current = null;
