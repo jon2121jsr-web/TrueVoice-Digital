@@ -2,13 +2,7 @@ import "./HeroMerchSlide.css";
 
 export default function HeroMerchSlide() {
   return (
-    <a
-      href="https://shop.truevoice.digital"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="hero-std-slide hero-merch-link"
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div className="hero-std-slide">
       <img
         src="/images/hero-merch.png"
         alt="TrueVoice Gear — Shop Now"
@@ -18,8 +12,21 @@ export default function HeroMerchSlide() {
         draggable="false"
       />
       <div className="hero-merch-cta">
-        <span className="hero-merch-btn">Shop TrueVoice Gear →</span>
+        <button
+          className="hero-merch-btn"
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            const section = document.querySelector('.tv-gear-section');
+            if (section) {
+              section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }}
+        >
+          Shop TrueVoice Gear →
+        </button>
       </div>
-    </a>
+    </div>
   );
 }

@@ -4,7 +4,6 @@
   height: 100%;
   overflow: hidden;
   background: #050816;
-  pointer-events: none;
 }
 .hero-std-img {
   width: 100%;
@@ -15,20 +14,13 @@
   pointer-events: none;
   user-select: none;
 }
-.hero-merch-link {
-  display: block;
-  width: 100%;
-  height: 100%;
-  text-decoration: none;
-  position: relative;
-  pointer-events: auto;
-}
 .hero-merch-cta {
   position: absolute;
   bottom: 140px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 2;
+  z-index: 10;
+  pointer-events: all;
 }
 .hero-merch-btn {
   background: #f5a623;
@@ -44,6 +36,8 @@
   pointer-events: all;
   box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   transition: background 0.2s ease, transform 0.15s ease;
+  position: relative;
+  z-index: 10;
 }
 .hero-merch-btn:hover {
   background: #e09400;
