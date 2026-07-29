@@ -8,34 +8,6 @@ const BASE_URL =
 const STATION_SLUG =
   import.meta.env.VITE_AZURACAST_STATION_SLUG || "truevoice_digital";
 
-// ------- LIVE365 LISTENER COUNT -------
-// Live365 station CALLSIGN — visible in the dashboard sidebar as "a61535"
-// (NOT the numeric ID 37793 — that returns 404)
-const LIVE365_CALLSIGN =
-  import.meta.env.VITE_LIVE365_CALLSIGN || "a61535";
-
-async function fetchLive365Listeners() {
-  try {
-    const url = `https://api.live365.com/station/${LIVE365_CALLSIGN}`;
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
-    if (!res.ok) return null;
-
-    const data = await res.json();
-
-    const count =
-      data?.listeners_count          ??
-      data?.data?.listeners_count    ??
-      data?.station?.listeners_count ??
-      data?.current_listeners        ??
-      data?.data?.current_listeners  ??
-      null;
-
-    return count != null ? Number(count) : null;
-  } catch {
-    return null;
-  }
-}
-
 export async function fetchNowPlaying() {
   const url = `${BASE_URL}/api/nowplaying/${STATION_SLUG}`;
 
@@ -51,7 +23,6 @@ export async function fetchNowPlaying() {
     : payload?.now_playing
     ? payload
     : { now_playing: payload };
-  console.log('nowplaying response:', JSON.stringify({ song: root?.now_playing?.song, art: root?.now_playing?.song?.art }, null, 2));
 
   const np   = root.now_playing || {};
   const song = np.song          || {};
@@ -63,10 +34,8 @@ export async function fetchNowPlaying() {
 
   const rawNext = root.playing_next || null;
 
-  const [live365Count, rawAzuraListeners] = await Promise.all([
-    fetchLive365Listeners(),
-    Promise.resolve(root.listeners ?? null),
-  ]);
+  const live365Count = null; // Live365 no longer in use
+  const rawAzuraListeners = root.listeners ?? null;
 
   let mountTotal = 0;
   for (const m of (root.station?.mounts ?? [])) {
