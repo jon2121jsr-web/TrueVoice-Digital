@@ -7,7 +7,7 @@
  * Captures: page views, stream plays, video plays, donation clicks.
  */
 
-const ENDPOINT = import.meta.env.VITE_ANALYTICS_ENDPOINT || '/api/analytics';
+const ENDPOINT = import.meta.env.VITE_ANALYTICS_ENDPOINT || 'https://truevoice.digital/api/analytics';
 const SITE_ID  = import.meta.env.VITE_ANALYTICS_SITE_ID  || 'truevoice';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
