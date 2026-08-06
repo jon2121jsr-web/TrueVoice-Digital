@@ -42,7 +42,6 @@
   transform: none;
   transition: opacity 450ms ease;
   z-index: 1;
-  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: center;
