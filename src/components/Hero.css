@@ -57,8 +57,8 @@
 
 /* ── Component slides ── fill the full slide area */
 .hero-slide[data-kind="component"] {
-  width: 100%;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   pointer-events: none;
 }
 
