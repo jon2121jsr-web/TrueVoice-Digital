@@ -61,7 +61,8 @@
 }
 
 .hero-slide[data-kind="component"] > .hero-std-slide,
-.hero-slide[data-kind="component"] > .hero-merch-slide {
+.hero-slide[data-kind="component"] > .hero-merch-slide,
+.hero-slide[data-kind="component"] > .hero-denisha-slide {
   width: 100%;
   height: 100%;
 }

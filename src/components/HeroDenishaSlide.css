@@ -1,11 +1,11 @@
-.hero-std-slide {
+.hero-denisha-slide {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: #1a0a2e;
 }
-.hero-std-img {
+.hero-denisha-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -16,7 +16,7 @@
 }
 
 @media (max-width: 768px) {
-  .hero-std-img {
+  .hero-denisha-img {
     object-position: 30% center;
   }
 }
