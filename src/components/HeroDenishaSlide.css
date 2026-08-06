@@ -14,3 +14,9 @@
   pointer-events: none;
   user-select: none;
 }
+
+@media (max-width: 768px) {
+  .hero-std-img {
+    object-position: 30% center;
+  }
+}
