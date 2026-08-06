@@ -1,5 +1,5 @@
 .hero-std-slide{position:relative;width:100%;height:100%;overflow:hidden;background:#050816;}
-.hero-std-img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none;user-select:none;}
+.hero-std-img{width:100%;height:100%;object-fit:cover;object-position:center 35%;display:block;pointer-events:none;user-select:none;}
 .hero-std-badge{position:absolute;bottom:48px;right:32px;width:fit-content;display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;border-radius:100px;padding:7px 20px;backdrop-filter:blur(6px);}
 .hero-std-badge--gold{color:#d4af37;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.35);}
 .hero-std-badge--blue{color:#7eb8ff;background:rgba(126,184,255,0.12);border:1px solid rgba(126,184,255,0.35);}

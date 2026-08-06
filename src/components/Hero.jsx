@@ -7,6 +7,7 @@ import HeroPigskinSlide from "./HeroPigskinSlide.jsx";
 import HeroRyanSlide from "./HeroRyanSlide.jsx";
 import HeroDeepEndSlide from "./HeroDeepEndSlide.jsx";
 import HeroRyanScheduleSlide from "./HeroRyanScheduleSlide.jsx";
+import HeroDenishaSlide from "./HeroDenishaSlide.jsx";
 
 // Minimum px travel before we count it as a swipe (not a tap)
 const SWIPE_THRESHOLD = 40;
@@ -35,7 +36,13 @@ export default function Hero() {
         component: HeroRyanScheduleSlide,
         alt: "The Ryan Kliesch Show-gram — Live Mon–Fri on TrueVoice Digital",
       },
-      // 4 — Merch
+      // 4 — Denisha Workizer — The Reclaimed Life
+      {
+        kind: "component",
+        component: HeroDenishaSlide,
+        alt: "The Reclaimed Life with Denisha Workizer on TrueVoice Digital",
+      },
+      // 5 — Merch
       {
         kind: "component",
         component: HeroMerchSlide,
