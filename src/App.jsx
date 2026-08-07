@@ -12,6 +12,7 @@ import ReelsGrid from "./components/ReelsGrid";
 import { NowPlayingDebug } from "./components/NowPlayingDebug";
 import TrueVoiceConnect from "./components/TrueVoiceConnect.jsx";
 import RecentTracksBar from "./components/RecentTracksBar.jsx";
+import ProgrammingSchedule from "./components/ProgrammingSchedule.jsx";
 import VideoModal from "./components/VideoModal.jsx";
 import MerchSection from "./components/MerchSection.jsx";
 import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
@@ -460,6 +461,8 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
             </div>
 
             <RecentTracksBar />
+
+            <ProgrammingSchedule />
 
             <section className="tv-section tv-section--stacked">
               <TrueVoiceConnect

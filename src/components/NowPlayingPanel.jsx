@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 import { trackStreamPlay } from '../lib/analytics.js';
-import { getActiveShow } from "../showSchedule.js";
+import { getActiveShow, getNextShow, showSchedule } from "../showSchedule.js";
 import "./NowPlayingPanel.css";
 
 function toNum(v, fallback = 0) {
@@ -41,6 +41,7 @@ export function NowPlayingPanel({
   const [listeners,      setListeners]      = useState(null);
   const [displaySong,    setDisplaySong]    = useState(null);
   const [activeShow,     setActiveShow]     = useState(() => getActiveShow());
+  const [nextShow,       setNextShow]       = useState(() => getNextShow());
   const [isReconnecting, setIsReconnecting] = useState(false);
 
   const isOwner = useIsOwner();
@@ -133,24 +134,37 @@ export function NowPlayingPanel({
     return () => window.clearInterval(id);
   }, []);
 
-  /* ── Update activeShow every 60 seconds ───────────────────────────────── */
+  /* ── Update activeShow / nextShow every 60 seconds ─────────────────────── */
   useEffect(() => {
-    const id = window.setInterval(() => setActiveShow(getActiveShow()), 60_000);
+    const id = window.setInterval(() => {
+      setActiveShow(getActiveShow());
+      setNextShow(getNextShow());
+    }, 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  /* ── Weekly programming ticker segments ────────────────────────────────── */
+  const pigskinShow = useMemo(() => showSchedule.find(s => s.id === 'pigskin') || null, []);
+
+  const tickerSegments = useMemo(() => {
+    const segs = [];
+    if (activeShow) {
+      segs.push({ key: 'live', live: true, text: `Live now · ${activeShow.name}` });
+    }
+    if (nextShow && (!activeShow || nextShow.name !== activeShow.name)) {
+      segs.push({ key: 'next', live: false, text: `Next: ${nextShow.name} at ${nextShow.etStart} (${nextShow.phxStart})` });
+    }
+    if (pigskinShow && activeShow?.id !== 'pigskin') {
+      segs.push({ key: 'pigskin', live: false, text: `Pigskin Frenzy · Saturdays ${pigskinShow.etRange} (${pigskinShow.phxRange})` });
+    }
+    return segs;
+  }, [activeShow, nextShow, pigskinShow]);
 
   /* ── Derived display values ────────────────────────────────────────────── */
   const title  = displaySong?.title  || (loading ? "Loading…" : "Live Stream");
   const artist = displaySong?.artist || "TrueVoice Digital";
   const album  = displaySong?.album  || "TrueVoice Digital";
   const art    = displaySong?.art    || null;
-
-  // Strip visible only when a show is live AND a song is playing between drops
-  const showNowPlayingStrip = !!(
-    activeShow &&
-    displaySong?.title &&
-    displaySong.title !== activeShow.name
-  );
 
   /* ── Notify app (MediaSession) ─────────────────────────────────────────── */
   const onStatusChangeRef = useRef(onStatusChange);
@@ -378,41 +392,14 @@ export function NowPlayingPanel({
         {/* Left panel */}
         <div className="tv-radio-left">
 
-          {!activeShow ? (
-            /* STATE 1 — Music only, no active show */
-            <>
-              <div className="tv-radio-eyebrow">
-                <Waveform />
-                <span>Now Playing</span>
-              </div>
-              <h2 className="tv-radio-title">{isReconnecting ? "Reconnecting…" : title}</h2>
-              <p className="tv-radio-artist">{artist}</p>
-            </>
-          ) : (
-            /* STATE 2 or 3 — Show is live */
-            <>
-              <p className="tv-show-tagline">{activeShow.tagline}</p>
-              <h2 className="tv-radio-title tv-radio-title--show">{activeShow.name}</h2>
-              {showNowPlayingStrip && (
-                /* STATE 2 — Song playing between drops */
-                <div className="tv-np-strip">
-                  <Waveform />
-                  <span className="tv-np-strip-label">NOW PLAYING</span>
-                  <span className="tv-np-strip-divider" aria-hidden="true" />
-                  <span className="tv-np-strip-track">
-                    {isReconnecting ? "Reconnecting…" : (
-                      <>
-                        {displaySong.title}
-                        {displaySong.artist
-                          ? <span className="tv-np-strip-artist"> · {displaySong.artist}</span>
-                          : null}
-                      </>
-                    )}
-                  </span>
-                </div>
-              )}
-            </>
-          )}
+          {/* Song / artist — always shown, regardless of live show status.
+              The weekly ticker below now covers "what show is live". */}
+          <div className="tv-radio-eyebrow">
+            <Waveform />
+            <span>Now Playing</span>
+          </div>
+          <h2 className="tv-radio-title">{isReconnecting ? "Reconnecting…" : title}</h2>
+          <p className="tv-radio-artist">{artist}</p>
 
           {error && <p className="tv-radio-error">{error}</p>}
 
@@ -457,6 +444,21 @@ export function NowPlayingPanel({
         </div>
 
       </div>
+
+      {/* ── Weekly programming ticker ── */}
+      {tickerSegments.length > 0 && (
+        <div className="tv-live-ticker">
+          <div className="tv-ticker-track">
+            {[...tickerSegments, ...tickerSegments].flatMap((seg, i) => ([
+              <span className="tv-ticker-seg" key={`seg-${i}`}>
+                {seg.live && <span className="tv-ticker-dot" aria-hidden="true" />}
+                {seg.text}
+              </span>,
+              <span className="tv-ticker-sep" key={`sep-${i}`} aria-hidden="true">/</span>,
+            ]))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

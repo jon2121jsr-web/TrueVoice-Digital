@@ -430,6 +430,59 @@
   font-size: 0.78rem;
 }
 
+/* ── Weekly programming ticker (full card only) ────────────────────────────── */
+.tv-live-ticker {
+  border-top: 1px solid #1e2840;
+  background: #0a0f1c;
+  overflow: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tv-ticker-track {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 0;
+  animation: tv-ticker-scroll 32s linear infinite;
+}
+
+.tv-ticker-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tv-ticker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e63946;
+  flex-shrink: 0;
+  animation: tv-dot-blink 1.2s infinite;
+}
+
+.tv-ticker-sep {
+  color: #2a3555;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+@keyframes tv-ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-ticker-track { animation: none; }
+  .tv-live-ticker  { overflow-x: auto; }
+}
+
 /* ── Mobile ─────────────────────────────────────────────────────────────────── */
 @media (max-width: 520px) {
   .tv-radio-left {
@@ -455,4 +508,6 @@
     height: 86px;
     padding: 8px;
   }
+
+  .tv-ticker-seg { font-size: 10px; padding: 0 14px; }
 }
