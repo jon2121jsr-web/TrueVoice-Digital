@@ -58,6 +58,9 @@ const SOCIAL = {
   instagram:
     import.meta.env.VITE_TRUEVOICE_INSTAGRAM_URL ||
     "https://www.instagram.com/truevoicedigital",
+  facebook:
+    import.meta.env.VITE_TRUEVOICE_FACEBOOK_URL ||
+    "https://www.facebook.com/profile.php?id=61592697160695",
 };
 
 // ─── Stripe links ─────────────────────────────────────────────────────────────
@@ -201,6 +204,12 @@ const XIcon = () => (
 const InstagramIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ pointerEvents: "none" }}>
     <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5Zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5ZM18 6.8a1.2 1.2 0 1 1-1.2-1.2A1.2 1.2 0 0 1 18 6.8Z" />
+  </svg>
+);
+
+const FacebookIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ pointerEvents: "none" }}>
+    <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06C2 17.08 5.66 21.23 10.44 22v-7.03H7.9v-2.91h2.54V9.86c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.87h2.77l-.44 2.91h-2.33V22C18.34 21.23 22 17.08 22 12.06Z" />
   </svg>
 );
 
@@ -401,6 +410,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
                   <SocialIconLink href={SOCIAL.youtube}   label="YouTube">   <YoutubeIcon />   </SocialIconLink>
                   <SocialIconLink href={SOCIAL.x}         label="X">         <XIcon />         </SocialIconLink>
                   <SocialIconLink href={SOCIAL.instagram} label="Instagram"> <InstagramIcon /> </SocialIconLink>
+                  <SocialIconLink href={SOCIAL.facebook}  label="Facebook">  <FacebookIcon />  </SocialIconLink>
                 </div>
 
                 <button
@@ -520,6 +530,7 @@ onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CH
                   <SocialIconLink href={SOCIAL.youtube}   label="YouTube">   <YoutubeIcon />   </SocialIconLink>
                   <SocialIconLink href={SOCIAL.x}         label="X">         <XIcon />         </SocialIconLink>
                   <SocialIconLink href={SOCIAL.instagram} label="Instagram"> <InstagramIcon /> </SocialIconLink>
+                  <SocialIconLink href={SOCIAL.facebook}  label="Facebook">  <FacebookIcon />  </SocialIconLink>
                 </div>
               </div>
 
