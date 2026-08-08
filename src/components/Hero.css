@@ -259,6 +259,12 @@
     object-position: center;
   }
 
+  /* New brand banner uses contain — cancel the shared legacy/poster
+     zoom-in transform above so nothing bleeds past the frame. */
+  .hero-slide-img[src*="Brand Hero Banner"] {
+    transform: none;
+  }
+
   .hero-dots {
     bottom: 10px;
   }
@@ -292,6 +298,10 @@
 
   .hero-slide-img[src*="truevoice-hero"] {
     transform: scale(1.18);
+  }
+
+  .hero-slide-img[src*="Brand Hero Banner"] {
+    transform: none;
   }
 
   .hero-arrow {

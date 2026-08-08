@@ -15,13 +15,12 @@ const SWIPE_THRESHOLD = 40;
 export default function Hero() {
   const slides = useMemo(
     () => [
-      // 1 — Legacy cover
+      // 1 — Brand cover (TrueVoice.Digital — Faithful Voices. Inspired Content.)
       {
-        src: "/images/truevoice-hero.jpg",
+        src: "/images/TrueVoice Digital Brand Hero Banner.png",
         alt: "TrueVoice Digital — Faithful Voices. Inspired Content.",
-        fit: "cover",
+        fit: "contain",
         position: "center center",
-        cover: true,
         kind: "legacy",
       },
       // 2 — Ryan Kliesch (new)
