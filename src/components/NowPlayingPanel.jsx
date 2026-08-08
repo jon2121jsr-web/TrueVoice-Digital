@@ -187,6 +187,38 @@ export function NowPlayingPanel({
     const el = audioRef?.current;
     if (!el) return;
 
+    // Single-flight recovery timer — error/stalled/online can all fire within
+    // milliseconds of the same hiccup. Only one reload attempt is ever in
+    // flight at a time, so they can't stack and repeatedly .load() the
+    // element (each .load() drops the buffer and can itself trigger another
+    // "stalled", which was causing the reconnect storm behind the pausing).
+    const recoveryTimerRef = { current: null };
+    const clearRecoveryTimer = () => {
+      if (recoveryTimerRef.current) {
+        clearTimeout(recoveryTimerRef.current);
+        recoveryTimerRef.current = null;
+      }
+    };
+    const scheduleRecovery = (delayMs) => {
+      if (!wantsPlaybackRef.current || recoveryTimerRef.current) return;
+      recoveryTimerRef.current = setTimeout(() => {
+        recoveryTimerRef.current = null;
+        if (!wantsPlaybackRef.current || !el.paused) return;
+        const onFallback = el.src.includes(AZURACAST_FALLBACK);
+        if (!onFallback) el.src = streamUrlRef.current;
+        el.load();
+        el.play().catch(() => {
+          el.src = AZURACAST_FALLBACK;
+          el.load();
+          el.play().catch(() => {
+            setError("Stream unavailable. Tap to retry.");
+            setIsPlaying(false);
+            isPlayingRef.current = false;
+          });
+        });
+      }, delayMs);
+    };
+
     const onPlay  = () => { setIsPlaying(true);  isPlayingRef.current = true; };
     const onPause = () => {
       setIsPlaying(false);
@@ -194,55 +226,29 @@ export function NowPlayingPanel({
     };
     const onEnded = () => { setIsPlaying(false); isPlayingRef.current = false; };
 
+    // Any error/stall funnels into the same debounced recovery — no more
+    // separate immediate + delayed attempts racing each other.
     const onError = () => {
-      if (!isPlayingRef.current) return;
-      const fallback = AZURACAST_FALLBACK;
-      if (el.src.includes(fallback)) {
-        setError("Stream unavailable. Tap to retry.");
-        setIsPlaying(false);
-        isPlayingRef.current = false;
-        return;
-      }
-      el.src = fallback;
-      el.load();
-      el.play().catch(() => {
-        setError("Stream unavailable. Tap to retry.");
-        setIsPlaying(false);
-        isPlayingRef.current = false;
-      });
+      if (!isPlayingRef.current && !wantsPlaybackRef.current) return;
+      scheduleRecovery(3000);
     };
-
-    // Network handoff recovery: reload after 3 s if still meant to be playing
-    // and the primary error handler hasn't already recovered the stream.
-    const onErrorRecovery = () => {
-      if (!wantsPlaybackRef.current) return;
-      setTimeout(() => {
-        if (!wantsPlaybackRef.current || !el.paused) return;
-        el.load();
-        el.play().catch(() => {});
-      }, 3000);
-    };
-
     const onStalled = () => {
       if (!wantsPlaybackRef.current) return;
-      setTimeout(() => {
-        if (!wantsPlaybackRef.current || !el.paused) return;
-        el.load();
-        el.play().catch(() => {});
-      }, 3000);
+      scheduleRecovery(3000);
     };
 
     // Reconnecting indicator while buffering
     const onWaiting = () => { setIsReconnecting(true); };
-    const onPlaying = () => { setIsReconnecting(false); };
+    const onPlaying = () => { setIsReconnecting(false); clearRecoveryTimer(); };
 
     // Phone call / audio focus recovery + interruption detection
     const onVisibilityChange = () => {
       if (document.hidden && el.paused) {
         // Backgrounded while paused (phone call, screen lock, app switch) —
-        // stand down so the 800ms recovery in onPause doesn't resume
-        // playback into the interruption. User must tap Play to resume.
+        // stand down so nothing auto-resumes playback into the interruption.
+        // User must tap Play to resume.
         wantsPlaybackRef.current = false;
+        clearRecoveryTimer();
         return;
       }
       if (
@@ -262,6 +268,7 @@ export function NowPlayingPanel({
       // stuck on "Reconnecting…" forever.
       setIsReconnecting(false);
       if (!wantsPlaybackRef.current || !el.paused) return; // only if user wants playback
+      clearRecoveryTimer(); // supersede any pending debounced attempt — retry now
       setIsReconnecting(true);
       el.src = streamUrlRef.current; // primary first
       el.load();
@@ -277,7 +284,6 @@ export function NowPlayingPanel({
     el.addEventListener("pause",   onPause);
     el.addEventListener("ended",   onEnded);
     el.addEventListener("error",   onError);
-    el.addEventListener("error",   onErrorRecovery);
     el.addEventListener("stalled", onStalled);
     el.addEventListener("waiting", onWaiting);
     el.addEventListener("playing", onPlaying);
@@ -286,11 +292,11 @@ export function NowPlayingPanel({
     window.addEventListener("offline", onOffline);
 
     return () => {
+      clearRecoveryTimer();
       el.removeEventListener("play",    onPlay);
       el.removeEventListener("pause",   onPause);
       el.removeEventListener("ended",   onEnded);
       el.removeEventListener("error",   onError);
-      el.removeEventListener("error",   onErrorRecovery);
       el.removeEventListener("stalled", onStalled);
       el.removeEventListener("waiting", onWaiting);
       el.removeEventListener("playing", onPlaying);
