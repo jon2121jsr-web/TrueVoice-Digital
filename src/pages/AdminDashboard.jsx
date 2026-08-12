@@ -361,21 +361,25 @@ export default function AdminDashboard() {
 
         {/* ── LISTENERS ────────────────────────────────────────── */}
         {activeTab === 'Listeners' && (
-          <Panel title="Live listener data">
-            <p style={{ fontSize:14, color:'#333', lineHeight:1.6, marginBottom:18 }}>
-              Live listener data is managed through Live365.
-              View your real-time stats, listener map, and
-              session data at your Live365 dashboard.
-            </p>
-            <a
-              href="https://dashboard.live365.com/stations/37793/overview"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display:'inline-block', padding:'10px 18px', background:'#1a5e3a', color:'#fff', borderRadius:8, fontSize:14, fontWeight:500, textDecoration:'none' }}
-            >
-              Open Live365 Dashboard
-            </a>
-          </Panel>
+          <>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom:20 }}>
+              <MetricCard label="Current listeners" value={azura.nowPlaying?.listeners} delta={azura.loading ? 'Loading…' : azura.error ?? undefined} deltaUp />
+              <MetricCard label="Peak (session)" value={azura.peakToday} deltaUp />
+              <MetricCard label="Unique listeners (session)" value={azura.nowPlaying?.listenersUnique} deltaUp />
+              <MetricCard label="Now playing" value={azura.nowPlaying?.show ?? 'Loading…'} delta={azura.nowPlaying?.artist ?? undefined} deltaUp />
+            </div>
+            <Panel title="Listener trend" meta={<LiveBadge />}>
+              <ResponsiveContainer width="100%" height={340}>
+                <LineChart data={azura.chartData}>
+                  <XAxis dataKey="label" tick={{ fontSize:11, fill:'#888' }} />
+                  <YAxis tick={{ fontSize:11, fill:'#888' }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="value" stroke={C.green} strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+              {azura.error && <ErrorNote msg={azura.error} />}
+            </Panel>
+          </>
         )}
 
         {/* ── VIDEO ────────────────────────────────────────────── */}
