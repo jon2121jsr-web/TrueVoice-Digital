@@ -8,8 +8,11 @@
  *   import AdminDashboard from './pages/AdminDashboard'
  *   <Route path="/admin" element={<AdminDashboard />} />
  *
- * Gate access with a simple env-var PIN (change to Supabase Auth if you want):
- *   VITE_ADMIN_PIN=yourpin
+ * Gated by Supabase Auth (email/password) — after sign-in, the user's
+ * email must also exist in the admin_users table (see
+ * supabase/migrations/*_admin_users.sql) or they're shown "Not authorized".
+ * Team members can be invited from the Team tab, which calls
+ * api/admin-invite.js.
  *
  * Install deps if not already present:
  *   npm install recharts
@@ -17,6 +20,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { readAllVisits } from '../lib/visitorStore';
+import { supabase } from '../lib/supabaseClient';
 import {
   LineChart, Line, BarChart, Bar, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer
@@ -26,40 +30,85 @@ import { useYouTubeAnalytics } from '../hooks/useYouTubeAnalytics';
 import { useStripeDonations }  from '../hooks/useStripeDonations';
 import { useSiteAnalytics }    from '../hooks/useSiteAnalytics';
 
-// ─── Simple PIN gate ─────────────────────────────────────────────────────────
+// ─── Auth gate ────────────────────────────────────────────────────────────────
 
-const ADMIN_PIN = 'tv2024admin';
-
-function PinGate({ onUnlock }) {
-  const [pin, setPin]   = useState('');
-  const [err, setErr]   = useState(false);
-  const submit = () => {
-    if (pin === ADMIN_PIN) { onUnlock(); }
-    else { setErr(true); setPin(''); }
-  };
+function AuthCard({ children }) {
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#f5f5f3' }}>
-      <div style={{ background:'#fff', border:'0.5px solid #ddd', borderRadius:12, padding:'32px 40px', minWidth:300, textAlign:'center' }}>
+      <div style={{ background:'#fff', border:'0.5px solid #ddd', borderRadius:12, padding:'32px 40px', minWidth:320, textAlign:'center' }}>
         <div style={{ width:40, height:40, background:'#1a5e3a', borderRadius:8, margin:'0 auto 16px', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 2L14 6V10L8 14L2 10V6L8 2Z" fill="white" opacity="0.9"/></svg>
         </div>
-        <p style={{ fontSize:15, fontWeight:500, marginBottom:4 }}>TrueVoice Admin</p>
-        <p style={{ fontSize:13, color:'#888', marginBottom:20 }}>Enter your admin PIN</p>
-        <input
-          type="password"
-          value={pin}
-          onChange={e => { setPin(e.target.value); setErr(false); }}
-          onKeyDown={e => e.key === 'Enter' && submit()}
-          placeholder="PIN"
-          style={{ width:'100%', padding:'10px 14px', border:`1px solid ${err ? '#e24b4a' : '#ddd'}`, borderRadius:8, fontSize:14, marginBottom:12, outline:'none', boxSizing:'border-box' }}
-          autoFocus
-        />
-        {err && <p style={{ color:'#e24b4a', fontSize:12, marginBottom:8 }}>Incorrect PIN</p>}
-        <button onClick={submit} style={{ width:'100%', padding:'10px 0', background:'#1a5e3a', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:500, cursor:'pointer' }}>
-          Enter
-        </button>
+        {children}
       </div>
     </div>
+  );
+}
+
+function SignInGate() {
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+  const [err, setErr]           = useState('');
+  const [loading, setLoading]   = useState(false);
+
+  const submit = async () => {
+    setErr('');
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) setErr(error.message);
+    // On success, the onAuthStateChange listener in AdminDashboard updates session.
+  };
+
+  return (
+    <AuthCard>
+      <p style={{ fontSize:15, fontWeight:500, marginBottom:4 }}>TrueVoice Admin</p>
+      <p style={{ fontSize:13, color:'#888', marginBottom:20 }}>Sign in with your team email</p>
+      <input
+        type="email"
+        value={email}
+        onChange={e => { setEmail(e.target.value); setErr(''); }}
+        onKeyDown={e => e.key === 'Enter' && submit()}
+        placeholder="Email"
+        style={{ width:'100%', padding:'10px 14px', border:`1px solid ${err ? '#e24b4a' : '#ddd'}`, borderRadius:8, fontSize:14, marginBottom:10, outline:'none', boxSizing:'border-box' }}
+        autoFocus
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={e => { setPassword(e.target.value); setErr(''); }}
+        onKeyDown={e => e.key === 'Enter' && submit()}
+        placeholder="Password"
+        style={{ width:'100%', padding:'10px 14px', border:`1px solid ${err ? '#e24b4a' : '#ddd'}`, borderRadius:8, fontSize:14, marginBottom:12, outline:'none', boxSizing:'border-box' }}
+      />
+      {err && <p style={{ color:'#e24b4a', fontSize:12, marginBottom:8 }}>{err}</p>}
+      <button onClick={submit} disabled={loading} style={{ width:'100%', padding:'10px 0', background:'#1a5e3a', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:500, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+        {loading ? 'Signing in…' : 'Sign in'}
+      </button>
+    </AuthCard>
+  );
+}
+
+function LoadingGate() {
+  return (
+    <AuthCard>
+      <p style={{ fontSize:13, color:'#888' }}>Loading…</p>
+    </AuthCard>
+  );
+}
+
+function NotAuthorizedGate({ email }) {
+  return (
+    <AuthCard>
+      <p style={{ fontSize:15, fontWeight:500, marginBottom:4 }}>Not authorized</p>
+      <p style={{ fontSize:13, color:'#888', marginBottom:20 }}>
+        {email} is signed in but isn't on the TrueVoice admin team. Ask an
+        existing admin to invite you.
+      </p>
+      <button onClick={() => supabase.auth.signOut()} style={{ width:'100%', padding:'10px 0', background:'#1a5e3a', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:500, cursor:'pointer' }}>
+        Sign out
+      </button>
+    </AuthCard>
   );
 }
 
@@ -229,14 +278,89 @@ function VisitorsTab({ range }) {
   );
 }
 
+function TeamTab({ session }) {
+  const [admins, setAdmins]           = useState(null);
+  const [error, setError]             = useState(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteStatus, setInviteStatus] = useState(null); // null | 'sending' | 'sent' | <error message>
+
+  const load = () => {
+    fetch('/api/admin-team', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(body => {
+        if (body.error) setError(body.error);
+        else { setAdmins(body.admins); setError(null); }
+      })
+      .catch(e => setError(e.message));
+  };
+
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const invite = async () => {
+    if (!inviteEmail) return;
+    setInviteStatus('sending');
+    try {
+      const res  = await fetch('/api/admin-invite', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body:    JSON.stringify({ email: inviteEmail }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Invite failed');
+      setInviteStatus('sent');
+      setInviteEmail('');
+      load();
+    } catch (e) {
+      setInviteStatus(e.message);
+    }
+  };
+
+  return (
+    <>
+      <Panel title="Invite teammate" style={{ marginBottom:16 }}>
+        <div style={{ display:'flex', gap:8 }}>
+          <input
+            type="email"
+            value={inviteEmail}
+            onChange={e => { setInviteEmail(e.target.value); setInviteStatus(null); }}
+            placeholder="teammate@email.com"
+            style={{ flex:1, padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, fontSize:13, outline:'none' }}
+          />
+          <button onClick={invite} disabled={inviteStatus === 'sending'} style={{ padding:'8px 16px', background:C.green, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:500, cursor: inviteStatus === 'sending' ? 'default' : 'pointer' }}>
+            {inviteStatus === 'sending' ? 'Sending…' : 'Send invite'}
+          </button>
+        </div>
+        {inviteStatus === 'sent' && <p style={{ fontSize:12, color:'#3B6D11', marginTop:8 }}>Invite sent.</p>}
+        {inviteStatus && inviteStatus !== 'sending' && inviteStatus !== 'sent' && <ErrorNote msg={inviteStatus} />}
+      </Panel>
+      <Panel title="Team" meta={admins ? `${admins.length} admin${admins.length === 1 ? '' : 's'}` : undefined}>
+        {error && <ErrorNote msg={error} />}
+        {!admins && !error && <p style={{ fontSize:13, color:'#888' }}>Loading…</p>}
+        {admins?.map(a => (
+          <div key={a.email} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:'0.5px solid #f0f0f0', fontSize:13 }}>
+            <div>
+              <p style={{ fontWeight:500, margin:0 }}>{a.email}</p>
+              <p style={{ fontSize:12, color:'#888', margin:0 }}>{a.role}{a.invited_by ? ` · invited by ${a.invited_by}` : ''}</p>
+            </div>
+            <span style={{ color:'#888', fontSize:12 }}>{new Date(a.created_at).toLocaleDateString()}</span>
+          </div>
+        ))}
+      </Panel>
+    </>
+  );
+}
+
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['Overview', 'Listeners', 'Video', 'Visitors', 'Donations'];
+const TABS = ['Overview', 'Listeners', 'Video', 'Visitors', 'Donations', 'Team'];
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
-  const [unlocked, setUnlocked] = useState(!ADMIN_PIN);
+  const [session, setSession]   = useState(undefined); // undefined = checking, null = signed out
+  const [adminRow, setAdminRow] = useState(undefined); // undefined = checking, null = not an admin
   const [activeTab, setActiveTab] = useState('Overview');
   const [range, setRange] = useState(7);
   const [clock, setClock] = useState('');
@@ -247,13 +371,37 @@ export default function AdminDashboard() {
   const analytics = useSiteAnalytics({ days: range });
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (session === undefined) return;
+    if (session === null) { setAdminRow(null); return; }
+    let cancelled = false;
+    setAdminRow(undefined);
+    supabase
+      .from('admin_users')
+      .select('email, role')
+      .eq('email', session.user.email)
+      .maybeSingle()
+      .then(({ data }) => { if (!cancelled) setAdminRow(data ?? null); });
+    return () => { cancelled = true; };
+  }, [session]);
+
+  useEffect(() => {
     const iv = setInterval(() => {
       setClock(new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit' }));
     }, 1000);
     return () => clearInterval(iv);
   }, []);
 
-  if (!unlocked) return <PinGate onUnlock={() => setUnlocked(true)} />;
+  if (session === undefined || (session && adminRow === undefined)) return <LoadingGate />;
+  if (!session) return <SignInGate />;
+  if (!adminRow) return <NotAuthorizedGate email={session.user.email} />;
 
   const listeners  = azura.nowPlaying?.listeners ?? 0;
   const nowPlaying = azura.nowPlaying?.show      ?? 'Loading…';
@@ -274,6 +422,11 @@ export default function AdminDashboard() {
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <LiveBadge />
           <span style={{ fontSize:12, color:'#888' }}>{clock}</span>
+          <span style={{ fontSize:12, color:'#ccc' }}>|</span>
+          <span style={{ fontSize:12, color:'#888' }}>{session.user.email}</span>
+          <button onClick={() => supabase.auth.signOut()} style={{ fontSize:12, color:'#888', background:'none', border:'none', cursor:'pointer', textDecoration:'underline', padding:0 }}>
+            Sign out
+          </button>
         </div>
       </div>
 
@@ -432,6 +585,9 @@ export default function AdminDashboard() {
 
         {/* ── VISITORS ─────────────────────────────────────────── */}
         {activeTab === 'Visitors' && <VisitorsTab range={range} />}
+
+        {/* ── TEAM ─────────────────────────────────────────────── */}
+        {activeTab === 'Team' && <TeamTab session={session} />}
 
         {/* ── DONATIONS ────────────────────────────────────────── */}
         {activeTab === 'Donations' && (
