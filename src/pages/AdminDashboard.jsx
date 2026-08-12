@@ -89,6 +89,42 @@ function SignInGate() {
   );
 }
 
+function SetPasswordGate({ onDone }) {
+  const [password, setPassword] = useState('');
+  const [err, setErr]           = useState('');
+  const [loading, setLoading]   = useState(false);
+
+  const submit = async () => {
+    setErr('');
+    if (password.length < 6) { setErr('Password must be at least 6 characters.'); return; }
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password });
+    setLoading(false);
+    if (error) { setErr(error.message); return; }
+    onDone();
+  };
+
+  return (
+    <AuthCard>
+      <p style={{ fontSize:15, fontWeight:500, marginBottom:4 }}>Set a new password</p>
+      <p style={{ fontSize:13, color:'#888', marginBottom:20 }}>Choose a password for your TrueVoice admin account.</p>
+      <input
+        type="password"
+        value={password}
+        onChange={e => { setPassword(e.target.value); setErr(''); }}
+        onKeyDown={e => e.key === 'Enter' && submit()}
+        placeholder="New password"
+        style={{ width:'100%', padding:'10px 14px', border:`1px solid ${err ? '#e24b4a' : '#ddd'}`, borderRadius:8, fontSize:14, marginBottom:12, outline:'none', boxSizing:'border-box' }}
+        autoFocus
+      />
+      {err && <p style={{ color:'#e24b4a', fontSize:12, marginBottom:8 }}>{err}</p>}
+      <button onClick={submit} disabled={loading} style={{ width:'100%', padding:'10px 0', background:'#1a5e3a', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:500, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+        {loading ? 'Saving…' : 'Save password'}
+      </button>
+    </AuthCard>
+  );
+}
+
 function LoadingGate() {
   return (
     <AuthCard>
@@ -361,6 +397,7 @@ const TABS = ['Overview', 'Listeners', 'Video', 'Visitors', 'Donations', 'Team']
 export default function AdminDashboard() {
   const [session, setSession]   = useState(undefined); // undefined = checking, null = signed out
   const [adminRow, setAdminRow] = useState(undefined); // undefined = checking, null = not an admin
+  const [recoveryMode, setRecoveryMode] = useState(() => window.location.hash.includes('type=recovery'));
   const [activeTab, setActiveTab] = useState('Overview');
   const [range, setRange] = useState(7);
   const [clock, setClock] = useState('');
@@ -372,7 +409,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true);
       setSession(sess ?? null);
     });
     return () => sub.subscription.unsubscribe();
@@ -399,6 +437,7 @@ export default function AdminDashboard() {
     return () => clearInterval(iv);
   }, []);
 
+  if (recoveryMode) return <SetPasswordGate onDone={() => setRecoveryMode(false)} />;
   if (session === undefined || (session && adminRow === undefined)) return <LoadingGate />;
   if (!session) return <SignInGate />;
   if (!adminRow) return <NotAuthorizedGate email={session.user.email} />;
