@@ -36,10 +36,10 @@ export function useAzuraCast() {
 
       const snapshot = {
         ts:        Date.now(),
-        listeners: data.listeners ?? 0,
-        show:      data['current-track']?.title ?? null,
-        artist:    data['current-track']?.artist ?? null,
-        peak:      data.listeners ?? 0,
+        listeners: data.listeners?.current ?? data.listeners?.total ?? 0,
+        show:      data.now_playing?.song?.title ?? null,
+        artist:    data.now_playing?.song?.artist ?? null,
+        peak:      data.listeners?.current ?? data.listeners?.total ?? 0,
       };
 
       setNowPlaying(snapshot);
