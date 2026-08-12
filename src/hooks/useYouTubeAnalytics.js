@@ -20,7 +20,7 @@
 import { useState, useEffect } from 'react';
 
 const API_KEY    = import.meta.env.VITE_YOUTUBE_API_KEY;
-const CHANNEL_ID = import.meta.env.VITE_YOUTUBE_CHANNEL_ID;
+const CHANNEL_ID = import.meta.env.VITE_YOUTUBE_CHANNEL_ID?.trim();
 const BASE       = 'https://www.googleapis.com/youtube/v3';
 const IS_PROD    = import.meta.env.PROD;
 
