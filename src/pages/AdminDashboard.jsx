@@ -19,6 +19,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import './AdminDashboard.css';
 import { readAllVisits } from '../lib/visitorStore';
 import { supabase } from '../lib/supabaseClient';
 import {
@@ -30,33 +31,22 @@ import { useYouTubeAnalytics } from '../hooks/useYouTubeAnalytics';
 import { useStripeDonations }  from '../hooks/useStripeDonations';
 import { useSiteAnalytics }    from '../hooks/useSiteAnalytics';
 
-// ─── Palette ─────────────────────────────────────────────────────────────────
-// Pulled from src/App.css (--tv-primary, --tv-text-main) and the site's dark
-// (night-mode / hero) treatment (#050816 base, night-mode card shadow), not
-// invented for this file.
+// ─── Palette (for Recharts props — component config, not DOM styles, so it
+// can't move to CSS; kept in sync with the custom properties in
+// AdminDashboard.css) ──────────────────────────────────────────────────────
 
 const C = {
-  bg:           '#050816',
-  surface:      '#0e1b3a',
-  surfaceAlt:   '#132449',
   border:       'rgba(255,255,255,0.08)',
   borderStrong: 'rgba(255,255,255,0.16)',
   accent:       '#3a6cff',
-  accentDark:   '#275fdb',
   text:         '#f5f7ff',
   textMuted:    '#8b96c2',
-  positive:     '#34d399',
-  negative:     '#fb7185',
-  shadow:       '0 18px 45px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06)',
-  radiusLg:     18,
-  radiusMd:     12,
-  radiusSm:     8,
 };
 const SHOW_COLORS = ['#3a6cff', '#22d3ee', '#fbbf24', '#f472b6', '#a78bfa'];
 
 const CHART_AXIS_TICK = { fontSize: 11, fill: C.textMuted };
 const CHART_TOOLTIP_CONTENT = {
-  contentStyle: { background: C.surface, border: `1px solid ${C.borderStrong}`, borderRadius: C.radiusSm, fontSize: 12, color: C.text },
+  contentStyle: { background: '#0e1b3a', border: `1px solid ${C.borderStrong}`, borderRadius: 8, fontSize: 12, color: C.text },
   labelStyle:   { color: C.textMuted },
   itemStyle:    { color: C.text },
 };
@@ -65,24 +55,15 @@ const CHART_TOOLTIP_CONTENT = {
 
 function AuthCard({ children }) {
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:C.bg }}>
-      <div style={{ background:C.surface, border:`1px solid ${C.border}`, boxShadow:C.shadow, borderRadius:C.radiusLg, padding:'32px 40px', minWidth:320, textAlign:'center' }}>
-        <div style={{ width:40, height:40, background:C.accent, borderRadius:C.radiusSm, margin:'0 auto 16px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+    <div className="admin-auth-wrap">
+      <div className="admin-auth-card">
+        <div className="admin-auth-icon">
           <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 2L14 6V10L8 14L2 10V6L8 2Z" fill="white" opacity="0.9"/></svg>
         </div>
         {children}
       </div>
     </div>
   );
-}
-
-function authInputStyle(err) {
-  return {
-    width:'100%', padding:'10px 14px',
-    border:`1px solid ${err ? C.negative : C.border}`,
-    background:C.surfaceAlt, color:C.text,
-    borderRadius:C.radiusSm, fontSize:14, marginBottom:10, outline:'none', boxSizing:'border-box',
-  };
 }
 
 function SignInGate() {
@@ -102,15 +83,15 @@ function SignInGate() {
 
   return (
     <AuthCard>
-      <p style={{ fontSize:15, fontWeight:500, marginBottom:4, color:C.text }}>TrueVoice Admin</p>
-      <p style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>Sign in with your team email</p>
+      <p className="admin-auth-title">TrueVoice Admin</p>
+      <p className="admin-auth-subtitle">Sign in with your team email</p>
       <input
         type="email"
         value={email}
         onChange={e => { setEmail(e.target.value); setErr(''); }}
         onKeyDown={e => e.key === 'Enter' && submit()}
         placeholder="Email"
-        style={authInputStyle(err)}
+        className={`admin-input${err ? ' admin-input--error' : ''}`}
         autoFocus
       />
       <input
@@ -119,10 +100,10 @@ function SignInGate() {
         onChange={e => { setPassword(e.target.value); setErr(''); }}
         onKeyDown={e => e.key === 'Enter' && submit()}
         placeholder="Password"
-        style={{ ...authInputStyle(err), marginBottom:12 }}
+        className={`admin-input admin-input--last${err ? ' admin-input--error' : ''}`}
       />
-      {err && <p style={{ color:C.negative, fontSize:12, marginBottom:8 }}>{err}</p>}
-      <button onClick={submit} disabled={loading} style={{ width:'100%', padding:'10px 0', background:C.accent, color:'#fff', border:'none', borderRadius:C.radiusSm, fontSize:14, fontWeight:500, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+      {err && <p className="admin-error-text">{err}</p>}
+      <button onClick={submit} disabled={loading} className="admin-btn-primary">
         {loading ? 'Signing in…' : 'Sign in'}
       </button>
     </AuthCard>
@@ -146,19 +127,19 @@ function SetPasswordGate({ onDone }) {
 
   return (
     <AuthCard>
-      <p style={{ fontSize:15, fontWeight:500, marginBottom:4, color:C.text }}>Set a new password</p>
-      <p style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>Choose a password for your TrueVoice admin account.</p>
+      <p className="admin-auth-title">Set a new password</p>
+      <p className="admin-auth-subtitle">Choose a password for your TrueVoice admin account.</p>
       <input
         type="password"
         value={password}
         onChange={e => { setPassword(e.target.value); setErr(''); }}
         onKeyDown={e => e.key === 'Enter' && submit()}
         placeholder="New password"
-        style={{ ...authInputStyle(err), marginBottom:12 }}
+        className={`admin-input admin-input--last${err ? ' admin-input--error' : ''}`}
         autoFocus
       />
-      {err && <p style={{ color:C.negative, fontSize:12, marginBottom:8 }}>{err}</p>}
-      <button onClick={submit} disabled={loading} style={{ width:'100%', padding:'10px 0', background:C.accent, color:'#fff', border:'none', borderRadius:C.radiusSm, fontSize:14, fontWeight:500, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+      {err && <p className="admin-error-text">{err}</p>}
+      <button onClick={submit} disabled={loading} className="admin-btn-primary">
         {loading ? 'Saving…' : 'Save password'}
       </button>
     </AuthCard>
@@ -168,7 +149,7 @@ function SetPasswordGate({ onDone }) {
 function LoadingGate() {
   return (
     <AuthCard>
-      <p style={{ fontSize:13, color:C.textMuted }}>Loading…</p>
+      <p className="admin-muted-text">Loading…</p>
     </AuthCard>
   );
 }
@@ -176,12 +157,12 @@ function LoadingGate() {
 function NotAuthorizedGate({ email }) {
   return (
     <AuthCard>
-      <p style={{ fontSize:15, fontWeight:500, marginBottom:4, color:C.text }}>Not authorized</p>
-      <p style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>
+      <p className="admin-auth-title">Not authorized</p>
+      <p className="admin-auth-subtitle">
         {email} is signed in but isn't on the TrueVoice admin team. Ask an
         existing admin to invite you.
       </p>
-      <button onClick={() => supabase.auth.signOut()} style={{ width:'100%', padding:'10px 0', background:C.accent, color:'#fff', border:'none', borderRadius:C.radiusSm, fontSize:14, fontWeight:500, cursor:'pointer' }}>
+      <button onClick={() => supabase.auth.signOut()} className="admin-btn-primary">
         Sign out
       </button>
     </AuthCard>
@@ -192,22 +173,22 @@ function NotAuthorizedGate({ email }) {
 
 function MetricCard({ label, value, delta, deltaUp }) {
   return (
-    <div style={{ background:C.surface, border:`1px solid ${C.border}`, boxShadow:C.shadow, borderRadius:C.radiusMd, padding:16 }}>
-      <p style={{ fontSize:11, color:C.textMuted, textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:6 }}>{label}</p>
-      <p style={{ fontSize:26, fontWeight:500, color:C.text, lineHeight:1 }}>{value ?? '—'}</p>
+    <div className="admin-metric-card">
+      <p className="admin-metric-label">{label}</p>
+      <p className="admin-metric-value">{value ?? '—'}</p>
       {delta && (
-        <p style={{ fontSize:12, marginTop:6, color: deltaUp ? C.positive : C.negative }}>{delta}</p>
+        <p className={`admin-metric-delta ${deltaUp ? 'admin-metric-delta--up' : 'admin-metric-delta--down'}`}>{delta}</p>
       )}
     </div>
   );
 }
 
-function Panel({ title, meta, children, style }) {
+function Panel({ title, meta, children, className = '' }) {
   return (
-    <div style={{ background:C.surface, border:`1px solid ${C.border}`, boxShadow:C.shadow, borderRadius:C.radiusLg, padding:16, ...style }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-        <span style={{ fontSize:13, fontWeight:500, color:C.text }}>{title}</span>
-        {meta && <span style={{ fontSize:12, color:C.textMuted }}>{meta}</span>}
+    <div className={`admin-panel ${className}`.trim()}>
+      <div className="admin-panel-header">
+        <span className="admin-panel-title">{title}</span>
+        {meta && <span className="admin-panel-meta">{meta}</span>}
       </div>
       {children}
     </div>
@@ -216,8 +197,8 @@ function Panel({ title, meta, children, style }) {
 
 function LiveBadge() {
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:C.accent, background:'rgba(58,108,255,0.16)', padding:'4px 10px', borderRadius:20, fontWeight:500 }}>
-      <span style={{ width:7, height:7, borderRadius:'50%', background:C.accent, display:'inline-block', animation:'pulse 1.8s ease-in-out infinite' }} />
+    <div className="admin-live-badge">
+      <span className="admin-live-dot" />
       Live
     </div>
   );
@@ -226,18 +207,18 @@ function LiveBadge() {
 function ProgressRow({ label, value, max, color = C.accent }) {
   const pct = max ? Math.round((value / max) * 100) : 0;
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:10, padding:'7px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
-      <span style={{ flex:1, color:C.text }}>{label}</span>
-      <div style={{ width:80, height:4, background:'rgba(255,255,255,0.08)', borderRadius:2, overflow:'hidden' }}>
-        <div style={{ width:`${pct}%`, height:'100%', background:color, borderRadius:2 }} />
+    <div className="admin-progress-row">
+      <span className="admin-progress-label">{label}</span>
+      <div className="admin-progress-track">
+        <div className="admin-progress-fill" style={{ width:`${pct}%`, background:color }} />
       </div>
-      <span style={{ color:C.textMuted, fontSize:12, width:32, textAlign:'right' }}>{pct}%</span>
+      <span className="admin-progress-pct">{pct}%</span>
     </div>
   );
 }
 
 function ErrorNote({ msg }) {
-  return <p style={{ fontSize:12, color:C.negative, padding:'8px 0' }}>⚠ {msg}</p>;
+  return <p className="admin-error-note">⚠ {msg}</p>;
 }
 
 function VisitorsTab({ range }) {
@@ -308,17 +289,17 @@ function VisitorsTab({ range }) {
   }, [visits, range]);
 
   if (!data) {
-    return <p style={{ fontSize:13, color:C.textMuted }}>Loading visits…</p>;
+    return <p className="admin-muted-text">Loading visits…</p>;
   }
 
   return (
     <>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom:20 }}>
+      <div className="admin-metric-grid">
         <MetricCard label={`Total visits (${range}d)`} value={data.total.toLocaleString()} />
         <MetricCard label="Visits today"               value={data.today.toLocaleString()} />
       </div>
       {error && <ErrorNote msg={error} />}
-      <Panel title={`Visits per day (${range}d)`} style={{ marginBottom:16 }}>
+      <Panel title={`Visits per day (${range}d)`} className="admin-panel--mb">
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data.dailyChart}>
             <XAxis dataKey="label" stroke={C.border} tick={CHART_AXIS_TICK} interval={Math.max(0, Math.floor(data.dailyChart.length / 10))} />
@@ -329,11 +310,11 @@ function VisitorsTab({ range }) {
         </ResponsiveContainer>
       </Panel>
       <Panel title="Top pages">
-        {data.topPaths.length === 0 && <p style={{ fontSize:13, color:C.textMuted }}>No visits recorded yet.</p>}
+        {data.topPaths.length === 0 && <p className="admin-muted-text">No visits recorded yet.</p>}
         {data.topPaths.map(p => (
-          <div key={p.path} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
-            <code style={{ color:C.text, fontSize:12 }}>{p.path}</code>
-            <span style={{ color:C.textMuted }}>{p.count.toLocaleString()}</span>
+          <div key={p.path} className="admin-list-row admin-list-row--p7">
+            <code className="admin-code">{p.path}</code>
+            <span className="admin-td-muted">{p.count.toLocaleString()}</span>
           </div>
         ))}
       </Panel>
@@ -382,32 +363,32 @@ function TeamTab({ session }) {
 
   return (
     <>
-      <Panel title="Invite teammate" style={{ marginBottom:16 }}>
-        <div style={{ display:'flex', gap:8 }}>
+      <Panel title="Invite teammate" className="admin-panel--mb">
+        <div className="admin-invite-row">
           <input
             type="email"
             value={inviteEmail}
             onChange={e => { setInviteEmail(e.target.value); setInviteStatus(null); }}
             placeholder="teammate@email.com"
-            style={{ flex:1, padding:'8px 12px', border:`1px solid ${C.border}`, background:C.surfaceAlt, color:C.text, borderRadius:C.radiusSm, fontSize:13, outline:'none' }}
+            className="admin-invite-input"
           />
-          <button onClick={invite} disabled={inviteStatus === 'sending'} style={{ padding:'8px 16px', background:C.accent, color:'#fff', border:'none', borderRadius:C.radiusSm, fontSize:13, fontWeight:500, cursor: inviteStatus === 'sending' ? 'default' : 'pointer' }}>
+          <button onClick={invite} disabled={inviteStatus === 'sending'} className="admin-btn-invite">
             {inviteStatus === 'sending' ? 'Sending…' : 'Send invite'}
           </button>
         </div>
-        {inviteStatus === 'sent' && <p style={{ fontSize:12, color:C.positive, marginTop:8 }}>Invite sent.</p>}
+        {inviteStatus === 'sent' && <p className="admin-invite-success">Invite sent.</p>}
         {inviteStatus && inviteStatus !== 'sending' && inviteStatus !== 'sent' && <ErrorNote msg={inviteStatus} />}
       </Panel>
       <Panel title="Team" meta={admins ? `${admins.length} admin${admins.length === 1 ? '' : 's'}` : undefined}>
         {error && <ErrorNote msg={error} />}
-        {!admins && !error && <p style={{ fontSize:13, color:C.textMuted }}>Loading…</p>}
+        {!admins && !error && <p className="admin-muted-text">Loading…</p>}
         {admins?.map(a => (
-          <div key={a.email} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
+          <div key={a.email} className="admin-list-row admin-list-row--p9 admin-list-row--hover">
             <div>
-              <p style={{ fontWeight:500, margin:0, color:C.text }}>{a.email}</p>
-              <p style={{ fontSize:12, color:C.textMuted, margin:0 }}>{a.role}{a.invited_by ? ` · invited by ${a.invited_by}` : ''}</p>
+              <p className="admin-row-title">{a.email}</p>
+              <p className="admin-row-subtitle">{a.role}{a.invited_by ? ` · invited by ${a.invited_by}` : ''}</p>
             </div>
-            <span style={{ color:C.textMuted, fontSize:12 }}>{new Date(a.created_at).toLocaleDateString()}</span>
+            <span className="admin-row-trailing">{new Date(a.created_at).toLocaleDateString()}</span>
           </div>
         ))}
       </Panel>
@@ -473,60 +454,59 @@ export default function AdminDashboard() {
   const nowPlaying = azura.nowPlaying?.show      ?? 'Loading…';
 
   return (
-    <div style={{ background:C.bg, color:C.text, minHeight:'100vh', fontFamily:'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
+    <div className="admin-page">
 
       {/* Top bar */}
-      <div style={{ background:C.surface, borderBottom:`1px solid ${C.border}`, padding:'14px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <div style={{ width:28, height:28, background:C.accent, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div className="admin-topbar">
+        <div className="admin-topbar-left">
+          <div className="admin-topbar-logo">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2L14 6V10L8 14L2 10V6L8 2Z" fill="white" opacity="0.9"/></svg>
           </div>
-          <span style={{ fontSize:15, fontWeight:500, color:C.text }}>TrueVoice Digital</span>
-          <span style={{ fontSize:12, color:C.textMuted }}>Analytics</span>
+          <span className="admin-topbar-title">TrueVoice Digital</span>
+          <span className="admin-topbar-sub">Analytics</span>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <div className="admin-topbar-right">
           <LiveBadge />
-          <span style={{ fontSize:12, color:C.textMuted }}>{clock}</span>
-          <span style={{ fontSize:12, color:C.border }}>|</span>
-          <span style={{ fontSize:12, color:C.textMuted }}>{session.user.email}</span>
-          <button onClick={() => supabase.auth.signOut()} style={{ fontSize:12, color:C.textMuted, background:'none', border:'none', cursor:'pointer', textDecoration:'underline', padding:0 }}>
+          <span className="admin-topbar-clock">{clock}</span>
+          <span className="admin-topbar-divider">|</span>
+          <span className="admin-topbar-email">{session.user.email}</span>
+          <button onClick={() => supabase.auth.signOut()} className="admin-signout">
             Sign out
           </button>
         </div>
       </div>
 
       {/* Nav */}
-      <div style={{ background:C.surface, borderBottom:`1px solid ${C.border}`, padding:'0 24px', display:'flex', gap:0 }}>
+      <div className="admin-nav">
         {TABS.map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
-            style={{ padding:'12px 16px', fontSize:13, color: activeTab===t ? C.accent : C.textMuted, border:'none', borderBottom: activeTab===t ? `2px solid ${C.accent}` : '2px solid transparent', background:'transparent', cursor:'pointer', fontWeight: activeTab===t ? 500 : 400 }}>
+            className={`admin-tab${activeTab===t ? ' admin-tab--active' : ''}`}>
             {t}
           </button>
         ))}
-        <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:4 }}>
+        <div className="admin-nav-ranges">
           {[7,30,90].map(d => (
             <button key={d} onClick={() => setRange(d)}
-              style={{ fontSize:12, padding:'3px 10px', borderRadius:20, border: range===d ? 'none' : `0.5px solid ${C.border}`, background: range===d ? C.accent : 'transparent', color: range===d ? '#fff' : C.textMuted, cursor:'pointer' }}>
+              className={`admin-range-btn${range===d ? ' admin-range-btn--active' : ''}`}>
               {d}d
             </button>
           ))}
         </div>
       </div>
 
-      <div style={{ padding:'20px 24px' }}>
+      <div className="admin-content">
 
         {/* ── OVERVIEW ─────────────────────────────────────────── */}
         {activeTab === 'Overview' && (
           <>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom:20 }}>
+            <div className="admin-metric-grid">
               <MetricCard label="Live listeners" value={listeners} delta={azura.loading ? 'Loading…' : azura.error ?? undefined} deltaUp />
               <MetricCard label={`Visitors (${range}d)`} value={analytics.summary?.uniqueVisitors?.toLocaleString()} delta={analytics.loading ? 'Loading…' : undefined} deltaUp />
               <MetricCard label={`Video views (${range}d)`} value={youtube.totals.views?.toLocaleString()} delta={youtube.loading ? 'Loading…' : undefined} deltaUp />
               <MetricCard label={`Donations (${range}d)`} value={stripe.totals.grossDisplay} delta={`${stripe.totals.count} transactions`} deltaUp />
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1.6fr) minmax(0,1fr)', gap:16, marginBottom:16 }}>
+            <div className="admin-grid-main">
               <Panel title="Listener trend" meta={`${range}d`}>
                 <ResponsiveContainer width="100%" height={180}>
                   <LineChart data={azura.chartData}>
@@ -544,33 +524,33 @@ export default function AdminDashboard() {
                   ['Now playing',      nowPlaying],
                   ['Avg listen (session)', `${Math.round(azura.history.length * 0.5)}m`],
                 ].map(([l, v]) => (
-                  <div key={l} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
-                    <span style={{ color:C.textMuted }}>{l}</span>
-                    <span style={{ fontWeight:500, color: l==='Now playing' ? C.accent : C.text }}>{v}</span>
+                  <div key={l} className="admin-list-row admin-list-row--p9">
+                    <span className="admin-list-row-label">{l}</span>
+                    <span className={`admin-list-row-value${l==='Now playing' ? ' admin-list-row-value--accent' : ''}`}>{v}</span>
                   </div>
                 ))}
                 {azura.error && <ErrorNote msg={azura.error} />}
               </Panel>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:16 }}>
+            <div className="admin-grid-even">
               <Panel title="Top shows by views" meta="YouTube">
-                {youtube.loading && <p style={{ fontSize:13, color:C.textMuted }}>Loading…</p>}
+                {youtube.loading && <p className="admin-muted-text">Loading…</p>}
                 {youtube.error  && <ErrorNote msg={youtube.error} />}
                 {youtube.shows.slice(0,5).map((s, i) => (
                   <ProgressRow key={s.slug} label={s.label} value={s.totalViews} max={youtube.shows[0]?.totalViews ?? 1} color={SHOW_COLORS[i]} />
                 ))}
               </Panel>
               <Panel title="Recent donations" meta="Stripe">
-                {stripe.loading && <p style={{ fontSize:13, color:C.textMuted }}>Loading…</p>}
+                {stripe.loading && <p className="admin-muted-text">Loading…</p>}
                 {stripe.error   && <ErrorNote msg={stripe.error} />}
                 {stripe.donations.slice(0,6).map(d => (
-                  <div key={d.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
+                  <div key={d.id} className="admin-list-row admin-list-row--p8 admin-list-row--hover">
                     <div>
-                      <p style={{ fontWeight:500, margin:0, color:C.text }}>{d.donor_name ?? 'Anonymous'}</p>
-                      <p style={{ fontSize:12, color:C.textMuted, margin:0 }}>{d.time_ago}</p>
+                      <p className="admin-row-title">{d.donor_name ?? 'Anonymous'}</p>
+                      <p className="admin-row-subtitle">{d.time_ago}</p>
                     </div>
-                    <span style={{ fontWeight:500, color:C.positive }}>{d.amount_display}</span>
+                    <span className="admin-list-row-value admin-list-row-value--positive">{d.amount_display}</span>
                   </div>
                 ))}
               </Panel>
@@ -581,7 +561,7 @@ export default function AdminDashboard() {
         {/* ── LISTENERS ────────────────────────────────────────── */}
         {activeTab === 'Listeners' && (
           <>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom:20 }}>
+            <div className="admin-metric-grid">
               <MetricCard label="Current listeners" value={azura.nowPlaying?.listeners} delta={azura.loading ? 'Loading…' : azura.error ?? undefined} deltaUp />
               <MetricCard label="Peak (session)" value={azura.peakToday} deltaUp />
               <MetricCard label="Unique listeners (session)" value={azura.nowPlaying?.listenersUnique} deltaUp />
@@ -604,14 +584,14 @@ export default function AdminDashboard() {
         {/* ── VIDEO ────────────────────────────────────────────── */}
         {activeTab === 'Video' && (
           <>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom:20 }}>
+            <div className="admin-metric-grid">
               <MetricCard label="Total views"    value={youtube.totals.views?.toLocaleString()} />
               <MetricCard label="Total likes"    value={youtube.totals.likes?.toLocaleString()} />
               <MetricCard label="Videos tracked" value={youtube.totals.videoCount} />
               <MetricCard label="Shows" value={youtube.shows.length} />
             </div>
             {youtube.error && <ErrorNote msg={youtube.error} />}
-            <Panel title="Views by show" meta="YouTube Data API v3" style={{ marginBottom:16 }}>
+            <Panel title="Views by show" meta="YouTube Data API v3" className="admin-panel--mb">
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={youtube.shows.slice(0,6).map((s,i) => ({ name: s.label, views: s.totalViews, fill: SHOW_COLORS[i] }))}>
                   <XAxis dataKey="name" stroke={C.border} tick={CHART_AXIS_TICK} />
@@ -626,21 +606,21 @@ export default function AdminDashboard() {
               </ResponsiveContainer>
             </Panel>
             <Panel title="Show breakdown">
-              <table style={{ width:'100%', fontSize:13, borderCollapse:'collapse' }}>
+              <table className="admin-table admin-table--pad10">
                 <thead>
-                  <tr style={{ borderBottom:`0.5px solid ${C.border}` }}>
+                  <tr>
                     {['Show','Videos','Total views','Likes'].map(h => (
-                      <th key={h} style={{ textAlign: h==='Show' ? 'left' : 'right', padding:'8px', fontSize:12, color:C.textMuted, fontWeight:500 }}>{h}</th>
+                      <th key={h} className={h==='Show' ? 'admin-ta-left' : 'admin-ta-right'}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {youtube.shows.map(s => (
-                    <tr key={s.slug} style={{ borderBottom:`0.5px solid ${C.border}` }}>
-                      <td style={{ padding:'10px 8px', fontWeight:500, color:C.text }}>{s.label}</td>
-                      <td style={{ textAlign:'right', padding:'10px 8px', color:C.textMuted }}>{s.videos.length}</td>
-                      <td style={{ textAlign:'right', padding:'10px 8px', color:C.text }}>{s.totalViews.toLocaleString()}</td>
-                      <td style={{ textAlign:'right', padding:'10px 8px', color:C.textMuted }}>{s.totalLikes.toLocaleString()}</td>
+                    <tr key={s.slug}>
+                      <td className="admin-td-strong">{s.label}</td>
+                      <td className="admin-ta-right admin-td-muted">{s.videos.length}</td>
+                      <td className="admin-ta-right">{s.totalViews.toLocaleString()}</td>
+                      <td className="admin-ta-right admin-td-muted">{s.totalLikes.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -658,15 +638,15 @@ export default function AdminDashboard() {
         {/* ── DONATIONS ────────────────────────────────────────── */}
         {activeTab === 'Donations' && (
           <>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom:20 }}>
+            <div className="admin-metric-grid">
               <MetricCard label={`Gross (${range}d)`}    value={stripe.totals.grossDisplay}   delta={`${stripe.totals.count} transactions`} deltaUp />
               <MetricCard label="Net received"            value={stripe.totals.netDisplay}     delta="After Stripe fees" deltaUp />
               <MetricCard label="Average donation"        value={stripe.totals.averageDisplay} deltaUp />
               <MetricCard label="Recurring"               value={stripe.totals.recurringDisplay} delta="Monthly subscriptions" deltaUp />
             </div>
             {stripe.error && <ErrorNote msg={stripe.error} />}
-            <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1.6fr) minmax(0,1fr)', gap:16, marginBottom:16 }}>
-              <Panel title={`Daily donations (${range}d)`} meta="Stripe">
+            <div className="admin-grid-main">
+              <Panel title={`Daily donations (${range}d)`} meta="Stripe" className="admin-panel--mb">
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={stripe.dailyChart}>
                     <XAxis dataKey="label" stroke={C.border} tick={{ fontSize:10, fill:C.textMuted }} interval={Math.floor(stripe.dailyChart.length/6)} />
@@ -683,33 +663,33 @@ export default function AdminDashboard() {
                   ['Fees',      stripe.totals.feesDisplay, true],
                   ['Net',       stripe.totals.netDisplay, false, true],
                 ].map(([l, v, isNeg, isBig]) => (
-                  <div key={l} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13, borderTop: isBig ? `1px solid ${C.borderStrong}` : undefined, marginTop: isBig ? 4 : undefined }}>
-                    <span style={{ color: isBig ? C.text : C.textMuted, fontWeight: isBig ? 500 : 400 }}>{l}</span>
-                    <span style={{ fontWeight:500, color: isNeg ? C.negative : isBig ? C.positive : C.text }}>{isNeg ? '-' : ''}{v}</span>
+                  <div key={l} className={`admin-breakdown-row${isBig ? ' admin-breakdown-row--big' : ''}`}>
+                    <span className={isBig ? 'admin-breakdown-label--big' : 'admin-breakdown-label'}>{l}</span>
+                    <span className={`admin-breakdown-value${isNeg ? ' admin-breakdown-value--neg' : isBig ? ' admin-breakdown-value--pos' : ''}`}>{isNeg ? '-' : ''}{v}</span>
                   </div>
                 ))}
               </Panel>
             </div>
             <Panel title="Transaction log" meta="Stripe webhook">
-              <table style={{ width:'100%', fontSize:13, borderCollapse:'collapse' }}>
+              <table className="admin-table admin-table--pad9 admin-table--hover">
                 <thead>
-                  <tr style={{ borderBottom:`0.5px solid ${C.border}` }}>
+                  <tr>
                     {['Donor','Type','Amount','Time'].map(h => (
-                      <th key={h} style={{ textAlign: h==='Amount'||h==='Time' ? 'right' : 'left', padding:'8px', fontSize:12, color:C.textMuted, fontWeight:500 }}>{h}</th>
+                      <th key={h} className={h==='Amount'||h==='Time' ? 'admin-ta-right' : 'admin-ta-left'}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {stripe.donations.map(d => (
-                    <tr key={d.id} style={{ borderBottom:`0.5px solid ${C.border}` }}>
-                      <td style={{ padding:'9px 8px', fontWeight:500, color:C.text }}>{d.donor_name ?? 'Anonymous'}</td>
-                      <td style={{ padding:'9px 8px' }}>
-                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:10, background: d.type==='recurring' ? 'rgba(52,211,153,0.16)' : 'rgba(58,108,255,0.16)', color: d.type==='recurring' ? C.positive : C.accent }}>
+                    <tr key={d.id}>
+                      <td className="admin-td-strong">{d.donor_name ?? 'Anonymous'}</td>
+                      <td>
+                        <span className={`admin-type-pill ${d.type==='recurring' ? 'admin-type-pill--recurring' : 'admin-type-pill--onetime'}`}>
                           {d.type === 'recurring' ? 'Recurring' : 'One-time'}
                         </span>
                       </td>
-                      <td style={{ textAlign:'right', padding:'9px 8px', fontWeight:500, color:C.positive }}>{d.amount_display}</td>
-                      <td style={{ textAlign:'right', padding:'9px 8px', color:C.textMuted, fontSize:12 }}>{d.time_ago}</td>
+                      <td className="admin-ta-right admin-td-amount">{d.amount_display}</td>
+                      <td className="admin-ta-right admin-td-time">{d.time_ago}</td>
                     </tr>
                   ))}
                 </tbody>
