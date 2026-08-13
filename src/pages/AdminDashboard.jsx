@@ -30,19 +30,59 @@ import { useYouTubeAnalytics } from '../hooks/useYouTubeAnalytics';
 import { useStripeDonations }  from '../hooks/useStripeDonations';
 import { useSiteAnalytics }    from '../hooks/useSiteAnalytics';
 
+// ─── Palette ─────────────────────────────────────────────────────────────────
+// Pulled from src/App.css (--tv-primary, --tv-text-main) and the site's dark
+// (night-mode / hero) treatment (#050816 base, night-mode card shadow), not
+// invented for this file.
+
+const C = {
+  bg:           '#050816',
+  surface:      '#0e1b3a',
+  surfaceAlt:   '#132449',
+  border:       'rgba(255,255,255,0.08)',
+  borderStrong: 'rgba(255,255,255,0.16)',
+  accent:       '#3a6cff',
+  accentDark:   '#275fdb',
+  text:         '#f5f7ff',
+  textMuted:    '#8b96c2',
+  positive:     '#34d399',
+  negative:     '#fb7185',
+  shadow:       '0 18px 45px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06)',
+  radiusLg:     18,
+  radiusMd:     12,
+  radiusSm:     8,
+};
+const SHOW_COLORS = ['#3a6cff', '#22d3ee', '#fbbf24', '#f472b6', '#a78bfa'];
+
+const CHART_AXIS_TICK = { fontSize: 11, fill: C.textMuted };
+const CHART_TOOLTIP_CONTENT = {
+  contentStyle: { background: C.surface, border: `1px solid ${C.borderStrong}`, borderRadius: C.radiusSm, fontSize: 12, color: C.text },
+  labelStyle:   { color: C.textMuted },
+  itemStyle:    { color: C.text },
+};
+
 // ─── Auth gate ────────────────────────────────────────────────────────────────
 
 function AuthCard({ children }) {
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#f5f5f3' }}>
-      <div style={{ background:'#fff', border:'0.5px solid #ddd', borderRadius:12, padding:'32px 40px', minWidth:320, textAlign:'center' }}>
-        <div style={{ width:40, height:40, background:'#1a5e3a', borderRadius:8, margin:'0 auto 16px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:C.bg }}>
+      <div style={{ background:C.surface, border:`1px solid ${C.border}`, boxShadow:C.shadow, borderRadius:C.radiusLg, padding:'32px 40px', minWidth:320, textAlign:'center' }}>
+        <div style={{ width:40, height:40, background:C.accent, borderRadius:C.radiusSm, margin:'0 auto 16px', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 2L14 6V10L8 14L2 10V6L8 2Z" fill="white" opacity="0.9"/></svg>
         </div>
         {children}
       </div>
     </div>
   );
+}
+
+function authInputStyle(err) {
+  return {
+    width:'100%', padding:'10px 14px',
+    border:`1px solid ${err ? C.negative : C.border}`,
+    background:C.surfaceAlt, color:C.text,
+    borderRadius:C.radiusSm, fontSize:14, marginBottom:10, outline:'none', boxSizing:'border-box',
+  };
 }
 
 function SignInGate() {
@@ -62,15 +102,15 @@ function SignInGate() {
 
   return (
     <AuthCard>
-      <p style={{ fontSize:15, fontWeight:500, marginBottom:4 }}>TrueVoice Admin</p>
-      <p style={{ fontSize:13, color:'#888', marginBottom:20 }}>Sign in with your team email</p>
+      <p style={{ fontSize:15, fontWeight:500, marginBottom:4, color:C.text }}>TrueVoice Admin</p>
+      <p style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>Sign in with your team email</p>
       <input
         type="email"
         value={email}
         onChange={e => { setEmail(e.target.value); setErr(''); }}
         onKeyDown={e => e.key === 'Enter' && submit()}
         placeholder="Email"
-        style={{ width:'100%', padding:'10px 14px', border:`1px solid ${err ? '#e24b4a' : '#ddd'}`, borderRadius:8, fontSize:14, marginBottom:10, outline:'none', boxSizing:'border-box' }}
+        style={authInputStyle(err)}
         autoFocus
       />
       <input
@@ -79,10 +119,10 @@ function SignInGate() {
         onChange={e => { setPassword(e.target.value); setErr(''); }}
         onKeyDown={e => e.key === 'Enter' && submit()}
         placeholder="Password"
-        style={{ width:'100%', padding:'10px 14px', border:`1px solid ${err ? '#e24b4a' : '#ddd'}`, borderRadius:8, fontSize:14, marginBottom:12, outline:'none', boxSizing:'border-box' }}
+        style={{ ...authInputStyle(err), marginBottom:12 }}
       />
-      {err && <p style={{ color:'#e24b4a', fontSize:12, marginBottom:8 }}>{err}</p>}
-      <button onClick={submit} disabled={loading} style={{ width:'100%', padding:'10px 0', background:'#1a5e3a', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:500, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+      {err && <p style={{ color:C.negative, fontSize:12, marginBottom:8 }}>{err}</p>}
+      <button onClick={submit} disabled={loading} style={{ width:'100%', padding:'10px 0', background:C.accent, color:'#fff', border:'none', borderRadius:C.radiusSm, fontSize:14, fontWeight:500, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
         {loading ? 'Signing in…' : 'Sign in'}
       </button>
     </AuthCard>
@@ -106,19 +146,19 @@ function SetPasswordGate({ onDone }) {
 
   return (
     <AuthCard>
-      <p style={{ fontSize:15, fontWeight:500, marginBottom:4 }}>Set a new password</p>
-      <p style={{ fontSize:13, color:'#888', marginBottom:20 }}>Choose a password for your TrueVoice admin account.</p>
+      <p style={{ fontSize:15, fontWeight:500, marginBottom:4, color:C.text }}>Set a new password</p>
+      <p style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>Choose a password for your TrueVoice admin account.</p>
       <input
         type="password"
         value={password}
         onChange={e => { setPassword(e.target.value); setErr(''); }}
         onKeyDown={e => e.key === 'Enter' && submit()}
         placeholder="New password"
-        style={{ width:'100%', padding:'10px 14px', border:`1px solid ${err ? '#e24b4a' : '#ddd'}`, borderRadius:8, fontSize:14, marginBottom:12, outline:'none', boxSizing:'border-box' }}
+        style={{ ...authInputStyle(err), marginBottom:12 }}
         autoFocus
       />
-      {err && <p style={{ color:'#e24b4a', fontSize:12, marginBottom:8 }}>{err}</p>}
-      <button onClick={submit} disabled={loading} style={{ width:'100%', padding:'10px 0', background:'#1a5e3a', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:500, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+      {err && <p style={{ color:C.negative, fontSize:12, marginBottom:8 }}>{err}</p>}
+      <button onClick={submit} disabled={loading} style={{ width:'100%', padding:'10px 0', background:C.accent, color:'#fff', border:'none', borderRadius:C.radiusSm, fontSize:14, fontWeight:500, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
         {loading ? 'Saving…' : 'Save password'}
       </button>
     </AuthCard>
@@ -128,7 +168,7 @@ function SetPasswordGate({ onDone }) {
 function LoadingGate() {
   return (
     <AuthCard>
-      <p style={{ fontSize:13, color:'#888' }}>Loading…</p>
+      <p style={{ fontSize:13, color:C.textMuted }}>Loading…</p>
     </AuthCard>
   );
 }
@@ -136,40 +176,27 @@ function LoadingGate() {
 function NotAuthorizedGate({ email }) {
   return (
     <AuthCard>
-      <p style={{ fontSize:15, fontWeight:500, marginBottom:4 }}>Not authorized</p>
-      <p style={{ fontSize:13, color:'#888', marginBottom:20 }}>
+      <p style={{ fontSize:15, fontWeight:500, marginBottom:4, color:C.text }}>Not authorized</p>
+      <p style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>
         {email} is signed in but isn't on the TrueVoice admin team. Ask an
         existing admin to invite you.
       </p>
-      <button onClick={() => supabase.auth.signOut()} style={{ width:'100%', padding:'10px 0', background:'#1a5e3a', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:500, cursor:'pointer' }}>
+      <button onClick={() => supabase.auth.signOut()} style={{ width:'100%', padding:'10px 0', background:C.accent, color:'#fff', border:'none', borderRadius:C.radiusSm, fontSize:14, fontWeight:500, cursor:'pointer' }}>
         Sign out
       </button>
     </AuthCard>
   );
 }
 
-// ─── Palette ─────────────────────────────────────────────────────────────────
-
-const C = {
-  green:  '#1a5e3a',
-  blue:   '#185FA5',
-  amber:  '#BA7517',
-  pink:   '#993556',
-  purple: '#534AB7',
-  teal:   '#0F6E56',
-  gray:   '#888780',
-};
-const SHOW_COLORS = [C.green, C.blue, C.amber, C.pink, C.purple];
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function MetricCard({ label, value, delta, deltaUp }) {
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e5e5e5', borderRadius:12, padding:16 }}>
-      <p style={{ fontSize:11, color:'#888', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:6 }}>{label}</p>
-      <p style={{ fontSize:26, fontWeight:500, color:'#111', lineHeight:1 }}>{value ?? '—'}</p>
+    <div style={{ background:C.surface, border:`1px solid ${C.border}`, boxShadow:C.shadow, borderRadius:C.radiusMd, padding:16 }}>
+      <p style={{ fontSize:11, color:C.textMuted, textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:6 }}>{label}</p>
+      <p style={{ fontSize:26, fontWeight:500, color:C.text, lineHeight:1 }}>{value ?? '—'}</p>
       {delta && (
-        <p style={{ fontSize:12, marginTop:6, color: deltaUp ? '#3B6D11' : '#A32D2D' }}>{delta}</p>
+        <p style={{ fontSize:12, marginTop:6, color: deltaUp ? C.positive : C.negative }}>{delta}</p>
       )}
     </div>
   );
@@ -177,10 +204,10 @@ function MetricCard({ label, value, delta, deltaUp }) {
 
 function Panel({ title, meta, children, style }) {
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e5e5e5', borderRadius:12, padding:16, ...style }}>
+    <div style={{ background:C.surface, border:`1px solid ${C.border}`, boxShadow:C.shadow, borderRadius:C.radiusLg, padding:16, ...style }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-        <span style={{ fontSize:13, fontWeight:500 }}>{title}</span>
-        {meta && <span style={{ fontSize:12, color:'#888' }}>{meta}</span>}
+        <span style={{ fontSize:13, fontWeight:500, color:C.text }}>{title}</span>
+        {meta && <span style={{ fontSize:12, color:C.textMuted }}>{meta}</span>}
       </div>
       {children}
     </div>
@@ -189,28 +216,28 @@ function Panel({ title, meta, children, style }) {
 
 function LiveBadge() {
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#1a5e3a', background:'#EAF3DE', padding:'4px 10px', borderRadius:20, fontWeight:500 }}>
-      <span style={{ width:7, height:7, borderRadius:'50%', background:'#3B6D11', display:'inline-block', animation:'pulse 1.8s ease-in-out infinite' }} />
+    <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:C.accent, background:'rgba(58,108,255,0.16)', padding:'4px 10px', borderRadius:20, fontWeight:500 }}>
+      <span style={{ width:7, height:7, borderRadius:'50%', background:C.accent, display:'inline-block', animation:'pulse 1.8s ease-in-out infinite' }} />
       Live
     </div>
   );
 }
 
-function ProgressRow({ label, value, max, color = C.green }) {
+function ProgressRow({ label, value, max, color = C.accent }) {
   const pct = max ? Math.round((value / max) * 100) : 0;
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:10, padding:'7px 0', borderBottom:'0.5px solid #f0f0f0', fontSize:13 }}>
-      <span style={{ flex:1, color:'#333' }}>{label}</span>
-      <div style={{ width:80, height:4, background:'#f0f0f0', borderRadius:2, overflow:'hidden' }}>
+    <div style={{ display:'flex', alignItems:'center', gap:10, padding:'7px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
+      <span style={{ flex:1, color:C.text }}>{label}</span>
+      <div style={{ width:80, height:4, background:'rgba(255,255,255,0.08)', borderRadius:2, overflow:'hidden' }}>
         <div style={{ width:`${pct}%`, height:'100%', background:color, borderRadius:2 }} />
       </div>
-      <span style={{ color:'#888', fontSize:12, width:32, textAlign:'right' }}>{pct}%</span>
+      <span style={{ color:C.textMuted, fontSize:12, width:32, textAlign:'right' }}>{pct}%</span>
     </div>
   );
 }
 
 function ErrorNote({ msg }) {
-  return <p style={{ fontSize:12, color:'#A32D2D', padding:'8px 0' }}>⚠ {msg}</p>;
+  return <p style={{ fontSize:12, color:C.negative, padding:'8px 0' }}>⚠ {msg}</p>;
 }
 
 function VisitorsTab({ range }) {
@@ -281,7 +308,7 @@ function VisitorsTab({ range }) {
   }, [visits, range]);
 
   if (!data) {
-    return <p style={{ fontSize:13, color:'#888' }}>Loading visits…</p>;
+    return <p style={{ fontSize:13, color:C.textMuted }}>Loading visits…</p>;
   }
 
   return (
@@ -294,19 +321,19 @@ function VisitorsTab({ range }) {
       <Panel title={`Visits per day (${range}d)`} style={{ marginBottom:16 }}>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data.dailyChart}>
-            <XAxis dataKey="label" tick={{ fontSize:11, fill:'#888' }} interval={Math.max(0, Math.floor(data.dailyChart.length / 10))} />
-            <YAxis tick={{ fontSize:11, fill:'#888' }} allowDecimals={false} />
-            <Tooltip />
-            <Bar dataKey="visits" fill={C.blue} radius={[4,4,0,0]} />
+            <XAxis dataKey="label" stroke={C.border} tick={CHART_AXIS_TICK} interval={Math.max(0, Math.floor(data.dailyChart.length / 10))} />
+            <YAxis stroke={C.border} tick={CHART_AXIS_TICK} allowDecimals={false} />
+            <Tooltip {...CHART_TOOLTIP_CONTENT} cursor={{ fill:'rgba(255,255,255,0.05)' }} />
+            <Bar dataKey="visits" fill={C.accent} radius={[4,4,0,0]} />
           </BarChart>
         </ResponsiveContainer>
       </Panel>
       <Panel title="Top pages">
-        {data.topPaths.length === 0 && <p style={{ fontSize:13, color:'#888' }}>No visits recorded yet.</p>}
+        {data.topPaths.length === 0 && <p style={{ fontSize:13, color:C.textMuted }}>No visits recorded yet.</p>}
         {data.topPaths.map(p => (
-          <div key={p.path} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:'0.5px solid #f0f0f0', fontSize:13 }}>
-            <code style={{ color:'#333', fontSize:12 }}>{p.path}</code>
-            <span style={{ color:'#888' }}>{p.count.toLocaleString()}</span>
+          <div key={p.path} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
+            <code style={{ color:C.text, fontSize:12 }}>{p.path}</code>
+            <span style={{ color:C.textMuted }}>{p.count.toLocaleString()}</span>
           </div>
         ))}
       </Panel>
@@ -362,25 +389,25 @@ function TeamTab({ session }) {
             value={inviteEmail}
             onChange={e => { setInviteEmail(e.target.value); setInviteStatus(null); }}
             placeholder="teammate@email.com"
-            style={{ flex:1, padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, fontSize:13, outline:'none' }}
+            style={{ flex:1, padding:'8px 12px', border:`1px solid ${C.border}`, background:C.surfaceAlt, color:C.text, borderRadius:C.radiusSm, fontSize:13, outline:'none' }}
           />
-          <button onClick={invite} disabled={inviteStatus === 'sending'} style={{ padding:'8px 16px', background:C.green, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:500, cursor: inviteStatus === 'sending' ? 'default' : 'pointer' }}>
+          <button onClick={invite} disabled={inviteStatus === 'sending'} style={{ padding:'8px 16px', background:C.accent, color:'#fff', border:'none', borderRadius:C.radiusSm, fontSize:13, fontWeight:500, cursor: inviteStatus === 'sending' ? 'default' : 'pointer' }}>
             {inviteStatus === 'sending' ? 'Sending…' : 'Send invite'}
           </button>
         </div>
-        {inviteStatus === 'sent' && <p style={{ fontSize:12, color:'#3B6D11', marginTop:8 }}>Invite sent.</p>}
+        {inviteStatus === 'sent' && <p style={{ fontSize:12, color:C.positive, marginTop:8 }}>Invite sent.</p>}
         {inviteStatus && inviteStatus !== 'sending' && inviteStatus !== 'sent' && <ErrorNote msg={inviteStatus} />}
       </Panel>
       <Panel title="Team" meta={admins ? `${admins.length} admin${admins.length === 1 ? '' : 's'}` : undefined}>
         {error && <ErrorNote msg={error} />}
-        {!admins && !error && <p style={{ fontSize:13, color:'#888' }}>Loading…</p>}
+        {!admins && !error && <p style={{ fontSize:13, color:C.textMuted }}>Loading…</p>}
         {admins?.map(a => (
-          <div key={a.email} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:'0.5px solid #f0f0f0', fontSize:13 }}>
+          <div key={a.email} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
             <div>
-              <p style={{ fontWeight:500, margin:0 }}>{a.email}</p>
-              <p style={{ fontSize:12, color:'#888', margin:0 }}>{a.role}{a.invited_by ? ` · invited by ${a.invited_by}` : ''}</p>
+              <p style={{ fontWeight:500, margin:0, color:C.text }}>{a.email}</p>
+              <p style={{ fontSize:12, color:C.textMuted, margin:0 }}>{a.role}{a.invited_by ? ` · invited by ${a.invited_by}` : ''}</p>
             </div>
-            <span style={{ color:'#888', fontSize:12 }}>{new Date(a.created_at).toLocaleDateString()}</span>
+            <span style={{ color:C.textMuted, fontSize:12 }}>{new Date(a.created_at).toLocaleDateString()}</span>
           </div>
         ))}
       </Panel>
@@ -446,41 +473,41 @@ export default function AdminDashboard() {
   const nowPlaying = azura.nowPlaying?.show      ?? 'Loading…';
 
   return (
-    <div style={{ background:'#f5f5f3', minHeight:'100vh', fontFamily:'system-ui, sans-serif' }}>
+    <div style={{ background:C.bg, color:C.text, minHeight:'100vh', fontFamily:'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
 
       {/* Top bar */}
-      <div style={{ background:'#fff', borderBottom:'0.5px solid #e5e5e5', padding:'14px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ background:C.surface, borderBottom:`1px solid ${C.border}`, padding:'14px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <div style={{ width:28, height:28, background:'#1a5e3a', borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ width:28, height:28, background:C.accent, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2L14 6V10L8 14L2 10V6L8 2Z" fill="white" opacity="0.9"/></svg>
           </div>
-          <span style={{ fontSize:15, fontWeight:500 }}>TrueVoice Digital</span>
-          <span style={{ fontSize:12, color:'#888' }}>Analytics</span>
+          <span style={{ fontSize:15, fontWeight:500, color:C.text }}>TrueVoice Digital</span>
+          <span style={{ fontSize:12, color:C.textMuted }}>Analytics</span>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <LiveBadge />
-          <span style={{ fontSize:12, color:'#888' }}>{clock}</span>
-          <span style={{ fontSize:12, color:'#ccc' }}>|</span>
-          <span style={{ fontSize:12, color:'#888' }}>{session.user.email}</span>
-          <button onClick={() => supabase.auth.signOut()} style={{ fontSize:12, color:'#888', background:'none', border:'none', cursor:'pointer', textDecoration:'underline', padding:0 }}>
+          <span style={{ fontSize:12, color:C.textMuted }}>{clock}</span>
+          <span style={{ fontSize:12, color:C.border }}>|</span>
+          <span style={{ fontSize:12, color:C.textMuted }}>{session.user.email}</span>
+          <button onClick={() => supabase.auth.signOut()} style={{ fontSize:12, color:C.textMuted, background:'none', border:'none', cursor:'pointer', textDecoration:'underline', padding:0 }}>
             Sign out
           </button>
         </div>
       </div>
 
       {/* Nav */}
-      <div style={{ background:'#fff', borderBottom:'0.5px solid #e5e5e5', padding:'0 24px', display:'flex', gap:0 }}>
+      <div style={{ background:C.surface, borderBottom:`1px solid ${C.border}`, padding:'0 24px', display:'flex', gap:0 }}>
         {TABS.map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
-            style={{ padding:'12px 16px', fontSize:13, color: activeTab===t ? '#1a5e3a' : '#888', border:'none', borderBottom: activeTab===t ? '2px solid #1a5e3a' : '2px solid transparent', background:'transparent', cursor:'pointer', fontWeight: activeTab===t ? 500 : 400 }}>
+            style={{ padding:'12px 16px', fontSize:13, color: activeTab===t ? C.accent : C.textMuted, border:'none', borderBottom: activeTab===t ? `2px solid ${C.accent}` : '2px solid transparent', background:'transparent', cursor:'pointer', fontWeight: activeTab===t ? 500 : 400 }}>
             {t}
           </button>
         ))}
         <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:4 }}>
           {[7,30,90].map(d => (
             <button key={d} onClick={() => setRange(d)}
-              style={{ fontSize:12, padding:'3px 10px', borderRadius:20, border: range===d ? 'none' : '0.5px solid #ccc', background: range===d ? '#1a5e3a' : 'transparent', color: range===d ? '#EAF3DE' : '#888', cursor:'pointer' }}>
+              style={{ fontSize:12, padding:'3px 10px', borderRadius:20, border: range===d ? 'none' : `0.5px solid ${C.border}`, background: range===d ? C.accent : 'transparent', color: range===d ? '#fff' : C.textMuted, cursor:'pointer' }}>
               {d}d
             </button>
           ))}
@@ -503,10 +530,10 @@ export default function AdminDashboard() {
               <Panel title="Listener trend" meta={`${range}d`}>
                 <ResponsiveContainer width="100%" height={180}>
                   <LineChart data={azura.chartData}>
-                    <XAxis dataKey="label" tick={{ fontSize:11, fill:'#888' }} />
-                    <YAxis tick={{ fontSize:11, fill:'#888' }} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="value" stroke={C.green} strokeWidth={2} dot={false} />
+                    <XAxis dataKey="label" stroke={C.border} tick={CHART_AXIS_TICK} />
+                    <YAxis stroke={C.border} tick={CHART_AXIS_TICK} />
+                    <Tooltip {...CHART_TOOLTIP_CONTENT} cursor={{ stroke:C.borderStrong }} />
+                    <Line type="monotone" dataKey="value" stroke={C.accent} strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </Panel>
@@ -517,9 +544,9 @@ export default function AdminDashboard() {
                   ['Now playing',      nowPlaying],
                   ['Avg listen (session)', `${Math.round(azura.history.length * 0.5)}m`],
                 ].map(([l, v]) => (
-                  <div key={l} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:'0.5px solid #f0f0f0', fontSize:13 }}>
-                    <span style={{ color:'#888' }}>{l}</span>
-                    <span style={{ fontWeight:500, color: l==='Now playing' ? C.green : '#111' }}>{v}</span>
+                  <div key={l} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
+                    <span style={{ color:C.textMuted }}>{l}</span>
+                    <span style={{ fontWeight:500, color: l==='Now playing' ? C.accent : C.text }}>{v}</span>
                   </div>
                 ))}
                 {azura.error && <ErrorNote msg={azura.error} />}
@@ -528,22 +555,22 @@ export default function AdminDashboard() {
 
             <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:16 }}>
               <Panel title="Top shows by views" meta="YouTube">
-                {youtube.loading && <p style={{ fontSize:13, color:'#888' }}>Loading…</p>}
+                {youtube.loading && <p style={{ fontSize:13, color:C.textMuted }}>Loading…</p>}
                 {youtube.error  && <ErrorNote msg={youtube.error} />}
                 {youtube.shows.slice(0,5).map((s, i) => (
                   <ProgressRow key={s.slug} label={s.label} value={s.totalViews} max={youtube.shows[0]?.totalViews ?? 1} color={SHOW_COLORS[i]} />
                 ))}
               </Panel>
               <Panel title="Recent donations" meta="Stripe">
-                {stripe.loading && <p style={{ fontSize:13, color:'#888' }}>Loading…</p>}
+                {stripe.loading && <p style={{ fontSize:13, color:C.textMuted }}>Loading…</p>}
                 {stripe.error   && <ErrorNote msg={stripe.error} />}
                 {stripe.donations.slice(0,6).map(d => (
-                  <div key={d.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:'0.5px solid #f0f0f0', fontSize:13 }}>
+                  <div key={d.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13 }}>
                     <div>
-                      <p style={{ fontWeight:500, margin:0 }}>{d.donor_name ?? 'Anonymous'}</p>
-                      <p style={{ fontSize:12, color:'#888', margin:0 }}>{d.time_ago}</p>
+                      <p style={{ fontWeight:500, margin:0, color:C.text }}>{d.donor_name ?? 'Anonymous'}</p>
+                      <p style={{ fontSize:12, color:C.textMuted, margin:0 }}>{d.time_ago}</p>
                     </div>
-                    <span style={{ fontWeight:500, color:'#3B6D11' }}>{d.amount_display}</span>
+                    <span style={{ fontWeight:500, color:C.positive }}>{d.amount_display}</span>
                   </div>
                 ))}
               </Panel>
@@ -563,10 +590,10 @@ export default function AdminDashboard() {
             <Panel title="Listener trend" meta={<LiveBadge />}>
               <ResponsiveContainer width="100%" height={340}>
                 <LineChart data={azura.chartData}>
-                  <XAxis dataKey="label" tick={{ fontSize:11, fill:'#888' }} />
-                  <YAxis tick={{ fontSize:11, fill:'#888' }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="value" stroke={C.green} strokeWidth={2} dot={false} />
+                  <XAxis dataKey="label" stroke={C.border} tick={CHART_AXIS_TICK} />
+                  <YAxis stroke={C.border} tick={CHART_AXIS_TICK} />
+                  <Tooltip {...CHART_TOOLTIP_CONTENT} cursor={{ stroke:C.borderStrong }} />
+                  <Line type="monotone" dataKey="value" stroke={C.accent} strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
               {azura.error && <ErrorNote msg={azura.error} />}
@@ -587,9 +614,9 @@ export default function AdminDashboard() {
             <Panel title="Views by show" meta="YouTube Data API v3" style={{ marginBottom:16 }}>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={youtube.shows.slice(0,6).map((s,i) => ({ name: s.label, views: s.totalViews, fill: SHOW_COLORS[i] }))}>
-                  <XAxis dataKey="name" tick={{ fontSize:11, fill:'#888' }} />
-                  <YAxis tick={{ fontSize:11, fill:'#888' }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
-                  <Tooltip />
+                  <XAxis dataKey="name" stroke={C.border} tick={CHART_AXIS_TICK} />
+                  <YAxis stroke={C.border} tick={CHART_AXIS_TICK} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+                  <Tooltip {...CHART_TOOLTIP_CONTENT} cursor={{ fill:'rgba(255,255,255,0.05)' }} />
                   <Bar dataKey="views" radius={[4,4,0,0]}>
                     {youtube.shows.slice(0,6).map((_, i) => (
                       <Cell key={i} fill={SHOW_COLORS[i % SHOW_COLORS.length]} />
@@ -601,19 +628,19 @@ export default function AdminDashboard() {
             <Panel title="Show breakdown">
               <table style={{ width:'100%', fontSize:13, borderCollapse:'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom:'0.5px solid #f0f0f0' }}>
+                  <tr style={{ borderBottom:`0.5px solid ${C.border}` }}>
                     {['Show','Videos','Total views','Likes'].map(h => (
-                      <th key={h} style={{ textAlign: h==='Show' ? 'left' : 'right', padding:'8px', fontSize:12, color:'#888', fontWeight:500 }}>{h}</th>
+                      <th key={h} style={{ textAlign: h==='Show' ? 'left' : 'right', padding:'8px', fontSize:12, color:C.textMuted, fontWeight:500 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {youtube.shows.map(s => (
-                    <tr key={s.slug} style={{ borderBottom:'0.5px solid #f0f0f0' }}>
-                      <td style={{ padding:'10px 8px', fontWeight:500 }}>{s.label}</td>
-                      <td style={{ textAlign:'right', padding:'10px 8px', color:'#888' }}>{s.videos.length}</td>
-                      <td style={{ textAlign:'right', padding:'10px 8px' }}>{s.totalViews.toLocaleString()}</td>
-                      <td style={{ textAlign:'right', padding:'10px 8px', color:'#888' }}>{s.totalLikes.toLocaleString()}</td>
+                    <tr key={s.slug} style={{ borderBottom:`0.5px solid ${C.border}` }}>
+                      <td style={{ padding:'10px 8px', fontWeight:500, color:C.text }}>{s.label}</td>
+                      <td style={{ textAlign:'right', padding:'10px 8px', color:C.textMuted }}>{s.videos.length}</td>
+                      <td style={{ textAlign:'right', padding:'10px 8px', color:C.text }}>{s.totalViews.toLocaleString()}</td>
+                      <td style={{ textAlign:'right', padding:'10px 8px', color:C.textMuted }}>{s.totalLikes.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -642,10 +669,10 @@ export default function AdminDashboard() {
               <Panel title={`Daily donations (${range}d)`} meta="Stripe">
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={stripe.dailyChart}>
-                    <XAxis dataKey="label" tick={{ fontSize:10, fill:'#888' }} interval={Math.floor(stripe.dailyChart.length/6)} />
-                    <YAxis tick={{ fontSize:11, fill:'#888' }} tickFormatter={v => `$${v}`} />
-                    <Tooltip formatter={v => [`$${v.toFixed(2)}`, 'Amount']} />
-                    <Bar dataKey="value" fill={C.green} radius={[3,3,0,0]} />
+                    <XAxis dataKey="label" stroke={C.border} tick={{ fontSize:10, fill:C.textMuted }} interval={Math.floor(stripe.dailyChart.length/6)} />
+                    <YAxis stroke={C.border} tick={CHART_AXIS_TICK} tickFormatter={v => `$${v}`} />
+                    <Tooltip {...CHART_TOOLTIP_CONTENT} cursor={{ fill:'rgba(255,255,255,0.05)' }} formatter={v => [`$${v.toFixed(2)}`, 'Amount']} />
+                    <Bar dataKey="value" fill={C.accent} radius={[3,3,0,0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </Panel>
@@ -656,9 +683,9 @@ export default function AdminDashboard() {
                   ['Fees',      stripe.totals.feesDisplay, true],
                   ['Net',       stripe.totals.netDisplay, false, true],
                 ].map(([l, v, isNeg, isBig]) => (
-                  <div key={l} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'0.5px solid #f0f0f0', fontSize:13, borderTop: isBig ? '1px solid #e0e0e0' : undefined, marginTop: isBig ? 4 : undefined }}>
-                    <span style={{ color: isBig ? '#111' : '#888', fontWeight: isBig ? 500 : 400 }}>{l}</span>
-                    <span style={{ fontWeight:500, color: isNeg ? '#A32D2D' : isBig ? '#3B6D11' : '#111' }}>{isNeg ? '-' : ''}{v}</span>
+                  <div key={l} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:`0.5px solid ${C.border}`, fontSize:13, borderTop: isBig ? `1px solid ${C.borderStrong}` : undefined, marginTop: isBig ? 4 : undefined }}>
+                    <span style={{ color: isBig ? C.text : C.textMuted, fontWeight: isBig ? 500 : 400 }}>{l}</span>
+                    <span style={{ fontWeight:500, color: isNeg ? C.negative : isBig ? C.positive : C.text }}>{isNeg ? '-' : ''}{v}</span>
                   </div>
                 ))}
               </Panel>
@@ -666,23 +693,23 @@ export default function AdminDashboard() {
             <Panel title="Transaction log" meta="Stripe webhook">
               <table style={{ width:'100%', fontSize:13, borderCollapse:'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom:'0.5px solid #f0f0f0' }}>
+                  <tr style={{ borderBottom:`0.5px solid ${C.border}` }}>
                     {['Donor','Type','Amount','Time'].map(h => (
-                      <th key={h} style={{ textAlign: h==='Amount'||h==='Time' ? 'right' : 'left', padding:'8px', fontSize:12, color:'#888', fontWeight:500 }}>{h}</th>
+                      <th key={h} style={{ textAlign: h==='Amount'||h==='Time' ? 'right' : 'left', padding:'8px', fontSize:12, color:C.textMuted, fontWeight:500 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {stripe.donations.map(d => (
-                    <tr key={d.id} style={{ borderBottom:'0.5px solid #f0f0f0' }}>
-                      <td style={{ padding:'9px 8px', fontWeight:500 }}>{d.donor_name ?? 'Anonymous'}</td>
+                    <tr key={d.id} style={{ borderBottom:`0.5px solid ${C.border}` }}>
+                      <td style={{ padding:'9px 8px', fontWeight:500, color:C.text }}>{d.donor_name ?? 'Anonymous'}</td>
                       <td style={{ padding:'9px 8px' }}>
-                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:10, background: d.type==='recurring' ? '#E1F5EE' : '#E6F1FB', color: d.type==='recurring' ? '#0F6E56' : '#185FA5' }}>
+                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:10, background: d.type==='recurring' ? 'rgba(52,211,153,0.16)' : 'rgba(58,108,255,0.16)', color: d.type==='recurring' ? C.positive : C.accent }}>
                           {d.type === 'recurring' ? 'Recurring' : 'One-time'}
                         </span>
                       </td>
-                      <td style={{ textAlign:'right', padding:'9px 8px', fontWeight:500, color:'#3B6D11' }}>{d.amount_display}</td>
-                      <td style={{ textAlign:'right', padding:'9px 8px', color:'#888', fontSize:12 }}>{d.time_ago}</td>
+                      <td style={{ textAlign:'right', padding:'9px 8px', fontWeight:500, color:C.positive }}>{d.amount_display}</td>
+                      <td style={{ textAlign:'right', padding:'9px 8px', color:C.textMuted, fontSize:12 }}>{d.time_ago}</td>
                     </tr>
                   ))}
                 </tbody>
