@@ -86,7 +86,12 @@ function isBlocked(title, description) {
 // leaving plenty of headroom for the rest of the site.
 async function youtube(endpoint, params) {
   const qs = new URLSearchParams({ ...params, key: YOUTUBE_API_KEY }).toString();
-  const res = await fetch(`https://www.googleapis.com/youtube/v3/${endpoint}?${qs}`);
+  // The API key is referer-restricted to truevoice.digital (see api/youtube.js,
+  // which does the same) -- a server-to-server fetch sends no referer at all,
+  // so Google 403s it unless we set one explicitly here.
+  const res = await fetch(`https://www.googleapis.com/youtube/v3/${endpoint}?${qs}`, {
+    headers: { 'Referer': 'https://www.truevoice.digital/' },
+  });
   const json = await res.json();
   if (!res.ok) {
     throw new Error(`YouTube ${endpoint} ${res.status}: ${json?.error?.message || "unknown error"}`);
