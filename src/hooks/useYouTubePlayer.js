@@ -52,6 +52,11 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
   const onEndedRef = useRef(onEnded);
   onEndedRef.current = onEnded;
 
+  // Read inside onReady (which only runs once, at creation) without
+  // retriggering the player-creation effect when isActive flips.
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
+
   // Stay in sync when mute is toggled from *any* card (including this
   // one, via toggleMute below) -- applies immediately to this card's own
   // player if it already exists, and to newly-created ones via onReady.
@@ -110,6 +115,31 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
             else playerRef.current.unMute();
             setMuted(sharedMuted);
             setReady(true);
+
+            // A "near" card (the one up next) mounts its player well
+            // before it becomes active, but a merely-cued YouTube player
+            // doesn't actually fetch any video data -- that only starts
+            // once playVideo() is called, which is what made the active
+            // card sit and buffer for several seconds right when it was
+            // scrolled to. Priming fixes that: kick off real (force-muted)
+            // playback immediately, then pause a beat later so nothing is
+            // ever heard or meaningfully seen before the card is shown as
+            // active. By the time this
+            // card becomes active, YouTube already has a buffer built up
+            // and playVideo() resumes instantly instead of starting cold.
+            if (!isActiveRef.current) {
+              // Force-muted regardless of sharedMuted -- this is a silent
+              // priming kick, not real playback, so it must never be
+              // audible even if the user has already unmuted the feed.
+              playerRef.current.mute();
+              playerRef.current.playVideo();
+              setTimeout(() => {
+                if (!cancelled && playerRef.current && !isActiveRef.current) {
+                  playerRef.current.pauseVideo();
+                  if (!sharedMuted) playerRef.current.unMute();
+                }
+              }, 300);
+            }
           },
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.ENDED) {
@@ -138,6 +168,12 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
   useEffect(() => {
     if (!ready || !playerRef.current) return;
     if (isActive) {
+      // A card that primed itself while merely "near" force-muted its
+      // player to stay silent -- make sure real mute state is restored
+      // before it actually plays, in case activation beat the priming
+      // timeout to it.
+      if (sharedMuted) playerRef.current.mute();
+      else playerRef.current.unMute();
       playerRef.current.playVideo();
     } else {
       playerRef.current.pauseVideo();
