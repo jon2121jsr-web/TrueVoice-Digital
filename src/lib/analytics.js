@@ -12,13 +12,29 @@ const SITE_ID  = (import.meta.env.VITE_ANALYTICS_SITE_ID || 'truevoice').trim();
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function getSessionId() {
-  let sid = sessionStorage.getItem('tv_sid');
-  if (!sid) {
-    sid = crypto.randomUUID();
-    sessionStorage.setItem('tv_sid', sid);
+// crypto.randomUUID() only exists in a "secure context" (HTTPS, or
+// localhost) -- it's undefined on a plain-HTTP LAN address, which is
+// exactly how phone testing reaches the dev server. Fall back to a
+// simple random id there instead of throwing, and never let a storage
+// or crypto failure here take down the rest of the app.
+function makeId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
   }
-  return sid;
+  return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+}
+
+function getSessionId() {
+  try {
+    let sid = sessionStorage.getItem('tv_sid');
+    if (!sid) {
+      sid = makeId();
+      sessionStorage.setItem('tv_sid', sid);
+    }
+    return sid;
+  } catch {
+    return makeId();
+  }
 }
 
 function send(eventName, props = {}) {
@@ -103,6 +119,14 @@ export function trackEvent(name, props = {}) {
 }
 
 // ─── Auto-init ───────────────────────────────────────────────────────────────
+// Wrapped defensively: this file is imported for side effects at module
+// load time, before React ever mounts. Any uncaught error here (as
+// getSessionId's old crypto.randomUUID call was) kills the whole module
+// graph and renders nothing -- analytics should never be able to do that.
 
-patchHistory();
-trackPageView(); // fire once on load
+try {
+  patchHistory();
+  trackPageView(); // fire once on load
+} catch (err) {
+  console.warn('[analytics] init failed, continuing without it', err);
+}

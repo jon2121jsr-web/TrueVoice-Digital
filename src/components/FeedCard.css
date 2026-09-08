@@ -1,0 +1,142 @@
+.feed-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  max-height: 860px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #0c1530;
+  color: #f5f7ff;
+}
+
+.feed-card-media {
+  position: absolute;
+  inset: 0;
+}
+
+.feed-card-player {
+  position: absolute;
+  inset: 0;
+}
+
+.feed-card-media iframe,
+.feed-card-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+  display: block;
+}
+
+.feed-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, transparent 25%, transparent 55%, rgba(3,6,20,0.9) 100%);
+  pointer-events: none;
+}
+
+.feed-card-top {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 5;
+}
+
+.feed-tag {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(5,8,22,0.55);
+  border: 1px solid rgba(255,255,255,0.16);
+  padding: 4px 8px;
+  border-radius: 5px;
+}
+
+.feed-mute-btn {
+  position: absolute;
+  right: 16px;
+  bottom: 120px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(5,8,22,0.55);
+  border: 1px solid rgba(255,255,255,0.16);
+  font-size: 16px;
+  color: #f5f7ff;
+}
+
+.feed-card-bottom {
+  position: absolute;
+  left: 16px;
+  right: 46px;
+  bottom: 24px;
+  z-index: 5;
+}
+
+.feed-card-title {
+  font-weight: 700;
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.feed-card-meta {
+  font-size: 12px;
+  color: #8b96c2;
+  margin: 0;
+}
+
+.feed-card[data-type="verse"] {
+  background: linear-gradient(175deg, #f4c76a 0%, #e2a83f 45%, #b9812a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feed-card-verse-body {
+  text-align: center;
+  padding: 40px;
+  color: #050816;
+}
+
+.feed-verse-text {
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.35;
+  margin: 0 0 14px;
+}
+
+.feed-verse-ref {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+.feed-verse-mark {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: rgba(5,8,22,0.55);
+}
+
+.feed-card[data-type="meme"] {
+  display: flex;
+  align-items: flex-end;
+}
+
+.feed-meme-caption {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 24px;
+  font-weight: 700;
+  font-size: 16px;
+  z-index: 5;
+}
