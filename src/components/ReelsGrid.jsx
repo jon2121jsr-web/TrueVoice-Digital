@@ -10,6 +10,7 @@ import "./ReelsGrid.css";
 
 const CHANNEL_IDS = {
   PIGSKIN:                "UC_khbgasHiiwUxPHOMfbR0A",
+  DENISHA:                "UCxcSYXrZQWHRF8iwdWCf3gg",
   GMAA:                   "UCKr-liguaGWMf3f94eQXsug",
   BIBLEPROJECT:           "UCVfwlh9XpX2Y_tQfjeln9QA",
   CAPTURING_CHRISTIANITY: "UCux-_Fze30tFuI_5CArwSmg",
@@ -46,6 +47,7 @@ function ReelsGrid() {
   const [activeVideo, setActiveVideo] = useState(null);
 
   const pigskinFeed   = useYouTubeFeed({ channelId: CHANNEL_IDS.PIGSKIN,                maxResults: 50, filterFn: pigskinFilter });
+  const denishaFeed   = useYouTubeFeed({ channelId: CHANNEL_IDS.DENISHA,                maxResults: 10 });
   const gmaaFeed      = useYouTubeFeed({ channelId: CHANNEL_IDS.GMAA,                   maxResults: 10 });
   const bpFeed        = useYouTubeFeed({ channelId: CHANNEL_IDS.BIBLEPROJECT,            maxResults: 10 });
   const capturingFeed = useYouTubeFeed({ channelId: CHANNEL_IDS.CAPTURING_CHRISTIANITY,  maxResults: 10 });
@@ -57,6 +59,12 @@ function ReelsGrid() {
     topic:       "College Football",
     source:      "Pigskin Frenzy",
     description: "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
+  });
+  const denishaReels = enrichVideos(denishaFeed.videos, {
+    speaker:     "Denisha Workizer",
+    topic:       "Faith & Lifestyle",
+    source:      "Living the Reclaimed Life",
+    description: "Denisha Workizer — where faith meets real life. You were made for more.",
   });
   const gmaaReels = enrichVideos(gmaaFeed.videos, {
     speaker:     "Cliffe Knechtle",
@@ -153,6 +161,7 @@ function ReelsGrid() {
       </p>
 
       {renderChannel("Pigskin Frenzy",          pigskinReels,   pigskinFeed)}
+      {renderChannel("Living the Reclaimed Life", denishaReels,   denishaFeed)}
       {renderChannel("Give Me an Answer",        gmaaReels,      gmaaFeed)}
       {renderChannel("Capturing Christianity",   capturingReels, capturingFeed)}
       {renderChannel("The Beat by Allen Parr",   beatReels,      beatFeed)}
