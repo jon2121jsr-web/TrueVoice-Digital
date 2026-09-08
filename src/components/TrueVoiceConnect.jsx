@@ -8,6 +8,7 @@ import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
 
 const CHANNEL_IDS = {
   PIGSKIN:                "UC_khbgasHiiwUxPHOMfbR0A",
+  DENISHA:                "UCxcSYXrZQWHRF8iwdWCf3gg",
   CAPTURING_CHRISTIANITY: "UCux-_Fze30tFuI_5CArwSmg",
   BEAT_ALLEN_PARR:        "UCm_RMW_fQk-ELpPYUzor8lw",
   COLD_CASE_CHRISTIANITY: "UCVFe7xhG6rl0ruoMQCJDtnw",
@@ -15,6 +16,7 @@ const CHANNEL_IDS = {
 
 const FALLBACKS = {
   pigskin:               "https://img.youtube.com/vi/gC4VikZ0dcA/maxresdefault.jpg",
+  denisha:               "https://img.youtube.com/vi/default/maxresdefault.jpg",
   capturingChristianity: "https://img.youtube.com/vi/default/maxresdefault.jpg",
   beatAllenParr:         "https://img.youtube.com/vi/default/maxresdefault.jpg",
   coldCase:              "https://img.youtube.com/vi/default/maxresdefault.jpg",
@@ -22,11 +24,13 @@ const FALLBACKS = {
 
 export default function TrueVoiceConnect({
   onPigskinFrenzy,
+  onDenisha,
   onCapturingChristianity,
   onBeatAllenParr,
   onColdCaseChristianity,
 }) {
   const pigskinLatest   = useYouTubeLatest({ channelId: CHANNEL_IDS.PIGSKIN });
+  const denishaLatest   = useYouTubeLatest({ channelId: CHANNEL_IDS.DENISHA });
   const capturingLatest = useYouTubeLatest({ channelId: CHANNEL_IDS.CAPTURING_CHRISTIANITY });
   const beatLatest      = useYouTubeLatest({ channelId: CHANNEL_IDS.BEAT_ALLEN_PARR });
   const coldCaseLatest  = useYouTubeLatest({ channelId: CHANNEL_IDS.COLD_CASE_CHRISTIANITY });
@@ -39,6 +43,14 @@ export default function TrueVoiceConnect({
       tag:         "CFB",
       onClick:     onPigskinFrenzy,
       thumbnail:   pigskinLatest.thumbnail   || FALLBACKS.pigskin,
+    },
+    {
+      id:          "denisha-workizer",
+      label:       "Living the Reclaimed Life",
+      description: "Denisha Workizer — where faith meets real life. You were made for more.",
+      tag:         "FAITH",
+      onClick:     onDenisha,
+      thumbnail:   denishaLatest.thumbnail || FALLBACKS.denisha,
     },
     {
       id:          "capturing-christianity",

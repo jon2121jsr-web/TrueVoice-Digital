@@ -18,6 +18,7 @@ import MerchSection from "./components/MerchSection.jsx";
 import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
 import PullToRefresh from "./components/PullToRefresh";
 import ChimeIn from "./components/ChimeIn";
+import ScrollFeed from "./components/ScrollFeed";
 
 import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
 import { useVisitorBeacon } from "./hooks/useVisitorBeacon";
@@ -26,12 +27,14 @@ import { useVisitorBeacon } from "./hooks/useVisitorBeacon";
 const VIDEO_SECTIONS = {
   WATCH_LIVE:              'WATCH_LIVE',
   PIGSKIN_FRENZY:          'PIGSKIN_FRENZY',
+  DENISHA:                 'DENISHA',
   CAPTURING_CHRISTIANITY:  'CAPTURING_CHRISTIANITY',
   BEAT_ALLEN_PARR:         'BEAT_ALLEN_PARR',
   COLD_CASE_CHRISTIANITY:  'COLD_CASE_CHRISTIANITY',
 };
 
 const PIGSKIN_CHANNEL_ID          = "UC_khbgasHiiwUxPHOMfbR0A";
+const DENISHA_CHANNEL_ID          = "UCxcSYXrZQWHRF8iwdWCf3gg";
 const CAPTURING_CHRISTIANITY_ID   = "UCux-_Fze30tFuI_5CArwSmg";
 const BEAT_ALLEN_PARR_ID          = "UCm_RMW_fQk-ELpPYUzor8lw";
 const COLD_CASE_CHRISTIANITY_ID   = "UCVFe7xhG6rl0ruoMQCJDtnw";
@@ -339,6 +342,7 @@ function App() {
 
   // Dynamic video feeds
   const pigskinFeed           = useYouTubeFeed({ channelId:  PIGSKIN_CHANNEL_ID,         maxResults: 10, filterFn: pigskinEpisodeFilter });
+  const denishaFeed           = useYouTubeFeed({ channelId:  DENISHA_CHANNEL_ID,         maxResults: 1 });
 const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANITY_ID,  maxResults: 1 });
   const beatFeed              = useYouTubeFeed({ channelId:  BEAT_ALLEN_PARR_ID,         maxResults: 1 });
   const coldCaseFeed          = useYouTubeFeed({ channelId:  COLD_CASE_CHRISTIANITY_ID,  maxResults: 1 });
@@ -346,6 +350,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
   const feedBySection = {
     [VIDEO_SECTIONS.WATCH_LIVE]:             [],
     [VIDEO_SECTIONS.PIGSKIN_FRENZY]:         pigskinFeed.videos,
+    [VIDEO_SECTIONS.DENISHA]:                denishaFeed.videos,
 [VIDEO_SECTIONS.CAPTURING_CHRISTIANITY]: capturingFeed.videos,
     [VIDEO_SECTIONS.BEAT_ALLEN_PARR]:        beatFeed.videos,
     [VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY]: coldCaseFeed.videos,
@@ -392,6 +397,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
   return (
     <Routes>
       <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/scroll" element={<ScrollFeed />} />
       <Route path="*" element={
         <div className="app-container tv-app">
           <PullToRefresh />
@@ -478,6 +484,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
               <TrueVoiceConnect
                 onWatchLive={()               => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
                 onPigskinFrenzy={()           => openVideoForSection(VIDEO_SECTIONS.PIGSKIN_FRENZY)}
+                onDenisha={()                 => openVideoForSection(VIDEO_SECTIONS.DENISHA)}
 onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CHRISTIANITY)}
                 onBeatAllenParr={()           => openVideoForSection(VIDEO_SECTIONS.BEAT_ALLEN_PARR)}
                 onColdCaseChristianity={()    => openVideoForSection(VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY)}
