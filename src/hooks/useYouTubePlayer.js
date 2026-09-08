@@ -8,6 +8,19 @@ import { useEffect, useRef, useState } from "react";
 
 let apiPromise = null;
 
+// Shared across every card in the feed, not per-instance. Without this,
+// each new player starts muted regardless of what the user chose on the
+// previous card -- so unmuting felt like it never "stuck" as the feed
+// scrolled. Once the user unmutes once, every current AND future player
+// in this page session follows that choice.
+let sharedMuted = true;
+const muteListeners = new Set();
+
+function setSharedMuted(next) {
+  sharedMuted = next;
+  muteListeners.forEach((listener) => listener(next));
+}
+
 function loadYouTubeApi() {
   if (apiPromise) return apiPromise;
   apiPromise = new Promise((resolve) => {
@@ -32,12 +45,27 @@ function loadYouTubeApi() {
 export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, isActive, onEnded }) {
   const playerRef = useRef(null);
   const [ready, setReady] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(sharedMuted);
 
   // Keep the latest onEnded without re-creating the player when it changes
   // identity (ScrollFeed passes a fresh closure each render).
   const onEndedRef = useRef(onEnded);
   onEndedRef.current = onEnded;
+
+  // Stay in sync when mute is toggled from *any* card (including this
+  // one, via toggleMute below) -- applies immediately to this card's own
+  // player if it already exists, and to newly-created ones via onReady.
+  useEffect(() => {
+    const onChange = (next) => {
+      setMuted(next);
+      if (playerRef.current) {
+        if (next) playerRef.current.mute();
+        else playerRef.current.unMute();
+      }
+    };
+    muteListeners.add(onChange);
+    return () => muteListeners.delete(onChange);
+  }, []);
 
   // Create the player once per videoId. clipStart/clipEnd are read at
   // creation time via native playerVars -- YouTube handles the clip
@@ -78,8 +106,9 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
         events: {
           onReady: () => {
             if (cancelled) return;
-            playerRef.current.mute();
-            setMuted(true);
+            if (sharedMuted) playerRef.current.mute();
+            else playerRef.current.unMute();
+            setMuted(sharedMuted);
             setReady(true);
           },
           onStateChange: (event) => {
@@ -117,12 +146,7 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
 
   const toggleMute = () => {
     if (!playerRef.current) return;
-    setMuted((m) => {
-      const next = !m;
-      if (next) playerRef.current.mute();
-      else playerRef.current.unMute();
-      return next;
-    });
+    setSharedMuted(!sharedMuted);
   };
 
   return { ready, muted, toggleMute };
