@@ -16,6 +16,14 @@ let apiPromise = null;
 let sharedMuted = true;
 const muteListeners = new Set();
 
+// Once a scroll-triggered (non-gesture) unmuted resume has actually been
+// refused for this /scroll session, stop making every later card wait out
+// the same nudge-then-check cycle before it can show the tap target --
+// each new card is a brand-new YouTube iframe, so the same refusal is
+// near-certain to repeat, and after a few cards that wait reads as "keeps
+// stalling" rather than a fast, expected tap-to-continue pattern.
+let autoplayBlocked = false;
+
 function setSharedMuted(next) {
   sharedMuted = next;
   muteListeners.forEach((listener) => listener(next));
@@ -201,10 +209,26 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
       // feedback, since controls: 0 means there's no native play button
       // either. Rather than trust a single cold getPlayerState() read,
       // track state from onStateChange (lastStateRef) as it actually
-      // arrives: nudge once with another playVideo() call partway through
-      // in case it just needs a second attempt, then if it still hasn't
-      // reached PLAYING, surface a real tap target so the user always has
-      // a way to recover instead of a frozen card.
+      // arrives.
+      if (!sharedMuted && autoplayBlocked) {
+        // Already learned this session that an unmuted, gesture-less
+        // resume gets refused -- don't make this card sit through the
+        // same nudge-then-wait cycle just to land on the same answer.
+        // Surface the tap target right away; if this attempt happens to
+        // succeed anyway, the PLAYING event above clears it instantly.
+        const check = setTimeout(() => {
+          if (lastStateRef.current !== window.YT?.PlayerState?.PLAYING) {
+            setStuck(true);
+          }
+        }, 150);
+        return () => clearTimeout(check);
+      }
+
+      // Nudge once with another playVideo() call partway through in case
+      // it just needs a second attempt, then if it still hasn't reached
+      // PLAYING, surface a real tap target so the user always has a way
+      // to recover instead of a frozen card -- and remember it for next
+      // time so later cards skip straight to the tap target.
       const nudge = setTimeout(() => {
         if (lastStateRef.current !== window.YT?.PlayerState?.PLAYING) {
           playerRef.current?.playVideo?.();
@@ -212,6 +236,7 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
       }, 700);
       const check = setTimeout(() => {
         if (lastStateRef.current !== window.YT?.PlayerState?.PLAYING) {
+          if (!sharedMuted) autoplayBlocked = true;
           setStuck(true);
         }
       }, 1600);
