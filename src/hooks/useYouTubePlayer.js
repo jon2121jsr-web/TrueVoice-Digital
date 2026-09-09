@@ -53,6 +53,10 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
   // hidden (controls: 0) and no way to recover. `resume` below is a real
   // gesture-driven escape hatch for exactly that case.
   const [stuck, setStuck] = useState(false);
+  // Updated from onStateChange as events actually arrive -- more reliable
+  // for the stuck check than calling player.getPlayerState() cold, since
+  // that call has to round-trip the postMessage bridge to the iframe.
+  const lastStateRef = useRef(null);
 
   // Keep the latest onEnded without re-creating the player when it changes
   // identity (ScrollFeed passes a fresh closure each render).
@@ -97,6 +101,7 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
     if (!containerRef.current || !videoId) return undefined;
 
     setReady(false);
+    lastStateRef.current = null;
 
     const mountNode = document.createElement("div");
     containerRef.current.appendChild(mountNode);
@@ -150,6 +155,7 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
             }
           },
           onStateChange: (event) => {
+            lastStateRef.current = event.data;
             if (event.data === YT.PlayerState.PLAYING) {
               setStuck(false);
             }
@@ -188,17 +194,31 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
       playerRef.current.playVideo();
 
       // This activation was triggered by scrolling (IntersectionObserver),
-      // not a tap -- some mobile browsers honor that for a muted resume
-      // but quietly refuse it for an unmuted one. Give it a beat, then
-      // check whether playback actually started; if not, surface a real
-      // tap target instead of leaving the card stuck with no feedback.
+      // not a tap -- some browsers (mobile especially, but desktop too in
+      // practice) honor that for a muted resume but quietly refuse it, or
+      // silently stall, for an unmuted one -- the player just sits there
+      // (buffering forever, or not even that) with no error and no
+      // feedback, since controls: 0 means there's no native play button
+      // either. Rather than trust a single cold getPlayerState() read,
+      // track state from onStateChange (lastStateRef) as it actually
+      // arrives: nudge once with another playVideo() call partway through
+      // in case it just needs a second attempt, then if it still hasn't
+      // reached PLAYING, surface a real tap target so the user always has
+      // a way to recover instead of a frozen card.
+      const nudge = setTimeout(() => {
+        if (lastStateRef.current !== window.YT?.PlayerState?.PLAYING) {
+          playerRef.current?.playVideo?.();
+        }
+      }, 700);
       const check = setTimeout(() => {
-        const state = playerRef.current?.getPlayerState?.();
-        if (state !== window.YT?.PlayerState?.PLAYING) {
+        if (lastStateRef.current !== window.YT?.PlayerState?.PLAYING) {
           setStuck(true);
         }
-      }, 1200);
-      return () => clearTimeout(check);
+      }, 1600);
+      return () => {
+        clearTimeout(nudge);
+        clearTimeout(check);
+      };
     } else {
       setStuck(false);
       playerRef.current.pauseVideo();

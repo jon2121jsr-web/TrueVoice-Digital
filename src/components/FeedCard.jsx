@@ -9,6 +9,7 @@
 // state is fetched once for the whole feed in ScrollFeed and passed down.
 import { useRef } from "react";
 import { useYouTubePlayer } from "../hooks/useYouTubePlayer";
+import { useVerseRadioAudio } from "../hooks/useVerseRadioAudio";
 import ReactionRail from "./ReactionRail";
 import "./FeedCard.css";
 
@@ -70,13 +71,25 @@ function VideoCard({ item, isActive, isNear, onEnded }) {
   );
 }
 
-function VerseCard({ item }) {
+function VerseCard({ item, isActive }) {
+  // TrueVoice's live radio stream, playing while this card is on screen --
+  // same feed-wide mute preference as the video cards, not reset per card.
+  const { muted, toggleMute } = useVerseRadioAudio(isActive);
+
   return (
     <>
       <div className="feed-card-verse-body">
         <p className="feed-verse-text">&ldquo;{item.verse_text}&rdquo;</p>
         <p className="feed-verse-ref">{item.verse_ref}</p>
       </div>
+      <button
+        type="button"
+        className="feed-mute-btn feed-mute-btn--verse"
+        onClick={toggleMute}
+        aria-label={muted ? "Unmute" : "Mute"}
+      >
+        {muted ? "\u{1F507}" : "\u{1F50A}"}
+      </button>
       <div className="feed-verse-mark">truevoice.digital</div>
     </>
   );
@@ -104,7 +117,7 @@ export default function FeedCard({
   if (item.item_type === "reel" || item.item_type === "snip") {
     inner = <VideoCard item={item} isActive={isActive} isNear={isNear} onEnded={onEnded} />;
   } else if (item.item_type === "verse") {
-    inner = <VerseCard item={item} />;
+    inner = <VerseCard item={item} isActive={isActive} />;
   } else if (item.item_type === "meme" && item.image_url) {
     inner = <MemeCard item={item} />;
   }
