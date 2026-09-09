@@ -80,7 +80,17 @@ export default function ScrollFeed() {
           <FeedCard
             item={item}
             isActive={idx === activeIndex}
-            isNear={Math.abs(idx - activeIndex) <= 1}
+            // Each video card creates a brand-new YouTube iframe player,
+            // and that iframe's own network bootstrap (its heaviest cost)
+            // takes real time -- a ±1 window only gives the very next
+            // card a head start, so scrolling past a video before it
+            // finishes doesn't leave the following one enough lead time
+            // to be ready by the time it becomes active. ±2 buys two
+            // cards' worth of scrolling time to initialize instead of
+            // one, at the cost of up to 5 concurrent players instead of
+            // 3 (each starts muted/paused, so it's a memory/CPU trade,
+            // not an autoplay-noise one).
+            isNear={Math.abs(idx - activeIndex) <= 2}
             onEnded={() => handleEnded(idx)}
             session={session}
             reaction={reactions[item.id]}

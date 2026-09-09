@@ -55,6 +55,15 @@
       content="https://truevoice.digital/og-truevoice.jpg"
     />
 
+    <!-- Preconnect to YouTube's domains so the Spiritual Scrolling feed's
+         first video iframe doesn't pay full DNS+TLS setup cost on top of
+         the request itself -- shaves a bit of latency off how long a
+         card takes to become ready. -->
+    <link rel="preconnect" href="https://www.youtube.com" />
+    <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+    <link rel="preconnect" href="https://i.ytimg.com" />
+    <link rel="preconnect" href="https://www.google.com" crossorigin />
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/truevoice-favicon.png" />
 
