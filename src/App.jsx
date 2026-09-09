@@ -1,6 +1,6 @@
 // src/App.jsx  — v10  (Capturing Christianity, The Beat by Allen Parr, Cold Case Christianity added April 2026)
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import AdminDashboard from "./pages/AdminDashboard";
 import "./App.css";
 
@@ -220,6 +220,14 @@ const FacebookIcon = () => (
 function App() {
   useVisitorBeacon();
 
+  // Subscribing to location here (not just inside <Routes>) is what makes
+  // App itself re-render on an in-app navigation like /scroll -> /?listen=1
+  // -- without it, the effect below that reads window.location.search only
+  // ever ran once, on the very first real page load, and silently missed
+  // every later client-side route change (App never unmounts between
+  // /scroll and / -- that's the whole point of client-side routing).
+  const location = useLocation();
+
   const playerRef = useRef(null);
 
   const [currentStation, setCurrentStation] = useState(STATION_NAME);
@@ -311,15 +319,13 @@ function App() {
   }, []);
 
   // Scroll "Listen Live" CTA handoff -- /scroll's CTAStrip lands here as
-  // /?listen=1. There's no persistent player yet (see the funnel audit,
-  // §04/§07), so this is the honest Phase 1 version: land on the homepage
-  // with the stream already reconnecting instead of making the visitor
-  // find and tap Listen Live themselves. Whether autoplay actually starts
-  // depends on the browser treating this navigation as still within the
-  // original tap's gesture window -- reconnectAndPlay() no-ops safely if not,
-  // and the player is scrolled into view either way so the button is right there.
+  // /?listen=1. This is a same-document client-side navigation (React
+  // Router, not a real page load), so the tap that triggered it stays
+  // "sticky" as far as the browser's autoplay policy is concerned -- no
+  // second tap needed. Depends on location.search (not []) so it fires on
+  // every arrival here, not just the first real page load of the session.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     if (!params.get("listen")) return;
     params.delete("listen");
     const qs     = params.toString();
@@ -327,7 +333,7 @@ function App() {
     window.history.replaceState({}, "", newUrl);
     reconnectAndPlay(playerRef.current);
     surfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
+  }, [location.search]);
 
   // Wire MediaSession AFTER first user-initiated play
   useEffect(() => {
