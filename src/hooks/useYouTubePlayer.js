@@ -100,6 +100,15 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
       rel: 0,
       modestbranding: 1,
       controls: 0,
+      // Mobile browsers block a JS-triggered playVideo() call that has no
+      // user gesture behind it (which is exactly what our isActive effect
+      // does when a card scrolls into view) -- that's why cards needed a
+      // manual tap on mobile. A native autoplay+mute embed is treated the
+      // same as <video muted autoplay playsinline>, which every mobile
+      // browser DOES allow with no gesture. Every player starts this way;
+      // onReady immediately pauses whichever ones aren't the active card.
+      autoplay: 1,
+      mute: 1,
     };
     if (clipEnd) playerVars.end = clipEnd;
 
@@ -111,34 +120,26 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
         events: {
           onReady: () => {
             if (cancelled) return;
-            if (sharedMuted) playerRef.current.mute();
-            else playerRef.current.unMute();
             setMuted(sharedMuted);
             setReady(true);
 
-            // A "near" card (the one up next) mounts its player well
-            // before it becomes active, but a merely-cued YouTube player
-            // doesn't actually fetch any video data -- that only starts
-            // once playVideo() is called, which is what made the active
-            // card sit and buffer for several seconds right when it was
-            // scrolled to. Priming fixes that: kick off real (force-muted)
-            // playback immediately, then pause a beat later so nothing is
-            // ever heard or meaningfully seen before the card is shown as
-            // active. By the time this
-            // card becomes active, YouTube already has a buffer built up
-            // and playVideo() resumes instantly instead of starting cold.
-            if (!isActiveRef.current) {
-              // Force-muted regardless of sharedMuted -- this is a silent
-              // priming kick, not real playback, so it must never be
-              // audible even if the user has already unmuted the feed.
-              playerRef.current.mute();
+            if (isActiveRef.current) {
+              // This is the real slide the user is on. Autoplay already
+              // started it muted; bring mute state up to the actual
+              // shared choice and make sure it's playing.
+              if (sharedMuted) playerRef.current.mute();
+              else playerRef.current.unMute();
               playerRef.current.playVideo();
-              setTimeout(() => {
-                if (!cancelled && playerRef.current && !isActiveRef.current) {
-                  playerRef.current.pauseVideo();
-                  if (!sharedMuted) playerRef.current.unMute();
-                }
-              }, 300);
+            } else {
+              // Not active yet -- native autoplay (muted, via playerVars)
+              // already kicked off real buffering the instant the iframe
+              // loaded, which is what a "near" card needs to be ready by
+              // the time it's actually scrolled to. Pause right away so
+              // nothing is seen playing before its turn; YouTube keeps
+              // buffering ahead regardless, so playVideo() resumes
+              // instantly instead of starting cold once this card goes
+              // active.
+              playerRef.current.pauseVideo();
             }
           },
           onStateChange: (event) => {
