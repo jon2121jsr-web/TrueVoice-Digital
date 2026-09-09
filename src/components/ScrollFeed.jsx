@@ -10,7 +10,7 @@ import FeedCard from "./FeedCard";
 import "./ScrollFeed.css";
 
 export default function ScrollFeed() {
-  const { items, loading, error } = useFeedItems({ limit: 20 });
+  const { items, loading, error } = useFeedItems({ limit: 30 });
   const { session } = useAuthSession();
   const itemIds = items.map((item) => item.id);
   const { byItem: reactions, toggle: toggleReaction } = useFeedReactions(itemIds, session);

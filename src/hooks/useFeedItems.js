@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-export function useFeedItems({ limit = 20 } = {}) {
+export function useFeedItems({ limit = 30 } = {}) {
   const [state, setState] = useState({ items: [], loading: true, error: null });
 
   useEffect(() => {
