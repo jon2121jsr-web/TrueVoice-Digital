@@ -35,6 +35,7 @@ const REEL_CHANNELS = [
   { id: "UCux-_Fze30tFuI_5CArwSmg", speaker: "Cameron Bertuzzi",      source: "Capturing Christianity" },
   { id: "UCm_RMW_fQk-ELpPYUzor8lw", speaker: "Allen Parr",            source: "The Beat by Allen Parr" },
   { id: "UCVFe7xhG6rl0ruoMQCJDtnw", speaker: "J. Warner Wallace",     source: "Cold Case Christianity" },
+  { id: "UCWpVof-rd5hs1xpchwj1MAQ", speaker: "TrueVoice Digital",     source: "TrueVoice Digital Shorts" },
 ];
 
 // item_type 'snip' -- curated music/worship artists (channel IDs researched
