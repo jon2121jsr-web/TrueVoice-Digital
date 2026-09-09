@@ -14,7 +14,7 @@ import "./FeedCard.css";
 
 function VideoCard({ item, isActive, isNear, onEnded }) {
   const containerRef = useRef(null);
-  const { ready, muted, toggleMute } = useYouTubePlayer({
+  const { ready, muted, toggleMute, stuck, resume } = useYouTubePlayer({
     containerRef,
     videoId: isNear ? item.youtube_id : null,
     clipStart: item.clip_start_seconds,
@@ -48,6 +48,16 @@ function VideoCard({ item, isActive, isNear, onEnded }) {
           aria-label={muted ? "Unmute" : "Mute"}
         >
           {muted ? "\u{1F507}" : "\u{1F50A}"}
+        </button>
+      )}
+      {isActive && stuck && (
+        <button
+          type="button"
+          className="feed-resume-btn"
+          onClick={resume}
+          aria-label="Play"
+        >
+          &#9654;
         </button>
       )}
       <div className="feed-card-bottom">

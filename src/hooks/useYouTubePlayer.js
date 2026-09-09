@@ -46,6 +46,13 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
   const playerRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [muted, setMuted] = useState(sharedMuted);
+  // True when this card is active but playback never actually started --
+  // mobile browsers can silently refuse to resume/unmute a video that
+  // wasn't kicked off by a direct tap (scrolling into view doesn't count
+  // as a user gesture), leaving it looking frozen with our own controls
+  // hidden (controls: 0) and no way to recover. `resume` below is a real
+  // gesture-driven escape hatch for exactly that case.
+  const [stuck, setStuck] = useState(false);
 
   // Keep the latest onEnded without re-creating the player when it changes
   // identity (ScrollFeed passes a fresh closure each render).
@@ -143,6 +150,9 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
             }
           },
           onStateChange: (event) => {
+            if (event.data === YT.PlayerState.PLAYING) {
+              setStuck(false);
+            }
             if (event.data === YT.PlayerState.ENDED) {
               onEndedRef.current?.();
             }
@@ -176,15 +186,39 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
       if (sharedMuted) playerRef.current.mute();
       else playerRef.current.unMute();
       playerRef.current.playVideo();
+
+      // This activation was triggered by scrolling (IntersectionObserver),
+      // not a tap -- some mobile browsers honor that for a muted resume
+      // but quietly refuse it for an unmuted one. Give it a beat, then
+      // check whether playback actually started; if not, surface a real
+      // tap target instead of leaving the card stuck with no feedback.
+      const check = setTimeout(() => {
+        const state = playerRef.current?.getPlayerState?.();
+        if (state !== window.YT?.PlayerState?.PLAYING) {
+          setStuck(true);
+        }
+      }, 1200);
+      return () => clearTimeout(check);
     } else {
+      setStuck(false);
       playerRef.current.pauseVideo();
     }
   }, [isActive, ready]);
+
+  // Real user gesture (a tap on the resume overlay) -- browsers that
+  // blocked the programmatic unmute above will allow this one.
+  const resume = () => {
+    if (!playerRef.current) return;
+    if (sharedMuted) playerRef.current.mute();
+    else playerRef.current.unMute();
+    playerRef.current.playVideo();
+    setStuck(false);
+  };
 
   const toggleMute = () => {
     if (!playerRef.current) return;
     setSharedMuted(!sharedMuted);
   };
 
-  return { ready, muted, toggleMute };
+  return { ready, muted, toggleMute, stuck, resume };
 }
