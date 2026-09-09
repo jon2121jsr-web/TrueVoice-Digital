@@ -37,6 +37,33 @@ function getSessionId() {
   }
 }
 
+// First-touch UTM capture. If the landing URL carries utm_* params, they're
+// stashed for the rest of the session so every later event -- not just the
+// first one -- can be attributed back to the campaign that brought this
+// visitor in, even after they've clicked around and the query string is
+// long gone from the address bar. A later internal link never overwrites
+// an already-stored first touch.
+function getUtmProps() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+    const found = {};
+    let any = false;
+    keys.forEach((k) => {
+      const v = params.get(k);
+      if (v) { found[k] = v; any = true; }
+    });
+    if (any) {
+      sessionStorage.setItem('tv_utm', JSON.stringify(found));
+      return found;
+    }
+    const stored = sessionStorage.getItem('tv_utm');
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
 function send(eventName, props = {}) {
   const payload = {
     site:      SITE_ID,
@@ -46,6 +73,7 @@ function send(eventName, props = {}) {
     referrer:  document.referrer || null,
     session:   getSessionId(),
     ts:        Date.now(),
+    ...(getUtmProps() || {}),
     ...props,
   };
 

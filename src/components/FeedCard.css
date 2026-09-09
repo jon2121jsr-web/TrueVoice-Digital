@@ -93,6 +93,35 @@
   justify-content: center;
 }
 
+.feed-cta-strip {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 78px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: rgba(184,134,58,0.94);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #171106;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  box-shadow: 0 8px 20px -8px rgba(0,0,0,0.5);
+}
+
+.feed-cta-icon { font-size: 11px; }
+
+.feed-card[data-type="verse"] .feed-cta-strip {
+  background: rgba(5,8,22,0.88);
+  border-color: rgba(255,255,255,0.16);
+  color: #f5f7ff;
+}
+
 .feed-card-bottom {
   position: absolute;
   left: 16px;

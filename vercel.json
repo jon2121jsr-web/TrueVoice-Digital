@@ -5,6 +5,17 @@
       "destination": "/api/$1"
     },
     {
+      "source": "/scroll/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|Discordbot|TelegramBot|Googlebot|bingbot|Pinterest|redditbot|Applebot).*"
+        }
+      ],
+      "destination": "/api/og/:id"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

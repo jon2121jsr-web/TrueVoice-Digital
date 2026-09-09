@@ -421,3 +421,52 @@
 }
 
 .admin-range-btn:focus-visible { outline: 2px solid rgba(58, 108, 255, 0.7); outline-offset: 2px; }
+
+/* ── Feed queue (Scroll CMS, Phase 1) ───────────────────────────────────── */
+
+.admin-feed-row {
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-feed-row-main { flex: 1; min-width: 0; }
+
+.admin-type-pill--reel  { background: rgba(58,108,255,0.16); color: var(--admin-accent); }
+.admin-type-pill--snip  { background: rgba(34,211,238,0.16); color: #22d3ee; }
+.admin-type-pill--verse { background: rgba(251,191,36,0.16); color: #fbbf24; }
+.admin-type-pill--meme  { background: rgba(244,114,182,0.16); color: #f472b6; }
+
+.admin-feed-cta-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--admin-text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-feed-cta-toggle input { accent-color: var(--admin-accent); cursor: pointer; }
+
+.admin-feed-row-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+.admin-btn-approve,
+.admin-btn-reject {
+  padding: 6px 14px;
+  border-radius: var(--admin-radius-sm);
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: opacity 0.15s ease, transform 0.08s ease;
+}
+
+.admin-btn-approve { background: var(--admin-positive); color: #04150e; }
+.admin-btn-reject  { background: transparent; border: 0.5px solid var(--admin-border-strong); color: var(--admin-text-muted); }
+
+.admin-btn-approve:hover:not(:disabled),
+.admin-btn-reject:hover:not(:disabled)  { transform: translateY(-1px); }
+.admin-btn-approve:disabled,
+.admin-btn-reject:disabled              { opacity: 0.6; cursor: default; transform: none; }

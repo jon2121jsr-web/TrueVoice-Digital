@@ -310,6 +310,25 @@ function App() {
     return () => window.clearTimeout(t);
   }, []);
 
+  // Scroll "Listen Live" CTA handoff -- /scroll's CTAStrip lands here as
+  // /?listen=1. There's no persistent player yet (see the funnel audit,
+  // §04/§07), so this is the honest Phase 1 version: land on the homepage
+  // with the stream already reconnecting instead of making the visitor
+  // find and tap Listen Live themselves. Whether autoplay actually starts
+  // depends on the browser treating this navigation as still within the
+  // original tap's gesture window -- reconnectAndPlay() no-ops safely if not,
+  // and the player is scrolled into view either way so the button is right there.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get("listen")) return;
+    params.delete("listen");
+    const qs     = params.toString();
+    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState({}, "", newUrl);
+    reconnectAndPlay(playerRef.current);
+    surfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   // Wire MediaSession AFTER first user-initiated play
   useEffect(() => {
     const audioEl = playerRef.current;
@@ -398,6 +417,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
     <Routes>
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/scroll" element={<ScrollFeed />} />
+      <Route path="/scroll/:id" element={<ScrollFeed />} />
       <Route path="*" element={
         <div className="app-container tv-app">
           <PullToRefresh />

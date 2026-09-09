@@ -2,14 +2,16 @@
 // The Spiritual Scrolling feed -- vertical snap-scroll, bounded by a fixed
 // set rather than infinite. Route: /scroll
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useFeedItems } from "../hooks/useFeedItems";
 import { useAuthSession } from "../hooks/useAuthSession";
 import { useFeedReactions } from "../hooks/useFeedReactions";
+import { trackEvent } from "../lib/analytics";
 import FeedCard from "./FeedCard";
 import "./ScrollFeed.css";
 
 export default function ScrollFeed() {
+  const { id: deepLinkId } = useParams();
   const { items, loading, error } = useFeedItems({ limit: 30 });
   const { session } = useAuthSession();
   const itemIds = items.map((item) => item.id);
@@ -17,12 +19,43 @@ export default function ScrollFeed() {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
+  const maxSeenRef = useRef(0);
   const containerRef = useRef(null);
   const cardRefs = useRef([]);
+  const didJumpRef = useRef(false);
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
+    if (activeIndex > maxSeenRef.current) maxSeenRef.current = activeIndex;
   }, [activeIndex]);
+
+  // Session start + depth-reached-on-exit. One row each per visit; depth
+  // is "how far did a stranger actually get" -- the funnel audit's
+  // north-star signal, independent of any single card's own engagement.
+  useEffect(() => {
+    const startedAt = Date.now();
+    trackEvent("scroll_session_start", { site: "scroll" });
+    return () => {
+      trackEvent("scroll_session_depth", {
+        site: "scroll",
+        cards_seen: maxSeenRef.current + 1,
+        duration_ms: Date.now() - startedAt,
+      });
+    };
+  }, []);
+
+  // /scroll/:id deep link (from a shared card) -- jump straight to that
+  // card once the feed has loaded, instead of always starting at the top.
+  // Runs once; a visitor scrolling around afterward isn't fighting a
+  // re-jump on every render.
+  useEffect(() => {
+    if (didJumpRef.current || !deepLinkId || items.length === 0) return;
+    const idx = items.findIndex((item) => item.id === deepLinkId);
+    if (idx === -1) return;
+    didJumpRef.current = true;
+    setActiveIndex(idx);
+    cardRefs.current[idx]?.scrollIntoView({ behavior: "auto", block: "start" });
+  }, [deepLinkId, items]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -49,6 +82,10 @@ export default function ScrollFeed() {
   // from a card that's no longer active is a no-op, not a yank-back).
   const handleEnded = (fromIdx) => {
     if (activeIndexRef.current !== fromIdx) return;
+    const finished = items[fromIdx];
+    if (finished) {
+      trackEvent("scroll_card_watch_complete", { site: "scroll", item_id: finished.id, item_type: finished.item_type });
+    }
     const next = cardRefs.current[fromIdx + 1];
     next?.scrollIntoView({ behavior: "smooth", block: "start" });
   };

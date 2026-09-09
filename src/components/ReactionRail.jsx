@@ -5,18 +5,25 @@
 // supabaseRealtime auth flow ChimeIn uses -- no separate auth system.
 import { useState } from "react";
 import { supabaseRealtime } from "../lib/supabaseRealtime";
+import { trackEvent } from "../lib/analytics";
 import "./ReactionRail.css";
 
 function ShareButton({ item }) {
   const [copied, setCopied] = useState(false);
 
   async function handleShare() {
-    const url = `${window.location.origin}/scroll#${item.id}`;
+    // Path-based, not a hash fragment -- a bot-facing rewrite in
+    // vercel.json routes this exact shape to api/og/[id].js so shared
+    // links carry a real per-item preview instead of the homepage's.
+    // See the funnel audit, §04/§07.
+    const url = `${window.location.origin}/scroll/${item.id}`;
     const shareData = {
       title: item.title || "TrueVoice Digital",
       text: item.title ? `"${item.title}" on TrueVoice Digital` : "Check this out on TrueVoice Digital",
       url,
     };
+    const channel = navigator.share ? "native_share" : "clipboard";
+    trackEvent("scroll_share", { site: "scroll", item_id: item.id, channel });
     if (navigator.share) {
       try { await navigator.share(shareData); } catch { /* user cancelled -- not an error */ }
       return;
@@ -57,6 +64,10 @@ function SignInPopover({ onClose }) {
     });
     setLoading(false);
     if (signInError) { setError(signInError.message); return; }
+    // "Requested," not "complete" -- the actual sign-in finishes on a
+    // different page load after the visitor clicks the emailed link,
+    // which this component has no hook into. See the funnel audit, §06.
+    trackEvent("scroll_signin_requested", { site: "scroll" });
     setSent(true);
   }
 
@@ -92,7 +103,12 @@ export default function ReactionRail({ item, session, reaction, onToggleReaction
   const [showSignIn, setShowSignIn] = useState(false);
 
   function handleHeartClick() {
-    if (!session) { setShowSignIn(true); return; }
+    if (!session) {
+      trackEvent("scroll_signin_start", { site: "scroll", trigger: "react", item_id: item.id });
+      setShowSignIn(true);
+      return;
+    }
+    trackEvent("scroll_react", { site: "scroll", item_id: item.id, reacted: !(reaction?.reacted ?? false) });
     onToggleReaction(item.id);
   }
 

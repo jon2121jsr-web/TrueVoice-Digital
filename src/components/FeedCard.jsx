@@ -7,11 +7,50 @@
 // fires when a clip finishes, driving auto-advance to the next card.
 // Every card type gets a ReactionRail (heart + share) -- session/reaction
 // state is fetched once for the whole feed in ScrollFeed and passed down.
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useYouTubePlayer } from "../hooks/useYouTubePlayer";
 import { useVerseRadioAudio } from "../hooks/useVerseRadioAudio";
 import ReactionRail from "./ReactionRail";
+import { trackEvent } from "../lib/analytics";
 import "./FeedCard.css";
+
+// Phase 1 only ever sets 'listen_live', but the label map is written for
+// the full CTA vocabulary the schema already allows (see the funnel audit,
+// §05) so Phase 2 turning one on is a copy change here, not new code.
+const CTA_LABELS = {
+  listen_live:  "Listen Live",
+  follow_show:  "Follow the Show",
+  visit_site:   "Visit TrueVoice",
+  donate:       "Give",
+};
+
+function CTAStrip({ item }) {
+  if (!item.cta_type || !CTA_LABELS[item.cta_type]) return null;
+
+  // Phase 1 only knows one destination -- the live player -- regardless of
+  // cta_target, which stays unused until a second CTA type needs it.
+  const to = item.cta_type === "listen_live" ? "/?listen=1" : "/";
+
+  function handleClick() {
+    trackEvent("scroll_cta_click", {
+      site: "scroll",
+      item_id: item.id,
+      cta_type: item.cta_type,
+      cta_target: item.cta_target || null,
+    });
+    if (item.cta_type === "listen_live") {
+      trackEvent("scroll_to_listen_live", { site: "scroll", item_id: item.id, source: "scroll" });
+    }
+  }
+
+  return (
+    <Link to={to} className="feed-cta-strip" onClick={handleClick}>
+      <span className="feed-cta-icon" aria-hidden="true">&#9654;</span>
+      <span>{CTA_LABELS[item.cta_type]}</span>
+    </Link>
+  );
+}
 
 function VideoCard({ item, isActive, isNear, onEnded }) {
   const containerRef = useRef(null);
@@ -113,6 +152,20 @@ export default function FeedCard({
   reaction,
   onToggleReaction,
 }) {
+  // Impression = this card actually became the active one, not just that
+  // it mounted nearby for pre-buffering (isNear casts a wider net than
+  // "seen" on purpose -- see the funnel audit, §01).
+  useEffect(() => {
+    if (!isActive) return;
+    trackEvent("scroll_card_impression", {
+      site: "scroll",
+      item_id: item.id,
+      item_type: item.item_type,
+      category: item.category || null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, item.id]);
+
   let inner = null;
   if (item.item_type === "reel" || item.item_type === "snip") {
     inner = <VideoCard item={item} isActive={isActive} isNear={isNear} onEnded={onEnded} />;
@@ -127,6 +180,7 @@ export default function FeedCard({
   return (
     <div className="feed-card" data-type={item.item_type}>
       {inner}
+      <CTAStrip item={item} />
       <ReactionRail
         item={item}
         session={session}

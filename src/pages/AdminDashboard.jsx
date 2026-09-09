@@ -396,9 +396,131 @@ function TeamTab({ session }) {
   );
 }
 
+function FeedQueueRow({ item, busy, live, onApprove, onReject, onToggleCta }) {
+  return (
+    <div className="admin-list-row admin-list-row--p9 admin-list-row--hover admin-feed-row">
+      <div className="admin-feed-row-main">
+        <p className="admin-row-title">{item.title || item.verse_ref || item.caption || '(untitled)'}</p>
+        <p className="admin-row-subtitle">
+          <span className={`admin-type-pill admin-type-pill--${item.item_type}`}>{item.item_type}</span>
+          {' '}{[item.speaker, item.source_show].filter(Boolean).join(' · ')}
+        </p>
+      </div>
+      <label className="admin-feed-cta-toggle">
+        <input
+          type="checkbox"
+          checked={item.cta_type === 'listen_live'}
+          disabled={busy}
+          onChange={(e) => onToggleCta(e.target.checked)}
+        />
+        Listen Live CTA
+      </label>
+      <div className="admin-feed-row-actions">
+        {!live && (
+          <button className="admin-btn-approve" disabled={busy} onClick={onApprove}>Approve</button>
+        )}
+        <button className="admin-btn-reject" disabled={busy} onClick={onReject}>
+          {live ? 'Pull' : 'Reject'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Phase 1's whole CMS: approve/reject what ingest pulled in, and toggle the
+// one CTA type Scroll knows about. No reordering, no rich editor, no
+// category/depth-rank controls yet -- those are Phase 2 (see the funnel
+// audit, §07/§09). This is deliberately the smallest thing that gets an
+// editor out from behind a code change.
+function FeedQueueTab() {
+  const [items, setItems] = useState(null);
+  const [error, setError] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+
+  const load = () => {
+    setError(null);
+    supabase
+      .from('feed_items')
+      .select('*')
+      .order('published_at', { ascending: false })
+      .limit(200)
+      .then(({ data, error: err }) => {
+        if (err) { setError(err.message); return; }
+        setItems(data ?? []);
+      });
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const needsReview = useMemo(() => (items ?? []).filter(i => i.status === 'needs_review'), [items]);
+  const live         = useMemo(() => (items ?? []).filter(i => i.status === 'auto_active' || i.status === 'active'), [items]);
+
+  async function setStatus(item, status) {
+    setBusyId(item.id);
+    const { error: err } = await supabase.from('feed_items').update({ status }).eq('id', item.id);
+    setBusyId(null);
+    if (err) { setError(err.message); return; }
+    load();
+  }
+
+  async function setCta(item, enabled) {
+    setBusyId(item.id);
+    const { error: err } = await supabase
+      .from('feed_items')
+      .update({ cta_type: enabled ? 'listen_live' : null })
+      .eq('id', item.id);
+    setBusyId(null);
+    if (err) { setError(err.message); return; }
+    load();
+  }
+
+  if (!items) return <p className="admin-muted-text">Loading feed items…</p>;
+
+  return (
+    <>
+      <div className="admin-metric-grid">
+        <MetricCard label="Needs review" value={needsReview.length} />
+        <MetricCard label="Live in Scroll" value={live.length} />
+        <MetricCard label="Listen Live CTA on" value={items.filter(i => i.cta_type === 'listen_live').length} />
+      </div>
+      {error && <ErrorNote msg={error} />}
+
+      <Panel title="Needs review" meta={`${needsReview.length} pending`} className="admin-panel--mb">
+        {needsReview.length === 0 && (
+          <p className="admin-muted-text">Nothing waiting — the ingest cron auto-promoted the rest, or the queue is caught up.</p>
+        )}
+        {needsReview.map(item => (
+          <FeedQueueRow
+            key={item.id}
+            item={item}
+            busy={busyId === item.id}
+            onApprove={() => setStatus(item, 'active')}
+            onReject={() => setStatus(item, 'inactive')}
+            onToggleCta={(on) => setCta(item, on)}
+          />
+        ))}
+      </Panel>
+
+      <Panel title="Live in Scroll" meta={`${live.length} items`}>
+        {live.length === 0 && <p className="admin-muted-text">Nothing live right now.</p>}
+        {live.map(item => (
+          <FeedQueueRow
+            key={item.id}
+            item={item}
+            busy={busyId === item.id}
+            live
+            onReject={() => setStatus(item, 'inactive')}
+            onToggleCta={(on) => setCta(item, on)}
+          />
+        ))}
+      </Panel>
+    </>
+  );
+}
+
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['Overview', 'Listeners', 'Video', 'Visitors', 'Donations', 'Team'];
+const TABS = ['Overview', 'Listeners', 'Video', 'Feed', 'Visitors', 'Donations', 'Team'];
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
@@ -628,6 +750,9 @@ export default function AdminDashboard() {
             </Panel>
           </>
         )}
+
+        {/* ── FEED ─────────────────────────────────────────────── */}
+        {activeTab === 'Feed' && <FeedQueueTab />}
 
         {/* ── VISITORS ─────────────────────────────────────────── */}
         {activeTab === 'Visitors' && <VisitorsTab range={range} />}
