@@ -11,6 +11,7 @@ export default function HeroMerchSlide() {
         decoding="async"
         draggable="false"
       />
+      <div className="hero-merch-scrim" aria-hidden="true" />
       <div className="hero-merch-cta">
         <button
           className="hero-merch-btn"

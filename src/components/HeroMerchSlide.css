@@ -14,9 +14,31 @@
   pointer-events: none;
   user-select: none;
 }
+
+/* Guarantees the CTA stays legible against whatever the source photo puts
+   at the bottom of frame, at any hero height -- see the scrim comment on
+   .hero-merch-cta below for why this exists as its own layer rather than
+   living in the button's own background. */
+.hero-merch-scrim {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 46%;
+  background: linear-gradient(to top, rgba(3,6,20,0.82) 0%, rgba(3,6,20,0.32) 55%, transparent 100%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Anchored a small, fixed distance off the TRUE bottom edge -- not a large
+   offset tuned for one hero height. .hero-section's own height swings from
+   520px on desktop down to 220px on small phones (see Hero.css), so a big
+   fixed "bottom" value that looked right on desktop lands much higher up
+   the (much shorter) mobile frame -- that's what was putting the button
+   over faces on mobile. Staying close to the real bottom edge, inside the
+   scrim above, keeps it clear of whatever's higher up in the photo at
+   every breakpoint. */
 .hero-merch-cta {
   position: absolute;
-  bottom: 140px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -42,4 +64,20 @@
 .hero-merch-btn:hover {
   background: #e09400;
   transform: scale(1.03);
+}
+
+@media (max-width: 768px) {
+  .hero-merch-cta { bottom: 14px; }
+  .hero-merch-btn {
+    padding: 10px 22px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-merch-cta { bottom: 10px; }
+  .hero-merch-btn {
+    padding: 8px 18px;
+    font-size: 0.78rem;
+  }
 }
