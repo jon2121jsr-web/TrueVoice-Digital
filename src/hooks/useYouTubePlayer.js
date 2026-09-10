@@ -125,8 +125,9 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
       // does when a card scrolls into view) -- that's why cards needed a
       // manual tap on mobile. A native autoplay+mute embed is treated the
       // same as <video muted autoplay playsinline>, which every mobile
-      // browser DOES allow with no gesture. Every player starts this way;
-      // onReady immediately pauses whichever ones aren't the active card.
+      // browser DOES allow with no gesture. Every player starts this way
+      // and stays playing (muted) even while not the active card -- see
+      // the onReady/isActive-effect comments below for why.
       autoplay: 1,
       mute: 1,
     };
@@ -154,12 +155,17 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
               // Not active yet -- native autoplay (muted, via playerVars)
               // already kicked off real buffering the instant the iframe
               // loaded, which is what a "near" card needs to be ready by
-              // the time it's actually scrolled to. Pause right away so
-              // nothing is seen playing before its turn; YouTube keeps
-              // buffering ahead regardless, so playVideo() resumes
-              // instantly instead of starting cold once this card goes
-              // active.
-              playerRef.current.pauseVideo();
+              // the time it's actually scrolled to. Deliberately NOT
+              // pausing it: a paused player can only be resumed by a
+              // playVideo() JS call with no user gesture behind it -- the
+              // exact call mobile browsers are free to refuse, which is
+              // what forced a manual tap on every card. A muted player
+              // that's already playing needs no such resume call; going
+              // active from here is just mute()/unMute(), which browsers
+              // don't gate the way they gate starting playback. Just
+              // confirm it's muted in case shared state changed between
+              // iframe creation and this instant.
+              playerRef.current.mute();
             }
           },
           onStateChange: (event) => {
@@ -168,7 +174,18 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
               setStuck(false);
             }
             if (event.data === YT.PlayerState.ENDED) {
-              onEndedRef.current?.();
+              if (isActiveRef.current) {
+                onEndedRef.current?.();
+              } else {
+                // A background near-card ran out its clip while sitting
+                // off-screen -- loop it quietly rather than let it sit
+                // stopped. A stopped player needs a real playVideo() call
+                // to come back once this card finally goes active, and
+                // that's the same gesture-less resume call we're avoiding
+                // above.
+                playerRef.current?.seekTo?.(clipStart || 0, true);
+                playerRef.current?.playVideo?.();
+              }
             }
           },
         },
@@ -246,7 +263,14 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
       };
     } else {
       setStuck(false);
-      playerRef.current.pauseVideo();
+      // Mute, don't pause -- see the onReady comment above. Keeping it
+      // playing (muted, looping past its own clip end via the ENDED
+      // handler above) means the *next* time this card goes active, that
+      // transition is a mute()/unMute() call instead of a playVideo()
+      // resume -- which is the operation mobile browsers can silently
+      // refuse without a gesture. That refusal is what made every card
+      // need a manual tap.
+      playerRef.current.mute();
     }
   }, [isActive, ready]);
 
