@@ -1,6 +1,7 @@
 /* src/components/MerchSection.css
-   TrueVoice Gear — Integrated into the tv- design system
-   White background, navy text — matches every other tv-section on the page.
+   TrueVoice Gear — dark navy + gold, matching the Scroll/FeedCard palette
+   (#0c1530 base, #e2a83f / #d4af37 gold) instead of the old white-card
+   look, plus a subtle grain texture for the "gritty" brand feel.
 */
 
 /* ─── Section wrapper ─────────────────────────────────────────────────────── */
@@ -8,9 +9,36 @@
   position: relative;
   padding: 64px 24px 72px;
   overflow: hidden;
-  background: #ffffff;
+  background: #0c1530;
   border-radius: 18px;
   margin: 0;
+  isolation: isolate;
+}
+
+/* Faint gold glow behind the header, echoing the magenta glow in the main
+   Hero -- same family of trick, different accent, ties this section back
+   into the rest of the site instead of reading as a plain white insert. */
+.tv-gear-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(226,168,63,0.14), transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Grain -- a tiled SVG noise filter, not an image asset. Low opacity,
+   overlay blend so it reads as texture on the navy rather than visible
+   speckling. This is the "gritty" surface treatment. */
+.tv-gear-section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ─── Header ──────────────────────────────────────────────────────────────── */
@@ -24,13 +52,14 @@
 
 .tv-gear-eyebrow {
   display: inline-block;
+  font-family: ui-monospace, monospace;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: #e63946;
-  background: rgba(230, 57, 70, 0.08);
-  border: 1px solid rgba(230, 57, 70, 0.22);
+  color: #e2a83f;
+  background: rgba(226, 168, 63, 0.1);
+  border: 1px solid rgba(226, 168, 63, 0.35);
   border-radius: 4px;
   padding: 4px 12px;
   margin-bottom: 16px;
@@ -40,31 +69,31 @@
   font-size: clamp(2rem, 5vw, 3.2rem);
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: #0e1b3a;
+  color: #f5f7ff;
   margin: 0 0 12px;
   line-height: 1.1;
   text-transform: uppercase;
 }
 
-.tv-gear-title-accent {
-  color: #e63946;
+.tv-gear-accent {
+  color: #e2a83f;
   position: relative;
 }
 
-.tv-gear-title-accent::after {
+.tv-gear-accent::after {
   content: "";
   position: absolute;
   bottom: -4px;
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #e63946, #ff6b00);
+  background: linear-gradient(90deg, #e2a83f, #b9812a);
   border-radius: 2px;
 }
 
 .tv-gear-subtitle {
   font-size: 1rem;
-  color: rgba(14, 27, 58, 0.55);
+  color: #8b96c2;
   margin: 0;
   line-height: 1.6;
 }
@@ -85,8 +114,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  background: #f7f8fc;
-  border: 1px solid rgba(14, 27, 58, 0.1);
+  background: #101a3a;
+  border: 1.5px solid rgba(226, 168, 63, 0.22);
   border-radius: 16px;
   overflow: hidden;
   text-decoration: none;
@@ -100,11 +129,10 @@
 .tv-merch-card:hover,
 .tv-merch-card--hovered {
   transform: translateY(-4px);
-  border-color: var(--card-accent, rgba(14, 27, 58, 0.2));
+  border-color: rgba(226, 168, 63, 0.6);
   box-shadow:
-    0 16px 40px rgba(14, 27, 58, 0.12),
-    0 0 0 1px var(--card-accent, transparent),
-    0 0 28px -8px var(--card-accent, transparent);
+    0 16px 40px rgba(0, 0, 0, 0.4),
+    0 0 28px -6px rgba(226, 168, 63, 0.35);
 }
 
 /* ─── Badge ───────────────────────────────────────────────────────────────── */
@@ -113,18 +141,21 @@
   top: 12px;
   left: 12px;
   z-index: 10;
+  font-family: ui-monospace, monospace;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   padding: 4px 10px;
   border-radius: 4px;
+  background: rgba(5,8,22,0.72);
+  backdrop-filter: blur(3px);
 }
 
-.tv-merch-badge--gold   { background: rgba(212,160,23,0.12); border: 1px solid rgba(212,160,23,0.35); color: #b8860b; }
-.tv-merch-badge--fire   { background: rgba(230,57,70,0.10);  border: 1px solid rgba(230,57,70,0.35);  color: #c0392b; }
-.tv-merch-badge--purple { background: rgba(157,78,221,0.10); border: 1px solid rgba(157,78,221,0.35); color: #7b2d8b; }
-.tv-merch-badge--blue   { background: rgba(39,95,219,0.10);  border: 1px solid rgba(39,95,219,0.35);  color: #275fdb; }
+.tv-merch-badge--gold   { border: 1px solid rgba(226,168,63,0.6); color: #e2a83f; }
+.tv-merch-badge--fire   { border: 1px solid rgba(230,57,70,0.55);  color: #ff6b6b; }
+.tv-merch-badge--purple { border: 1px solid rgba(157,78,221,0.55); color: #c48bf0; }
+.tv-merch-badge--blue   { border: 1px solid rgba(74,124,255,0.55); color: #7fa4ff; }
 
 /* ─── Visual area ─────────────────────────────────────────────────────────── */
 .tv-merch-visual {
@@ -132,15 +163,24 @@
   width: 100%;
   height: 260px;
   overflow: hidden;
+  background: #050816;
 }
 
-.tv-merch-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s ease;
+/* Note: the actual rendered <img> uses .tv-merch-real-img (defined near the
+   bottom of this file) -- the hover zoom lives there, not on this unused
+   .tv-merch-img, which nothing in MerchSection.jsx ever applies (that
+   mismatch was already present before this pass; fixed alongside it so
+   the zoom the card design implies actually happens). */
+
+/* Bottom scrim on every product photo -- same treatment as FeedCard/Scroll,
+   so a card's photo blends into its info panel instead of a hard edge. */
+.tv-merch-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 60%, rgba(16,26,58,0.9) 100%);
+  pointer-events: none;
 }
-.tv-merch-card:hover .tv-merch-img { transform: scale(1.05); }
 
 .tv-merch-placeholder {
   width: 100%;
@@ -152,53 +192,16 @@
   gap: 12px;
   background: linear-gradient(
     145deg,
-    color-mix(in srgb, var(--card-accent, #275fdb) 12%, #1a1e2e) 0%,
-    #10131f 100%
+    color-mix(in srgb, var(--card-accent, #e2a83f) 14%, #0c1530) 0%,
+    #050816 100%
   );
 }
 
-.tv-merch-placeholder-cross {
-  font-size: 56px;
-  color: var(--card-accent, #275fdb);
-  opacity: 0.6;
-  line-height: 1;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+.tv-merch-cross {
+  width: 44px;
+  color: var(--card-accent, #e2a83f);
+  opacity: 0.55;
 }
-.tv-merch-card:hover .tv-merch-placeholder-cross { opacity: 0.9; transform: scale(1.1); }
-
-.tv-merch-placeholder-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.tv-merch-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-.tv-merch-card:hover .tv-merch-overlay { opacity: 1; }
-
-.tv-merch-cta {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #ffffff;
-  background: var(--card-accent, #e63946);
-  padding: 10px 22px;
-  border-radius: 8px;
-  transform: translateY(8px);
-  transition: transform 0.25s ease;
-}
-.tv-merch-card:hover .tv-merch-cta { transform: translateY(0); }
 
 /* ─── Product info ────────────────────────────────────────────────────────── */
 .tv-merch-info {
@@ -206,136 +209,51 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-  border-top: 1px solid rgba(14, 27, 58, 0.07);
-  background: #ffffff;
+  background: #101a3a;
 }
 
 .tv-merch-scripture {
+  font-family: ui-monospace, monospace;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--card-accent, #e63946);
   opacity: 0.9;
 }
 
 .tv-merch-name {
   font-size: 14px;
   font-weight: 700;
-  color: #0e1b3a;
+  color: #f5f7ff;
   line-height: 1.3;
 }
 
 .tv-merch-price {
   font-size: 15px;
   font-weight: 800;
-  color: #0e1b3a;
+  color: #f5f7ff;
   margin-top: 4px;
 }
 
-/* ─── Footer ──────────────────────────────────────────────────────────────── */
-.tv-gear-footer {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  margin-top: 40px;
-}
-
-.tv-gear-coming-own {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  color: rgba(14, 27, 58, 0.45);
-  border: 1px solid rgba(14, 27, 58, 0.12);
-  border-radius: 100px;
-  padding: 8px 20px;
-}
-
-.tv-gear-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #e63946;
-  animation: tv-gear-pulse 2s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-@keyframes tv-gear-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.4; transform: scale(0.7); }
-}
-
-/* ─── Mobile ──────────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .tv-gear-section { padding: 48px 16px 56px; }
-  .tv-gear-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .tv-merch-name  { font-size: 13px; }
-  .tv-merch-price { font-size: 14px; }
-
-  @media (hover: none) and (pointer: coarse) {
-    .tv-merch-overlay { opacity: 0; }
-    .tv-merch-card:active .tv-merch-overlay { opacity: 1; }
-  }
-}
-
-.tv-merch-real-img {
-  width: 100%;
-  height: 260px;
-  object-fit: cover;
-  object-position: top center;
-  display: block;
-  border-radius: 12px 12px 0 0;
-  pointer-events: none;
-  user-select: none;
-}
-
-.tv-merch-sizes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0 8px;
-}
-
-.tv-merch-size-btn {
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1.5px solid #ccd6f2;
-  background: #fff;
-  color: #4d5a7a;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.tv-merch-size-btn:hover {
-  border-color: #275fdb;
-  color: #275fdb;
-}
-
-.tv-merch-size-btn.selected {
-  font-weight: 800;
-}
-
+/* ─── Buy button ──────────────────────────────────────────────────────────── */
 .tv-merch-buy-btn {
   width: 100%;
-  padding: 10px 0;
+  padding: 11px 0;
   border: none;
-  border-radius: 10px;
-  color: #fff;
-  font-size: 14px;
+  border-radius: 8px;
+  color: #171106;
+  font-size: 13.5px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
-  margin-top: 4px;
-  transition: opacity 0.15s;
+  margin-top: 8px;
+  transition: filter 0.15s, transform 0.15s;
 }
 
 .tv-merch-buy-btn:hover {
-  opacity: 0.88;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .tv-merch-buy-btn:disabled {
@@ -343,8 +261,23 @@
   cursor: not-allowed;
 }
 
-.tv-merch-error {
-  color: #c0392b;
-  font-size: 12px;
-  margin: 4px 0 0;
+/* ─── Mobile ──────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .tv-gear-section { padding: 48px 16px 56px; }
+  .tv-gear-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .tv-merch-visual { height: 180px; }
+  .tv-merch-name  { font-size: 13px; }
+  .tv-merch-price { font-size: 14px; }
 }
+
+.tv-merch-real-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  transition: transform 0.4s ease;
+}
+.tv-merch-card:hover .tv-merch-real-img { transform: scale(1.05); }

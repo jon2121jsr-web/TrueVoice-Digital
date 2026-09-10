@@ -51,19 +51,34 @@
   border-radius: 6px;
   padding: 14px 32px;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
   pointer-events: all;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-  transition: background 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 6px 22px -4px rgba(245,166,35,0.55), 0 4px 16px rgba(0,0,0,0.4);
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   position: relative;
   z-index: 10;
+  animation: hero-merch-pulse 2.6s ease-in-out infinite;
 }
 .hero-merch-btn:hover {
   background: #e09400;
-  transform: scale(1.03);
+  transform: scale(1.04);
+  animation-play-state: paused;
+  box-shadow: 0 8px 26px -4px rgba(245,166,35,0.7), 0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* A slow, subtle glow breathe -- not a size/position jump, just enough to
+   catch the eye without feeling like a nagging animated ad. */
+@keyframes hero-merch-pulse {
+  0%, 100% { box-shadow: 0 6px 22px -4px rgba(245,166,35,0.55), 0 4px 16px rgba(0,0,0,0.4); }
+  50%      { box-shadow: 0 6px 30px -2px rgba(245,166,35,0.85), 0 4px 16px rgba(0,0,0,0.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-merch-btn { animation: none; }
 }
 
 @media (max-width: 768px) {
