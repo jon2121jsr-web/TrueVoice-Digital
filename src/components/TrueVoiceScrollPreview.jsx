@@ -62,7 +62,7 @@ function loopEmbedSrc(item) {
   return `https://www.youtube.com/embed/${item.youtube_id}?${params.toString()}`;
 }
 
-function PreviewCard({ item, position, isCentered, cardRef }) {
+function PreviewCard({ item, position, isCentered, cardRef, hoverProps }) {
   const poster = posterFor(item);
   const isVerse = item.item_type === "verse";
   const isVideo = item.item_type === "reel" || item.item_type === "snip";
@@ -85,6 +85,7 @@ function PreviewCard({ item, position, isCentered, cardRef }) {
       onClick={handleClick}
       ref={cardRef}
       data-item-id={item.id}
+      {...hoverProps}
     >
       {showLoop ? (
         <iframe
@@ -129,6 +130,22 @@ export default function TrueVoiceScrollPreview() {
   const cardRefs = useRef([]);
   const [centeredId, setCenteredId] = useState(null);
 
+  // Mouse/trackpad devices don't "scroll a card to center" the way a phone's
+  // touch-swipe does -- on a wide screen several cards can already be fully
+  // visible with no scrolling at all, so the IntersectionObserver approach
+  // below only ever fired for whichever card happened to cross the strip's
+  // edge threshold. Hover is the actual browsing gesture on those devices,
+  // so it drives the preview there instead; touch devices (where the
+  // scroll-centering already works correctly) keep the observer.
+  const [supportsHover, setSupportsHover] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    setSupportsHover(mq.matches);
+    const onChange = (e) => setSupportsHover(e.matches);
+    mq.addEventListener?.("change", onChange);
+    return () => mq.removeEventListener?.("change", onChange);
+  }, []);
+
   useEffect(() => {
     if (loading || error || items.length === 0) return;
     trackEvent("home_scroll_preview_impression", {
@@ -140,8 +157,10 @@ export default function TrueVoiceScrollPreview() {
 
   // Track whichever card is centered in the strip -- same IntersectionObserver
   // pattern ScrollFeed uses for its own active-card tracking, just against a
-  // horizontally-scrolling root instead of a vertical one.
+  // horizontally-scrolling root instead of a vertical one. Touch devices
+  // only -- see the supportsHover comment above.
   useEffect(() => {
+    if (supportsHover) return undefined;
     const container = scrollerRef.current;
     if (!container || items.length === 0) return undefined;
 
@@ -158,7 +177,7 @@ export default function TrueVoiceScrollPreview() {
 
     cardRefs.current.forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
-  }, [items]);
+  }, [items, supportsHover]);
 
   // Nothing live yet -- rather than show an empty rail under a heading,
   // just skip the section entirely (same call ScrollFeed itself makes).
@@ -182,6 +201,10 @@ export default function TrueVoiceScrollPreview() {
                     position={idx}
                     isCentered={centeredId === item.id}
                     cardRef={(el) => { cardRefs.current[idx] = el; }}
+                    hoverProps={supportsHover ? {
+                      onMouseEnter: () => setCenteredId(item.id),
+                      onMouseLeave: () => setCenteredId((prev) => (prev === item.id ? null : prev)),
+                    } : undefined}
                   />
                 ))}
                 <Link

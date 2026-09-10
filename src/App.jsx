@@ -454,7 +454,17 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
-  // Dock height observer
+  // Dock height observer -- keyed on location.pathname for the same reason
+  // as the CTA handoff effects above: App itself never unmounts on a
+  // client-side route change, only the wildcard route's JSX (Hero, player,
+  // etc.) does, whenever pathname leaves "/" for /scroll or /admin. With a
+  // [] dependency this effect only ever ran once, on the very first real
+  // page load -- so its observer kept watching that ORIGINAL surfaceRef
+  // node forever, even after it was removed from the DOM by a later route
+  // change, and never reconnected to the fresh node created when the
+  // wildcard route remounts on returning to "/". Re-running it on every
+  // pathname change (dep array below) makes it reconnect to whichever
+  // surfaceRef node is actually live right now.
   useEffect(() => {
     const el = surfaceRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -463,19 +473,29 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [location.pathname]);
 
-  // Floating player sentinel
+  // Floating player sentinel -- same reconnect-on-route-change fix as the
+  // dock height observer above. Without it, leaving "/" for /scroll while
+  // the player happened to be floating left isFloatingPlayer stuck true
+  // forever (the observer driving it was watching a node that no longer
+  // existed) -- so coming back to "/" and scrolling to the very top still
+  // showed the docked slot as an empty spacer while the real player stayed
+  // pinned floating at the bottom, since nothing was left alive to ever
+  // flip isFloatingPlayer back to false.
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel || typeof IntersectionObserver === "undefined") return;
+    if (!sentinel || typeof IntersectionObserver === "undefined") {
+      setIsFloatingPlayer(false);
+      return;
+    }
     const io = new IntersectionObserver(
       ([entry]) => setIsFloatingPlayer(!entry.isIntersecting),
       { root: null, threshold: 0, rootMargin: "-12px 0px 0px 0px" }
     );
     io.observe(sentinel);
     return () => io.disconnect();
-  }, []);
+  }, [location.pathname]);
 
   return (
     <Routes>
