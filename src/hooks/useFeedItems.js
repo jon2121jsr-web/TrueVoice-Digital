@@ -1,5 +1,5 @@
 // src/hooks/useFeedItems.js
-// Fetches the live Spiritual Scrolling feed from feed_items.
+// Fetches the live TrueVoice Scroll feed from feed_items.
 // Public read -- no auth required. Only feed_reactions requires sign-in.
 
 import { useEffect, useState } from "react";

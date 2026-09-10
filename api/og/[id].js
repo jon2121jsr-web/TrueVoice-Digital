@@ -34,7 +34,7 @@ function escapeHtml(value) {
 
 function describeItem(item) {
   if (!item) {
-    return { title: 'TrueVoice Digital', description: 'Spiritual Scrolling on TrueVoice Digital.', image: FALLBACK_IMAGE };
+    return { title: 'TrueVoice Digital', description: 'TrueVoice Scroll on TrueVoice Digital.', image: FALLBACK_IMAGE };
   }
 
   if (item.item_type === 'verse') {

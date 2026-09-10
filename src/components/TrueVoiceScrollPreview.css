@@ -1,0 +1,243 @@
+/* TrueVoice Scroll — homepage teaser rail.
+   Same horizontal-scroller shell as ReelsGrid (.reels-scroller-wrap etc.)
+   but a deliberately different, darker card language so this reads as its
+   own "Reels tray," not another Channels row. */
+
+.tvs-intro {
+  margin: 4px 0 16px;
+  font-size: 0.9rem;
+  color: var(--tv-text-muted);
+}
+
+.tvs-scroller-wrap {
+  position: relative;
+}
+
+.tvs-scroller-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60px;
+  height: calc(100% - 12px);
+  background: linear-gradient(to right, transparent, var(--tv-bg, white));
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 0 12px 12px 0;
+}
+
+.tvs-scroller {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  padding-right: 48px;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 2px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(184, 134, 58, 0.45) rgba(184, 134, 58, 0.08);
+}
+
+.tvs-scroller::-webkit-scrollbar { height: 8px; }
+.tvs-scroller::-webkit-scrollbar-track {
+  background: rgba(184, 134, 58, 0.08);
+  border-radius: 999px;
+  margin: 0 4px;
+}
+.tvs-scroller::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(184, 134, 58, 0.5);
+}
+
+/* ─── CARD — tall 9:16 poster, dark scrim, gold ring ─────────────────────── */
+
+.tvs-card {
+  position: relative;
+  flex: 0 0 148px;
+  aspect-ratio: 9 / 16;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0c1530;
+  border: 1.5px solid rgba(184, 134, 58, 0.55);
+  box-shadow: 0 8px 20px rgba(9, 33, 93, 0.18);
+  text-decoration: none;
+  color: #f5f7ff;
+  display: block;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.tvs-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(9, 33, 93, 0.26);
+}
+
+.tvs-card-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tvs-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 35%, transparent 55%, rgba(3,6,20,0.92) 100%);
+}
+
+.tvs-card-tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(5,8,22,0.6);
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 3px 6px;
+  border-radius: 5px;
+}
+
+.tvs-card-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: rgba(5,8,22,0.5);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: #fff;
+}
+
+.tvs-card-bottom {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+}
+
+.tvs-card-title {
+  margin: 0 0 2px;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tvs-card-meta {
+  margin: 0;
+  font-size: 10px;
+  color: #b7c0e6;
+}
+
+/* Verse cards — same gold gradient treatment as the full Scroll feed */
+.tvs-card--verse {
+  background: linear-gradient(175deg, #f4c76a 0%, #e2a83f 45%, #b9812a 100%);
+  border-color: rgba(5,8,22,0.2);
+}
+
+.tvs-card--verse .tvs-card-play {
+  background: rgba(5,8,22,0.16);
+  border-color: rgba(5,8,22,0.28);
+  color: #050816;
+}
+
+.tvs-card--verse .tvs-card-tag {
+  background: rgba(5,8,22,0.14);
+  border-color: rgba(5,8,22,0.22);
+  color: #050816;
+}
+
+.tvs-card-verse-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 22px 12px;
+  color: #050816;
+}
+
+.tvs-card-verse-text {
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1.35;
+  margin: 0 0 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tvs-card-verse-ref {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* ─── "SEE ALL" TILE ──────────────────────────────────────────────────────── */
+
+.tvs-card--more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #101a3a;
+  border-style: dashed;
+}
+
+.tvs-more-arrow {
+  font-size: 22px;
+  color: #e2a83f;
+}
+
+.tvs-more-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f5f7ff;
+}
+
+/* ─── SKELETON ────────────────────────────────────────────────────────────── */
+
+.tvs-card--skeleton {
+  border-color: rgba(184, 134, 58, 0.25);
+  background: #1a2246;
+  animation: tvs-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes tvs-shimmer {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .tvs-card { flex: 0 0 128px; }
+  .tvs-scroller-wrap::after { width: 40px; }
+}

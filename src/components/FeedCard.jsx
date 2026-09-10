@@ -1,5 +1,5 @@
 // src/components/FeedCard.jsx
-// Renders one Spiritual Scrolling card. Video types (reel/snip) use the
+// Renders one TrueVoice Scroll card. Video types (reel/snip) use the
 // YouTube IFrame Player API -- mute/pause/play are real API calls, not
 // src swaps, so position is preserved across scroll and mute toggles.
 // Player instances are only created for the active card and its immediate

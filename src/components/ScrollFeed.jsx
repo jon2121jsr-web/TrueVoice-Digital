@@ -1,5 +1,5 @@
 // src/components/ScrollFeed.jsx
-// The Spiritual Scrolling feed -- vertical snap-scroll, bounded by a fixed
+// The TrueVoice Scroll feed -- vertical snap-scroll, bounded by a fixed
 // set rather than infinite. Route: /scroll
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
