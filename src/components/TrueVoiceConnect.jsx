@@ -12,6 +12,8 @@ const CHANNEL_IDS = {
   CAPTURING_CHRISTIANITY: "UCux-_Fze30tFuI_5CArwSmg",
   BEAT_ALLEN_PARR:        "UCm_RMW_fQk-ELpPYUzor8lw",
   COLD_CASE_CHRISTIANITY: "UCVFe7xhG6rl0ruoMQCJDtnw",
+  BIBLE_PROJECT:          "UCVfwlh9XpX2Y_tQfjeln9QA",
+  GIVE_ME_AN_ANSWER:      "UCKr-liguaGWMf3f94eQXsug",
 };
 
 const FALLBACKS = {
@@ -20,6 +22,8 @@ const FALLBACKS = {
   capturingChristianity: "https://img.youtube.com/vi/default/maxresdefault.jpg",
   beatAllenParr:         "https://img.youtube.com/vi/default/maxresdefault.jpg",
   coldCase:              "https://img.youtube.com/vi/default/maxresdefault.jpg",
+  bibleProject:          "https://img.youtube.com/vi/default/maxresdefault.jpg",
+  giveMeAnAnswer:        "https://img.youtube.com/vi/default/maxresdefault.jpg",
 };
 
 export default function TrueVoiceConnect({
@@ -28,12 +32,16 @@ export default function TrueVoiceConnect({
   onCapturingChristianity,
   onBeatAllenParr,
   onColdCaseChristianity,
+  onBibleProject,
+  onGiveMeAnAnswer,
 }) {
-  const pigskinLatest   = useYouTubeLatest({ channelId: CHANNEL_IDS.PIGSKIN });
-  const denishaLatest   = useYouTubeLatest({ channelId: CHANNEL_IDS.DENISHA });
-  const capturingLatest = useYouTubeLatest({ channelId: CHANNEL_IDS.CAPTURING_CHRISTIANITY });
-  const beatLatest      = useYouTubeLatest({ channelId: CHANNEL_IDS.BEAT_ALLEN_PARR });
-  const coldCaseLatest  = useYouTubeLatest({ channelId: CHANNEL_IDS.COLD_CASE_CHRISTIANITY });
+  const pigskinLatest        = useYouTubeLatest({ channelId: CHANNEL_IDS.PIGSKIN });
+  const denishaLatest        = useYouTubeLatest({ channelId: CHANNEL_IDS.DENISHA });
+  const capturingLatest      = useYouTubeLatest({ channelId: CHANNEL_IDS.CAPTURING_CHRISTIANITY });
+  const beatLatest           = useYouTubeLatest({ channelId: CHANNEL_IDS.BEAT_ALLEN_PARR });
+  const coldCaseLatest       = useYouTubeLatest({ channelId: CHANNEL_IDS.COLD_CASE_CHRISTIANITY });
+  const bibleProjectLatest   = useYouTubeLatest({ channelId: CHANNEL_IDS.BIBLE_PROJECT });
+  const giveMeAnAnswerLatest = useYouTubeLatest({ channelId: CHANNEL_IDS.GIVE_ME_AN_ANSWER });
 
   const cards = [
     {
@@ -75,6 +83,22 @@ export default function TrueVoiceConnect({
       tag:         "APOLOGETICS",
       onClick:     onColdCaseChristianity,
       thumbnail:   coldCaseLatest.thumbnail  || FALLBACKS.coldCase,
+    },
+    {
+      id:          "bible-project",
+      label:       "BibleProject",
+      description: "Animated videos and podcasts that help you experience the Bible as a unified story that leads to Jesus.",
+      tag:         "BIBLE",
+      onClick:     onBibleProject,
+      thumbnail:   bibleProjectLatest.thumbnail || FALLBACKS.bibleProject,
+    },
+    {
+      id:          "give-me-an-answer",
+      label:       "Give Me An Answer",
+      description: "Stuart & Cliffe Knechtle take faith to the streets — real conversations answering hard questions about Jesus.",
+      tag:         "APOLOGETICS",
+      onClick:     onGiveMeAnAnswer,
+      thumbnail:   giveMeAnAnswerLatest.thumbnail || FALLBACKS.giveMeAnAnswer,
     },
   ];
 

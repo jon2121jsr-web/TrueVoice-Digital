@@ -32,6 +32,8 @@ const VIDEO_SECTIONS = {
   CAPTURING_CHRISTIANITY:  'CAPTURING_CHRISTIANITY',
   BEAT_ALLEN_PARR:         'BEAT_ALLEN_PARR',
   COLD_CASE_CHRISTIANITY:  'COLD_CASE_CHRISTIANITY',
+  BIBLE_PROJECT:           'BIBLE_PROJECT',
+  GIVE_ME_AN_ANSWER:       'GIVE_ME_AN_ANSWER',
 };
 
 const PIGSKIN_CHANNEL_ID          = "UC_khbgasHiiwUxPHOMfbR0A";
@@ -40,6 +42,8 @@ const TVD_SHORTS_CHANNEL_ID       = "UCWpVof-rd5hs1xpchwj1MAQ";
 const CAPTURING_CHRISTIANITY_ID   = "UCux-_Fze30tFuI_5CArwSmg";
 const BEAT_ALLEN_PARR_ID          = "UCm_RMW_fQk-ELpPYUzor8lw";
 const COLD_CASE_CHRISTIANITY_ID   = "UCVFe7xhG6rl0ruoMQCJDtnw";
+const BIBLE_PROJECT_ID            = "UCVfwlh9XpX2Y_tQfjeln9QA";
+const GIVE_ME_AN_ANSWER_ID        = "UCKr-liguaGWMf3f94eQXsug";
 const pigskinEpisodeFilter = (title) => title?.trim().startsWith("Episode");
 
 // Scroll's "Watch Latest Episode" / "Visit Show Channel" CTAs hand off here
@@ -55,6 +59,8 @@ const SHOW_SLUG_TO_SECTION = {
   capturing_christianity:  VIDEO_SECTIONS.CAPTURING_CHRISTIANITY,
   beat_allen_parr:         VIDEO_SECTIONS.BEAT_ALLEN_PARR,
   cold_case_christianity:  VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY,
+  bible_project:           VIDEO_SECTIONS.BIBLE_PROJECT,
+  give_me_an_answer:       VIDEO_SECTIONS.GIVE_ME_AN_ANSWER,
 };
 
 // ─── Stream URLs ──────────────────────────────────────────────────────────────
@@ -389,6 +395,8 @@ function App() {
 const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANITY_ID,  maxResults: 1 });
   const beatFeed              = useYouTubeFeed({ channelId:  BEAT_ALLEN_PARR_ID,         maxResults: 1 });
   const coldCaseFeed          = useYouTubeFeed({ channelId:  COLD_CASE_CHRISTIANITY_ID,  maxResults: 1 });
+  const bibleProjectFeed      = useYouTubeFeed({ channelId:  BIBLE_PROJECT_ID,           maxResults: 1 });
+  const giveMeAnAnswerFeed    = useYouTubeFeed({ channelId:  GIVE_ME_AN_ANSWER_ID,        maxResults: 1 });
 
   const feedBySection = {
     [VIDEO_SECTIONS.WATCH_LIVE]:             [],
@@ -398,6 +406,8 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
 [VIDEO_SECTIONS.CAPTURING_CHRISTIANITY]: capturingFeed.videos,
     [VIDEO_SECTIONS.BEAT_ALLEN_PARR]:        beatFeed.videos,
     [VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY]: coldCaseFeed.videos,
+    [VIDEO_SECTIONS.BIBLE_PROJECT]:          bibleProjectFeed.videos,
+    [VIDEO_SECTIONS.GIVE_ME_AN_ANSWER]:      giveMeAnAnswerFeed.videos,
   };
 
   const openVideoForSection = (sectionKey) => {
@@ -562,6 +572,8 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
 onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CHRISTIANITY)}
                 onBeatAllenParr={()           => openVideoForSection(VIDEO_SECTIONS.BEAT_ALLEN_PARR)}
                 onColdCaseChristianity={()    => openVideoForSection(VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY)}
+                onBibleProject={()            => openVideoForSection(VIDEO_SECTIONS.BIBLE_PROJECT)}
+                onGiveMeAnAnswer={()          => openVideoForSection(VIDEO_SECTIONS.GIVE_ME_AN_ANSWER)}
               />
             </section>
 

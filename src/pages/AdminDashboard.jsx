@@ -411,7 +411,7 @@ const SHOW_OPTIONS_BY_TYPE = {
   // TrueVoice's own shows -- CTA jumps straight into the latest episode.
   follow_show: [
     { value: 'pigskin',    label: 'Pigskin Frenzy (Joel Norris)' },
-    { value: 'denisha',    label: "Denisha's Show" },
+    { value: 'denisha',    label: 'Living the Reclaimed Life (Denisha)' },
     { value: 'tvd_shorts', label: 'Ryan Kliesch / TVD Shorts' },
   ],
   // Licensed / third-party shows -- CTA only opens the channel section,
@@ -420,6 +420,8 @@ const SHOW_OPTIONS_BY_TYPE = {
     { value: 'capturing_christianity', label: 'Capturing Christianity' },
     { value: 'beat_allen_parr',        label: 'The Beat by Allen Parr' },
     { value: 'cold_case_christianity', label: 'Cold Case Christianity' },
+    { value: 'bible_project',          label: 'BibleProject' },
+    { value: 'give_me_an_answer',      label: 'Give Me An Answer' },
   ],
 };
 

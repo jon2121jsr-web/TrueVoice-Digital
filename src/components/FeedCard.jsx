@@ -21,7 +21,7 @@ import "./FeedCard.css";
 // Keep this in sync with SHOW_SLUG_TO_SECTION in App.jsx.
 const ORIGINAL_SHOW_LABELS = {
   pigskin:    "Pigskin Frenzy",
-  denisha:    "Denisha's Show",
+  denisha:    "Living the Reclaimed Life",
   tvd_shorts: "Ryan Kliesch",
 };
 
@@ -32,6 +32,8 @@ const LICENSED_SHOW_LABELS = {
   capturing_christianity: "Capturing Christianity",
   beat_allen_parr:        "The Beat by Allen Parr",
   cold_case_christianity: "Cold Case Christianity",
+  bible_project:          "BibleProject",
+  give_me_an_answer:      "Give Me An Answer",
 };
 
 function resolveCta(item) {
