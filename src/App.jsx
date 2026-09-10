@@ -28,6 +28,7 @@ const VIDEO_SECTIONS = {
   WATCH_LIVE:              'WATCH_LIVE',
   PIGSKIN_FRENZY:          'PIGSKIN_FRENZY',
   DENISHA:                 'DENISHA',
+  TVD_SHORTS:              'TVD_SHORTS',
   CAPTURING_CHRISTIANITY:  'CAPTURING_CHRISTIANITY',
   BEAT_ALLEN_PARR:         'BEAT_ALLEN_PARR',
   COLD_CASE_CHRISTIANITY:  'COLD_CASE_CHRISTIANITY',
@@ -35,10 +36,26 @@ const VIDEO_SECTIONS = {
 
 const PIGSKIN_CHANNEL_ID          = "UC_khbgasHiiwUxPHOMfbR0A";
 const DENISHA_CHANNEL_ID          = "UCxcSYXrZQWHRF8iwdWCf3gg";
+const TVD_SHORTS_CHANNEL_ID       = "UCWpVof-rd5hs1xpchwj1MAQ";
 const CAPTURING_CHRISTIANITY_ID   = "UCux-_Fze30tFuI_5CArwSmg";
 const BEAT_ALLEN_PARR_ID          = "UCm_RMW_fQk-ELpPYUzor8lw";
 const COLD_CASE_CHRISTIANITY_ID   = "UCVFe7xhG6rl0ruoMQCJDtnw";
 const pigskinEpisodeFilter = (title) => title?.trim().startsWith("Episode");
+
+// Scroll's "Watch Latest Episode" / "Visit Show Channel" CTAs hand off here
+// as /?show=<slug>[&autoplay=1] -- this maps that slug to a VIDEO_SECTIONS
+// key. Only shows TrueVoice actually produces get the autoplay-straight-
+// into-the-latest-episode treatment (Pigskin Frenzy, Denisha, TVD Shorts);
+// the licensed/third-party shows only ever get the no-autoplay "channel"
+// version, wired up where the CTA is rendered in FeedCard.jsx.
+const SHOW_SLUG_TO_SECTION = {
+  pigskin:                 VIDEO_SECTIONS.PIGSKIN_FRENZY,
+  denisha:                 VIDEO_SECTIONS.DENISHA,
+  tvd_shorts:              VIDEO_SECTIONS.TVD_SHORTS,
+  capturing_christianity:  VIDEO_SECTIONS.CAPTURING_CHRISTIANITY,
+  beat_allen_parr:         VIDEO_SECTIONS.BEAT_ALLEN_PARR,
+  cold_case_christianity:  VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY,
+};
 
 // ─── Stream URLs ──────────────────────────────────────────────────────────────
 const LIVE365_STREAM_URL =
@@ -368,6 +385,7 @@ function App() {
   // Dynamic video feeds
   const pigskinFeed           = useYouTubeFeed({ channelId:  PIGSKIN_CHANNEL_ID,         maxResults: 10, filterFn: pigskinEpisodeFilter });
   const denishaFeed           = useYouTubeFeed({ channelId:  DENISHA_CHANNEL_ID,         maxResults: 1 });
+  const tvdShortsFeed         = useYouTubeFeed({ channelId:  TVD_SHORTS_CHANNEL_ID,      maxResults: 1 });
 const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANITY_ID,  maxResults: 1 });
   const beatFeed              = useYouTubeFeed({ channelId:  BEAT_ALLEN_PARR_ID,         maxResults: 1 });
   const coldCaseFeed          = useYouTubeFeed({ channelId:  COLD_CASE_CHRISTIANITY_ID,  maxResults: 1 });
@@ -376,6 +394,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
     [VIDEO_SECTIONS.WATCH_LIVE]:             [],
     [VIDEO_SECTIONS.PIGSKIN_FRENZY]:         pigskinFeed.videos,
     [VIDEO_SECTIONS.DENISHA]:                denishaFeed.videos,
+    [VIDEO_SECTIONS.TVD_SHORTS]:             tvdShortsFeed.videos,
 [VIDEO_SECTIONS.CAPTURING_CHRISTIANITY]: capturingFeed.videos,
     [VIDEO_SECTIONS.BEAT_ALLEN_PARR]:        beatFeed.videos,
     [VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY]: coldCaseFeed.videos,
@@ -395,6 +414,35 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
     setVideoOpen(false);
     setActiveVideo(null);
   };
+
+  // Scroll "Watch Latest Episode" / "Visit Show Channel" CTA handoff --
+  // /?show=<slug>[&autoplay=1]. Originals (Pigskin Frenzy, Denisha, TVD
+  // Shorts) arrive with autoplay=1 and jump straight into the latest
+  // episode via the same openVideoForSection() the TrueVoiceConnect tiles
+  // use. Licensed/third-party shows arrive without it and just scroll the
+  // visitor to TrueVoice Connect to browse -- there's no "TrueVoice
+  // episode" of theirs to force-play. Same location.search-dependent
+  // pattern as the Listen Live handoff above, for the same reason.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const show = params.get("show");
+    if (!show) return;
+    const autoplay = params.get("autoplay") === "1";
+    params.delete("show");
+    params.delete("autoplay");
+    const qs     = params.toString();
+    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState({}, "", newUrl);
+
+    const section = SHOW_SLUG_TO_SECTION[show];
+    if (autoplay && section) {
+      openVideoForSection(section);
+    } else {
+      document.getElementById("tv-connect-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   // Dock height observer
   useEffect(() => {
@@ -506,7 +554,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
 
             <ProgrammingSchedule />
 
-            <section className="tv-section tv-section--stacked">
+            <section id="tv-connect-section" className="tv-section tv-section--stacked">
               <TrueVoiceConnect
                 onWatchLive={()               => openVideoForSection(VIDEO_SECTIONS.WATCH_LIVE)}
                 onPigskinFrenzy={()           => openVideoForSection(VIDEO_SECTIONS.PIGSKIN_FRENZY)}

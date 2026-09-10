@@ -396,7 +396,49 @@ function TeamTab({ session }) {
   );
 }
 
-function FeedQueueRow({ item, busy, live, onApprove, onReject, onToggleCta }) {
+// CTA_TYPE_OPTIONS / SHOW_OPTIONS_BY_TYPE must stay in sync with
+// ORIGINAL_SHOW_LABELS / LICENSED_SHOW_LABELS / SHOW_SLUG_TO_SECTION in
+// FeedCard.jsx and App.jsx -- this is the one place an admin picks a show,
+// those are the two places that render/route it.
+const CTA_TYPE_OPTIONS = [
+  { value: '',            label: 'No CTA' },
+  { value: 'listen_live', label: 'Listen Live' },
+  { value: 'follow_show', label: 'Watch Latest Episode' },
+  { value: 'visit_site',  label: 'Visit Show Channel' },
+];
+
+const SHOW_OPTIONS_BY_TYPE = {
+  // TrueVoice's own shows -- CTA jumps straight into the latest episode.
+  follow_show: [
+    { value: 'pigskin',    label: 'Pigskin Frenzy (Joel Norris)' },
+    { value: 'denisha',    label: "Denisha's Show" },
+    { value: 'tvd_shorts', label: 'Ryan Kliesch / TVD Shorts' },
+  ],
+  // Licensed / third-party shows -- CTA only opens the channel section,
+  // never autoplays (TrueVoice doesn't own an episode of theirs to force).
+  visit_site: [
+    { value: 'capturing_christianity', label: 'Capturing Christianity' },
+    { value: 'beat_allen_parr',        label: 'The Beat by Allen Parr' },
+    { value: 'cold_case_christianity', label: 'Cold Case Christianity' },
+  ],
+};
+
+function FeedQueueRow({ item, busy, live, onApprove, onReject, onCtaChange }) {
+  const ctaType = item.cta_type || '';
+  const showOptions = SHOW_OPTIONS_BY_TYPE[ctaType] || null;
+
+  function handleTypeChange(e) {
+    const nextType = e.target.value;
+    if (!nextType) { onCtaChange({ cta_type: null, cta_target: null }); return; }
+    if (nextType === 'listen_live') { onCtaChange({ cta_type: 'listen_live', cta_target: null }); return; }
+    const firstTarget = SHOW_OPTIONS_BY_TYPE[nextType]?.[0]?.value ?? null;
+    onCtaChange({ cta_type: nextType, cta_target: firstTarget });
+  }
+
+  function handleTargetChange(e) {
+    onCtaChange({ cta_type: ctaType, cta_target: e.target.value });
+  }
+
   return (
     <div className="admin-list-row admin-list-row--p9 admin-list-row--hover admin-feed-row">
       <div className="admin-feed-row-main">
@@ -406,15 +448,16 @@ function FeedQueueRow({ item, busy, live, onApprove, onReject, onToggleCta }) {
           {' '}{[item.speaker, item.source_show].filter(Boolean).join(' · ')}
         </p>
       </div>
-      <label className="admin-feed-cta-toggle">
-        <input
-          type="checkbox"
-          checked={item.cta_type === 'listen_live'}
-          disabled={busy}
-          onChange={(e) => onToggleCta(e.target.checked)}
-        />
-        Listen Live CTA
-      </label>
+      <div className="admin-feed-cta-controls">
+        <select className="admin-feed-select" value={ctaType} disabled={busy} onChange={handleTypeChange}>
+          {CTA_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        {showOptions && (
+          <select className="admin-feed-select" value={item.cta_target || ''} disabled={busy} onChange={handleTargetChange}>
+            {showOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        )}
+      </div>
       <div className="admin-feed-row-actions">
         {!live && (
           <button className="admin-btn-approve" disabled={busy} onClick={onApprove}>Approve</button>
@@ -463,12 +506,9 @@ function FeedQueueTab() {
     load();
   }
 
-  async function setCta(item, enabled) {
+  async function setCta(item, patch) {
     setBusyId(item.id);
-    const { error: err } = await supabase
-      .from('feed_items')
-      .update({ cta_type: enabled ? 'listen_live' : null })
-      .eq('id', item.id);
+    const { error: err } = await supabase.from('feed_items').update(patch).eq('id', item.id);
     setBusyId(null);
     if (err) { setError(err.message); return; }
     load();
@@ -481,7 +521,7 @@ function FeedQueueTab() {
       <div className="admin-metric-grid">
         <MetricCard label="Needs review" value={needsReview.length} />
         <MetricCard label="Live in Scroll" value={live.length} />
-        <MetricCard label="Listen Live CTA on" value={items.filter(i => i.cta_type === 'listen_live').length} />
+        <MetricCard label="CTA on" value={items.filter(i => i.cta_type).length} />
       </div>
       {error && <ErrorNote msg={error} />}
 
@@ -496,7 +536,7 @@ function FeedQueueTab() {
             busy={busyId === item.id}
             onApprove={() => setStatus(item, 'active')}
             onReject={() => setStatus(item, 'inactive')}
-            onToggleCta={(on) => setCta(item, on)}
+            onCtaChange={(patch) => setCta(item, patch)}
           />
         ))}
       </Panel>
@@ -510,7 +550,7 @@ function FeedQueueTab() {
             busy={busyId === item.id}
             live
             onReject={() => setStatus(item, 'inactive')}
-            onToggleCta={(on) => setCta(item, on)}
+            onCtaChange={(patch) => setCta(item, patch)}
           />
         ))}
       </Panel>

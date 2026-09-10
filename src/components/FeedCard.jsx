@@ -15,22 +15,47 @@ import ReactionRail from "./ReactionRail";
 import { trackEvent } from "../lib/analytics";
 import "./FeedCard.css";
 
-// Phase 1 only ever sets 'listen_live', but the label map is written for
-// the full CTA vocabulary the schema already allows (see the funnel audit,
-// §05) so Phase 2 turning one on is a copy change here, not new code.
-const CTA_LABELS = {
-  listen_live:  "Listen Live",
-  follow_show:  "Follow the Show",
-  visit_site:   "Visit TrueVoice",
-  donate:       "Give",
+// Shows TrueVoice actually produces -- these are the only ones a
+// follow_show CTA can point at (jumps straight into the latest episode).
+// Labels double as the "Watch <label>" / "More from <label>" CTA copy.
+// Keep this in sync with SHOW_SLUG_TO_SECTION in App.jsx.
+const ORIGINAL_SHOW_LABELS = {
+  pigskin:    "Pigskin Frenzy",
+  denisha:    "Denisha's Show",
+  tvd_shorts: "Ryan Kliesch",
 };
 
-function CTAStrip({ item }) {
-  if (!item.cta_type || !CTA_LABELS[item.cta_type]) return null;
+// Licensed / third-party shows -- visit_site only, never autoplay (see the
+// funnel audit follow-up: TrueVoice doesn't own an "episode" to send
+// someone to for these, just a channel to go browse).
+const LICENSED_SHOW_LABELS = {
+  capturing_christianity: "Capturing Christianity",
+  beat_allen_parr:        "The Beat by Allen Parr",
+  cold_case_christianity: "Cold Case Christianity",
+};
 
-  // Phase 1 only knows one destination -- the live player -- regardless of
-  // cta_target, which stays unused until a second CTA type needs it.
-  const to = item.cta_type === "listen_live" ? "/?listen=1" : "/";
+function resolveCta(item) {
+  if (item.cta_type === "listen_live") {
+    return { to: "/?listen=1", label: "Listen Live" };
+  }
+  if (item.cta_type === "follow_show" && ORIGINAL_SHOW_LABELS[item.cta_target]) {
+    return {
+      to: `/?show=${item.cta_target}&autoplay=1`,
+      label: `Watch ${ORIGINAL_SHOW_LABELS[item.cta_target]}`,
+    };
+  }
+  if (item.cta_type === "visit_site" && LICENSED_SHOW_LABELS[item.cta_target]) {
+    return {
+      to: `/?show=${item.cta_target}`,
+      label: `More from ${LICENSED_SHOW_LABELS[item.cta_target]}`,
+    };
+  }
+  return null;
+}
+
+function CTAStrip({ item }) {
+  const cta = resolveCta(item);
+  if (!cta) return null;
 
   function handleClick() {
     trackEvent("scroll_cta_click", {
@@ -45,9 +70,9 @@ function CTAStrip({ item }) {
   }
 
   return (
-    <Link to={to} className="feed-cta-strip" onClick={handleClick}>
+    <Link to={cta.to} className="feed-cta-strip" onClick={handleClick}>
       <span className="feed-cta-icon" aria-hidden="true">&#9654;</span>
-      <span>{CTA_LABELS[item.cta_type]}</span>
+      <span>{cta.label}</span>
     </Link>
   );
 }

@@ -436,17 +436,27 @@
 .admin-type-pill--verse { background: rgba(251,191,36,0.16); color: #fbbf24; }
 .admin-type-pill--meme  { background: rgba(244,114,182,0.16); color: #f472b6; }
 
-.admin-feed-cta-toggle {
+.admin-feed-cta-controls {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 6px;
-  font-size: 12px;
-  color: var(--admin-text-muted);
-  white-space: nowrap;
-  cursor: pointer;
+  flex-shrink: 0;
 }
 
-.admin-feed-cta-toggle input { accent-color: var(--admin-accent); cursor: pointer; }
+.admin-feed-select {
+  padding: 5px 8px;
+  border-radius: var(--admin-radius-sm);
+  border: 0.5px solid var(--admin-border-strong);
+  background: var(--admin-surface-alt);
+  color: var(--admin-text);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 190px;
+}
+
+.admin-feed-select:disabled { opacity: 0.6; cursor: default; }
+.admin-feed-select:focus-visible { outline: 2px solid rgba(58, 108, 255, 0.7); outline-offset: 1px; }
 
 .admin-feed-row-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
