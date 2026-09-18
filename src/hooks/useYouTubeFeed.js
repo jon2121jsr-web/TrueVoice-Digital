@@ -84,11 +84,28 @@ async function fetchRawVideos(playlistId, maxResults) {
     const s         = item.snippet;
     const youtubeId = s?.resourceId?.videoId;
     if (!youtubeId) return null;
+    // maxresdefault.jpg is a guess, not a guarantee -- YouTube only
+    // generates that size for videos with a true HD/landscape source
+    // asset, and often hasn't finished generating it yet for a video
+    // that just published. Guessing the URL directly (the old code
+    // here) silently served a tiny gray placeholder for any video
+    // without one -- which is exactly what showed up as blank/gray
+    // cards for the newest uploads. playlistItems' own `thumbnails`
+    // object only ever lists sizes that actually exist, so prefer
+    // that, and only fall back to a guessed URL (hqdefault -- present
+    // for essentially every video, unlike maxresdefault) if it's empty.
+    const thumbs = s.thumbnails || {};
+    const thumbnailUrl =
+      thumbs.maxres?.url  ||
+      thumbs.high?.url    ||
+      thumbs.medium?.url  ||
+      thumbs.default?.url ||
+      `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
     return {
       id:           youtubeId,
       youtubeId,
       title:        s.title || "",
-      thumbnailUrl: `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`,
+      thumbnailUrl,
       embedUrl:     `https://www.youtube.com/embed/${youtubeId}?autoplay=1`,
       videoUrl:     `https://www.youtube.com/watch?v=${youtubeId}`,
       speaker:      null,

@@ -41,14 +41,21 @@ async function fetchLatestFromPlaylist(playlistId, filterFn, maxResults = 10) {
   const snippet = match?.snippet || items[0]?.snippet;
   if (!snippet) throw new Error(`No matching item in playlist: ${playlistId}`);
 
-  const videoId   = snippet.resourceId?.videoId || null;
-  const title     = snippet.title || null;
+  const videoId = snippet.resourceId?.videoId || null;
+  const title   = snippet.title || null;
+  // Real thumbnails first -- YouTube's `thumbnails` object only ever
+  // lists sizes that actually exist for this video, unlike a guessed
+  // maxresdefault.jpg URL (not guaranteed, and often not yet generated
+  // for a video that just published, which is what was producing blank
+  // gray cards for the newest uploads). The old code here put the guess
+  // first, which also made the "fallback" chain after it dead code,
+  // since a non-null guessed URL string always short-circuited the `||`.
   const thumbnail =
-    (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null) ||
-    snippet.thumbnails?.maxres?.url ||
-    snippet.thumbnails?.high?.url   ||
-    snippet.thumbnails?.medium?.url ||
-    null;
+    snippet.thumbnails?.maxres?.url  ||
+    snippet.thumbnails?.high?.url    ||
+    snippet.thumbnails?.medium?.url  ||
+    snippet.thumbnails?.default?.url ||
+    (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null);
 
   return { videoId, title, thumbnail };
 }
