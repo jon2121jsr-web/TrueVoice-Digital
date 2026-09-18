@@ -25,3 +25,6 @@ dist-ssr
 .vercel
 
 .claude/
+
+# Supabase CLI local cache (pooler URL, project ref, version pins) -- regenerates automatically, never commit
+supabase/.temp/
