@@ -8,7 +8,7 @@ import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
 
 const CHANNEL_IDS = {
   PIGSKIN:                "UC_khbgasHiiwUxPHOMfbR0A",
-  DENISHA:                "UCxcSYXrZQWHRF8iwdWCf3gg",
+  DENISHA:                "UCd1zk8GJorg7Yl9yaqsEhGA",
   CAPTURING_CHRISTIANITY: "UCux-_Fze30tFuI_5CArwSmg",
   BEAT_ALLEN_PARR:        "UCm_RMW_fQk-ELpPYUzor8lw",
   COLD_CASE_CHRISTIANITY: "UCVFe7xhG6rl0ruoMQCJDtnw",

@@ -10,7 +10,7 @@ import "./ReelsGrid.css";
 
 const CHANNEL_IDS = {
   PIGSKIN:                "UC_khbgasHiiwUxPHOMfbR0A",
-  DENISHA:                "UCxcSYXrZQWHRF8iwdWCf3gg",
+  DENISHA:                "UCd1zk8GJorg7Yl9yaqsEhGA",
   GMAA:                   "UCKr-liguaGWMf3f94eQXsug",
   BIBLEPROJECT:           "UCVfwlh9XpX2Y_tQfjeln9QA",
   CAPTURING_CHRISTIANITY: "UCux-_Fze30tFuI_5CArwSmg",

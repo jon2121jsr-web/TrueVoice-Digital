@@ -1,6 +1,6 @@
 // src/App.jsx  — v10  (Capturing Christianity, The Beat by Allen Parr, Cold Case Christianity added April 2026)
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import AdminDashboard from "./pages/AdminDashboard";
 import "./App.css";
 
@@ -22,6 +22,7 @@ import ScrollFeed from "./components/ScrollFeed";
 
 import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
 import { useVisitorBeacon } from "./hooks/useVisitorBeacon";
+import { initPushNotifications } from "./lib/pushNotifications.js";
 
 // ─── Video sections ───────────────────────────────────────────────────────────
 const VIDEO_SECTIONS = {
@@ -37,7 +38,7 @@ const VIDEO_SECTIONS = {
 };
 
 const PIGSKIN_CHANNEL_ID          = "UC_khbgasHiiwUxPHOMfbR0A";
-const DENISHA_CHANNEL_ID          = "UCxcSYXrZQWHRF8iwdWCf3gg";
+const DENISHA_CHANNEL_ID          = "UCd1zk8GJorg7Yl9yaqsEhGA";
 const TVD_SHORTS_CHANNEL_ID       = "UCWpVof-rd5hs1xpchwj1MAQ";
 const CAPTURING_CHRISTIANITY_ID   = "UCux-_Fze30tFuI_5CArwSmg";
 const BEAT_ALLEN_PARR_ID          = "UCm_RMW_fQk-ELpPYUzor8lw";
@@ -250,6 +251,16 @@ function App() {
   // every later client-side route change (App never unmounts between
   // /scroll and / -- that's the whole point of client-side routing).
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Native app only (no-ops entirely on the web build -- see
+  // src/lib/pushNotifications.js). Deliberately [] -- this registers the
+  // device once per app session, not per route, so it doesn't need the
+  // location-remount fix the two effects below needed.
+  useEffect(() => {
+    initPushNotifications(navigate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const playerRef = useRef(null);
 

@@ -29,7 +29,7 @@ const YOUTUBE_API_KEY = process.env.VITE_YOUTUBE_API_KEY || process.env.YOUTUBE_
 // / TrueVoiceConnect.jsx).
 const REEL_CHANNELS = [
   { id: "UC_khbgasHiiwUxPHOMfbR0A", speaker: "Joel Norris",           source: "Pigskin Frenzy" },
-  { id: "UCxcSYXrZQWHRF8iwdWCf3gg", speaker: "Denisha Workizer",      source: "Living the Reclaimed Life" },
+  { id: "UCd1zk8GJorg7Yl9yaqsEhGA", speaker: "Denisha Workizer",      source: "Living the Reclaimed Life" },
   { id: "UCKr-liguaGWMf3f94eQXsug", speaker: "Cliffe Knechtle",       source: "Give Me an Answer" },
   { id: "UCVfwlh9XpX2Y_tQfjeln9QA", speaker: "BibleProject",          source: "BibleProject" },
   { id: "UCux-_Fze30tFuI_5CArwSmg", speaker: "Cameron Bertuzzi",      source: "Capturing Christianity" },
