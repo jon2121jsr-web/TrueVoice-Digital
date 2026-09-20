@@ -146,6 +146,7 @@ export function NowPlayingPanel({
   /* ── Weekly programming ticker segments ────────────────────────────────── */
   const pigskinShow = useMemo(() => showSchedule.find(s => s.id === 'pigskin') || null, []);
 
+  /*
   const tickerSegments = useMemo(() => {
     const segs = [];
     if (activeShow) {
@@ -159,6 +160,7 @@ export function NowPlayingPanel({
     }
     return segs;
   }, [activeShow, nextShow, pigskinShow]);
+  */
 
   /* ── Derived display values ────────────────────────────────────────────── */
   const title  = displaySong?.title  || (loading ? "Loading…" : "Live Stream");
@@ -452,6 +454,7 @@ export function NowPlayingPanel({
       </div>
 
       {/* ── Weekly programming ticker ── */}
+      {/*
       {tickerSegments.length > 0 && (
         <div className="tv-live-ticker">
           <div className="tv-ticker-track">
@@ -465,6 +468,7 @@ export function NowPlayingPanel({
           </div>
         </div>
       )}
+      */}
     </div>
   );
 }
