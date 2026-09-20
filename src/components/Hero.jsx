@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "./Hero.css";
 import HeroMerchSlide from "./HeroMerchSlide.jsx";
 import HeroPigskinSlide from "./HeroPigskinSlide.jsx";
-import HeroRyanSlide from "./HeroRyanSlide.jsx";
-import HeroDeepEndSlide from "./HeroDeepEndSlide.jsx";
-import HeroRyanScheduleSlide from "./HeroRyanScheduleSlide.jsx";
+// import HeroRyanSlide from "./HeroRyanSlide.jsx";
+// import HeroDeepEndSlide from "./HeroDeepEndSlide.jsx";
+// import HeroRyanScheduleSlide from "./HeroRyanScheduleSlide.jsx";
 import HeroDenishaSlide from "./HeroDenishaSlide.jsx";
 
 // Minimum px travel before we count it as a swipe (not a tap)
@@ -24,17 +24,17 @@ export default function Hero() {
         kind: "legacy",
       },
       // 2 — Ryan Kliesch (new)
-      {
-        kind: "component",
-        component: HeroRyanSlide,
-        alt: "Ryan Kliesch on TrueVoice Digital — Coming Soon",
-      },
+      // {
+      //   kind: "component",
+      //   component: HeroRyanSlide,
+      //   alt: "Ryan Kliesch on TrueVoice Digital — Coming Soon",
+      // },
       // 3 — Ryan Kliesch schedule
-      {
-        kind: "component",
-        component: HeroRyanScheduleSlide,
-        alt: "The Ryan Kliesch Show-gram — Live Mon–Fri on TrueVoice Digital",
-      },
+      // {
+      //   kind: "component",
+      //   component: HeroRyanScheduleSlide,
+      //   alt: "The Ryan Kliesch Show-gram — Live Mon–Fri on TrueVoice Digital",
+      // },
       // 4 — Denisha Workizer — The Reclaimed Life
       {
         kind: "component",
@@ -62,11 +62,11 @@ export default function Hero() {
         kind: "poster",
       },
       // 8 — The Deep End (replaces hero-coming.png)
-      {
-        kind: "component",
-        component: HeroDeepEndSlide,
-        alt: "The Deep End with Scott & Ryan — Coming Soon",
-      },
+      // {
+      //   kind: "component",
+      //   component: HeroDeepEndSlide,
+      //   alt: "The Deep End with Scott & Ryan — Coming Soon",
+      // },
     ],
     []
   );
