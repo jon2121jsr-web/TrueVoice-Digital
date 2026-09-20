@@ -11,7 +11,7 @@ import PodcastList from "./components/PodcastList";
 import ReelsGrid from "./components/ReelsGrid";
 import { NowPlayingDebug } from "./components/NowPlayingDebug";
 import TrueVoiceConnect from "./components/TrueVoiceConnect.jsx";
-import RecentTracksBar from "./components/RecentTracksBar.jsx";
+// import RecentTracksBar from "./components/RecentTracksBar.jsx";
 import TrueVoiceScrollPreview from "./components/TrueVoiceScrollPreview.jsx";
 import VideoModal from "./components/VideoModal.jsx";
 import MerchSection from "./components/MerchSection.jsx";
@@ -591,7 +591,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
               </div>
             </div>
 
-            <RecentTracksBar />
+            {/* <RecentTracksBar /> */}
 
             <TrueVoiceScrollPreview />
 
