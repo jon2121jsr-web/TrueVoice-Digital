@@ -1,0 +1,37 @@
+workflows:
+  truevoice-ios-workflow:
+    name: TrueVoice iOS Workflow
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Codemagic CI
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: digital.truevoice.app
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+      - name: Build web app
+        script: npm run build
+      - name: Sync Capacitor iOS
+        script: npx cap sync ios
+      - name: Install CocoaPods dependencies
+        script: cd ios/App && pod install
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
+      - name: Build ipa for distribution
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
