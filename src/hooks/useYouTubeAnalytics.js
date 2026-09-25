@@ -18,11 +18,13 @@
  */
 
 import { useState, useEffect } from 'react';
+import { API_BASE, IS_NATIVE_APP } from '../lib/apiBase';
 
 const API_KEY    = import.meta.env.VITE_YOUTUBE_API_KEY;
 const CHANNEL_ID = import.meta.env.VITE_YOUTUBE_CHANNEL_ID?.trim();
 const BASE       = 'https://www.googleapis.com/youtube/v3';
 const IS_PROD    = import.meta.env.PROD;
+const USE_PROXY  = IS_PROD || IS_NATIVE_APP;
 
 // Map playlist names / title keywords → show slugs
 // Adjust these to match your actual show names / playlist IDs
@@ -54,8 +56,8 @@ async function fetchChannelVideos(maxResults = 50) {
   // This skips the channels API call entirely, avoiding domain-restriction errors.
   const uploadsId = CHANNEL_ID.replace(/^UC/, 'UU');
 
-  const playlistUrl = IS_PROD
-    ? `/api/youtube?endpoint=playlistItems&part=snippet&playlistId=${uploadsId}&maxResults=${maxResults}`
+  const playlistUrl = USE_PROXY
+    ? `${API_BASE}/api/youtube?endpoint=playlistItems&part=snippet&playlistId=${uploadsId}&maxResults=${maxResults}`
     : `${BASE}/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=${maxResults}&key=${API_KEY}`;
   const playlistData = await fetchJson(playlistUrl);
 
@@ -63,8 +65,8 @@ async function fetchChannelVideos(maxResults = 50) {
   const videoIds = items.map(i => i.snippet.resourceId.videoId).join(',');
   if (!videoIds) return [];
 
-  const videosUrl = IS_PROD
-    ? `/api/youtube?endpoint=videos&part=snippet%2Cstatistics&id=${videoIds}`
+  const videosUrl = USE_PROXY
+    ? `${API_BASE}/api/youtube?endpoint=videos&part=snippet%2Cstatistics&id=${videoIds}`
     : `${BASE}/videos?part=snippet,statistics&id=${videoIds}&key=${API_KEY}`;
   const statsData = await fetchJson(videosUrl);
 

@@ -4,17 +4,23 @@
 // Returns { videoId, title, thumbnail, loading, error }
 
 import { useEffect, useState } from "react";
+import { API_BASE, IS_NATIVE_APP } from "../lib/apiBase";
 
 const API_KEY      = import.meta.env.VITE_YOUTUBE_API_KEY;
 const BASE_URL     = "https://www.googleapis.com/youtube/v3";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+// Same-origin `/api/youtube` proxy in prod avoids shipping the API key's
+// referrer restriction problem to native apps -- see src/lib/apiBase.js.
+const USE_PROXY    = import.meta.env.PROD || IS_NATIVE_APP;
 
 const uploadsCache = {};
 const resultCache  = {};
 
 async function resolveUploadsPlaylistId(channelId) {
   if (uploadsCache[channelId]) return uploadsCache[channelId];
-  const url  = `${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${API_KEY}`;
+  const url  = USE_PROXY
+    ? `${API_BASE}/api/youtube?endpoint=channels&part=contentDetails&id=${channelId}`
+    : `${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${API_KEY}`;
   const res  = await fetch(url);
   if (!res.ok) throw new Error(`channels API failed: ${res.status}`);
   const data = await res.json();
@@ -27,7 +33,9 @@ async function resolveUploadsPlaylistId(channelId) {
 // Fetch up to maxResults items from a playlist, apply optional filterFn,
 // return the first match.
 async function fetchLatestFromPlaylist(playlistId, filterFn, maxResults = 10) {
-  const url = `${BASE_URL}/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResults}&key=${API_KEY}`;
+  const url = USE_PROXY
+    ? `${API_BASE}/api/youtube?endpoint=playlistItems&part=snippet&playlistId=${playlistId}&maxResults=${maxResults}`
+    : `${BASE_URL}/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResults}&key=${API_KEY}`;
   const res  = await fetch(url);
   if (!res.ok) throw new Error(`playlistItems API failed: ${res.status}`);
   const data  = await res.json();

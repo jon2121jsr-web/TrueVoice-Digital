@@ -6,11 +6,13 @@
 // Raw API results are cached for 5 minutes per channel/playlist+maxResults pair.
 
 import { useEffect, useState } from "react";
+import { API_BASE, IS_NATIVE_APP } from "../lib/apiBase";
 
 const API_KEY      = import.meta.env.VITE_YOUTUBE_API_KEY;
 const BASE_URL     = "https://www.googleapis.com/youtube/v3";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const IS_PROD      = import.meta.env.PROD;
+const USE_PROXY    = IS_PROD || IS_NATIVE_APP;
 
 const CACHE_VERSION = 'v1';
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -60,8 +62,8 @@ const rawCache     = {};  // cacheKey   → { videos, at }
 
 async function resolveUploadsPlaylistId(channelId) {
   if (uploadsCache[channelId]) return uploadsCache[channelId];
-  const url  = IS_PROD
-    ? `/api/youtube?endpoint=channels&part=contentDetails&id=${channelId}`
+  const url  = USE_PROXY
+    ? `${API_BASE}/api/youtube?endpoint=channels&part=contentDetails&id=${channelId}`
     : `${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${API_KEY}`;
   const res  = await fetch(url);
   if (!res.ok) throw new Error(`channels API ${res.status}`);
@@ -74,8 +76,8 @@ async function resolveUploadsPlaylistId(channelId) {
 }
 
 async function fetchRawVideos(playlistId, maxResults) {
-  const url = IS_PROD
-    ? `/api/youtube?endpoint=playlistItems&part=snippet&playlistId=${playlistId}&maxResults=${maxResults}`
+  const url = USE_PROXY
+    ? `${API_BASE}/api/youtube?endpoint=playlistItems&part=snippet&playlistId=${playlistId}&maxResults=${maxResults}`
     : `${BASE_URL}/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResults}&key=${API_KEY}`;
   const res  = await fetch(url);
   if (!res.ok) throw new Error(`playlistItems API ${res.status}`);
