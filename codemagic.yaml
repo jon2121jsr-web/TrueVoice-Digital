@@ -26,7 +26,7 @@ workflows:
       - name: Increment build number
         script: |
           cd ios/App
-          agvtool new-version -all $CM_BUILD_NUMBER
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $CM_BUILD_NUMBER;/g" App.xcodeproj/project.pbxproj
       - name: Set up code signing settings on Xcode project
         script: xcode-project use-profiles
       - name: Build ipa for distribution
