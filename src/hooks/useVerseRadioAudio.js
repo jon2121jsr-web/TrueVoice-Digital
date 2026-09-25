@@ -13,10 +13,12 @@
 // mobile -- browsers gate a *new* media element's unmuted autoplay much
 // more strictly than resuming one they've already seen a real tap on.
 import { useEffect, useState } from "react";
+import { preferredStreamUrl } from "../lib/streamUrl";
 
 const LIVE365_STREAM_URL = "https://streaming.live365.com/a61535";
-const LIVE_STREAM_URL =
-  import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL;
+const LIVE_STREAM_URL = preferredStreamUrl(
+  import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL
+);
 const AZURACAST_FALLBACK_URL =
   "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 

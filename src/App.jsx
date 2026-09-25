@@ -21,6 +21,7 @@ import ChimeIn from "./components/ChimeIn";
 import ScrollFeed from "./components/ScrollFeed";
 
 import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
+import { preferredStreamUrl } from "./lib/streamUrl";
 import { useVisitorBeacon } from "./hooks/useVisitorBeacon";
 import { initPushNotifications } from "./lib/pushNotifications.js";
 
@@ -68,8 +69,9 @@ const SHOW_SLUG_TO_SECTION = {
 const LIVE365_STREAM_URL =
   "https://streaming.live365.com/a61535";
 
-const LIVE_STREAM_URL =
-  import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL;
+const LIVE_STREAM_URL = preferredStreamUrl(
+  import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL
+);
 
 const AZURACAST_FALLBACK_URL =
   "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
