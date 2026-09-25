@@ -560,9 +560,101 @@ function FeedQueueTab() {
   );
 }
 
+function ChimeMessageRow({ msg, busy, onFlag, onRestore }) {
+  return (
+    <div className="admin-list-row admin-list-row--p9 admin-list-row--hover admin-feed-row">
+      <div className="admin-feed-row-main">
+        <p className="admin-row-title">{msg.display_name}</p>
+        <p className="admin-row-subtitle">{msg.message}</p>
+      </div>
+      <div className="admin-feed-row-actions">
+        {msg.flagged ? (
+          <button className="admin-btn-approve" disabled={busy} onClick={onRestore}>Restore</button>
+        ) : (
+          <button className="admin-btn-reject" disabled={busy} onClick={onFlag}>Remove</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Chime In shipped as a fully open live chat with no way to remove a
+// message -- see 20260925180000_chime_messages_moderation.sql. This is
+// the UI half: flip `flagged` on a message (soft-hide, reversible) rather
+// than hard-deleting, so a mistaken removal can be undone and there's an
+// audit trail of what was taken down.
+function ChimeModerationTab() {
+  const [msgs, setMsgs] = useState(null);
+  const [error, setError] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+
+  const load = () => {
+    setError(null);
+    supabase
+      .from('chime_messages')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(150)
+      .then(({ data, error: err }) => {
+        if (err) { setError(err.message); return; }
+        setMsgs(data ?? []);
+      });
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const live    = useMemo(() => (msgs ?? []).filter(m => !m.flagged), [msgs]);
+  const removed = useMemo(() => (msgs ?? []).filter(m => m.flagged), [msgs]);
+
+  async function setFlagged(msg, flagged) {
+    setBusyId(msg.id);
+    const { error: err } = await supabase.from('chime_messages').update({ flagged }).eq('id', msg.id);
+    setBusyId(null);
+    if (err) { setError(err.message); return; }
+    load();
+  }
+
+  if (!msgs) return <p className="admin-muted-text">Loading Chime In messages…</p>;
+
+  return (
+    <>
+      <div className="admin-metric-grid">
+        <MetricCard label="Live messages" value={live.length} />
+        <MetricCard label="Removed" value={removed.length} />
+        <MetricCard label="Total (last 150)" value={msgs.length} />
+      </div>
+      {error && <ErrorNote msg={error} />}
+
+      <Panel title="Live in Chime In" meta={`${live.length} visible`} className="admin-panel--mb">
+        {live.length === 0 && <p className="admin-muted-text">No messages yet.</p>}
+        {live.map(msg => (
+          <ChimeMessageRow
+            key={msg.id}
+            msg={msg}
+            busy={busyId === msg.id}
+            onFlag={() => setFlagged(msg, true)}
+          />
+        ))}
+      </Panel>
+
+      <Panel title="Removed" meta={`${removed.length} hidden`}>
+        {removed.length === 0 && <p className="admin-muted-text">Nothing removed.</p>}
+        {removed.map(msg => (
+          <ChimeMessageRow
+            key={msg.id}
+            msg={msg}
+            busy={busyId === msg.id}
+            onRestore={() => setFlagged(msg, false)}
+          />
+        ))}
+      </Panel>
+    </>
+  );
+}
+
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['Overview', 'Listeners', 'Video', 'Feed', 'Visitors', 'Donations', 'Team'];
+const TABS = ['Overview', 'Listeners', 'Video', 'Feed', 'Chime In', 'Visitors', 'Donations', 'Team'];
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
@@ -795,6 +887,7 @@ export default function AdminDashboard() {
 
         {/* ── FEED ─────────────────────────────────────────────── */}
         {activeTab === 'Feed' && <FeedQueueTab />}
+        {activeTab === 'Chime In' && <ChimeModerationTab />}
 
         {/* ── VISITORS ─────────────────────────────────────────── */}
         {activeTab === 'Visitors' && <VisitorsTab range={range} />}
