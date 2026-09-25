@@ -43,7 +43,6 @@ export function NowPlayingPanel({
   const [activeShow,     setActiveShow]     = useState(() => getActiveShow());
   const [nextShow,       setNextShow]       = useState(() => getNextShow());
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const [debugInfo,     setDebugInfo]     = useState("");
 
   const isOwner = useIsOwner();
 
@@ -232,31 +231,17 @@ export function NowPlayingPanel({
     // Any error/stall funnels into the same debounced recovery — no more
     // separate immediate + delayed attempts racing each other.
     const onError = () => {
-      snapshotDebug("error-event");
       if (!isPlayingRef.current && !wantsPlaybackRef.current) return;
       scheduleRecovery(3000);
     };
     const onStalled = () => {
-      snapshotDebug("stalled");
       if (!wantsPlaybackRef.current) return;
       scheduleRecovery(3000);
     };
 
-    // TEMP DEBUG: snapshot the audio element's real state so we can see
-    // exactly what's failing on-device without a Mac/Safari inspector.
-    // Remove once the iOS stream-connect issue is resolved.
-    const snapshotDebug = (label) => {
-      const codeNames = { 1: "ABORTED", 2: "NETWORK", 3: "DECODE", 4: "SRC_NOT_SUPPORTED" };
-      const errCode = el.error ? el.error.code : null;
-      const errName = errCode ? (codeNames[errCode] || `code ${errCode}`) : "none";
-      setDebugInfo(
-        `${label} | networkState=${el.networkState} readyState=${el.readyState} err=${errName} src=${(el.currentSrc || el.src || "").slice(0, 60)}`
-      );
-    };
-
     // Reconnecting indicator while buffering
-    const onWaiting = () => { setIsReconnecting(true); snapshotDebug("waiting"); };
-    const onPlaying = () => { setIsReconnecting(false); clearRecoveryTimer(); snapshotDebug("playing"); };
+    const onWaiting = () => { setIsReconnecting(true); };
+    const onPlaying = () => { setIsReconnecting(false); clearRecoveryTimer(); };
 
     // Phone call / audio focus recovery + interruption detection
     const onVisibilityChange = () => {
@@ -423,11 +408,6 @@ export function NowPlayingPanel({
           </div>
           <h2 className="tv-radio-title">{isReconnecting ? "Reconnecting…" : title}</h2>
           <p className="tv-radio-artist">{artist}</p>
-          {(isReconnecting || debugInfo) && (
-            <p style={{ fontSize: "10px", opacity: 0.6, wordBreak: "break-all", marginTop: "4px" }}>
-              DEBUG: {debugInfo || "no event yet"}
-            </p>
-          )}
 
           {error && <p className="tv-radio-error">{error}</p>}
 
