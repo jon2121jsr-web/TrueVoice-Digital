@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import AdminDashboard from "./pages/AdminDashboard";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import "./App.css";
 
 import Hero from "./components/Hero";
@@ -513,6 +514,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
   return (
     <Routes>
       <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/scroll" element={<ScrollFeed />} />
       <Route path="/scroll/:id" element={<ScrollFeed />} />
       <Route path="*" element={
@@ -661,6 +663,7 @@ onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CH
               </div>
 
               <p>© {new Date().getFullYear()} TrueVoice.Digital. All rights reserved.</p>
+              <p><a href="/privacy" style={{ color: "inherit" }}>Privacy Policy</a></p>
               <p className="tv-footer-attrib">POWERED BY OUTPUT DIGITAL</p>
             </footer>
           </main>

@@ -1,0 +1,58 @@
+/* src/pages/PrivacyPolicy.css */
+.tv-privacy-page {
+  min-height: 100vh;
+  background: var(--tv-bg, #d7e4ff);
+  color: var(--tv-text-main, #0e1b3a);
+}
+
+.tv-privacy-header {
+  padding: 20px 24px;
+}
+
+.tv-privacy-brand {
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-decoration: none;
+  color: var(--tv-text-main, #0e1b3a);
+}
+
+.tv-privacy-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 24px 80px;
+  line-height: 1.6;
+}
+
+.tv-privacy-main h1 {
+  font-size: 1.9rem;
+  margin-bottom: 4px;
+}
+
+.tv-privacy-effective {
+  color: var(--tv-text-muted, #4d5a7a);
+  margin-bottom: 28px;
+  font-size: 0.9rem;
+}
+
+.tv-privacy-main h2 {
+  margin-top: 32px;
+  font-size: 1.25rem;
+}
+
+.tv-privacy-main h3 {
+  margin-top: 20px;
+  font-size: 1.02rem;
+}
+
+.tv-privacy-main p {
+  margin-top: 10px;
+  color: var(--tv-text-main, #0e1b3a);
+}
+
+.tv-privacy-main a {
+  color: var(--tv-primary, #275fdb);
+}
+
+.tv-privacy-back {
+  margin-top: 40px;
+}
