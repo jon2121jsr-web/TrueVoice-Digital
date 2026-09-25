@@ -6,6 +6,8 @@ workflows:
     integrations:
       app_store_connect: Codemagic CI
     environment:
+      groups:
+        - truevoice_frontend
       ios_signing:
         distribution_type: app_store
         bundle_identifier: digital.truevoice.app
