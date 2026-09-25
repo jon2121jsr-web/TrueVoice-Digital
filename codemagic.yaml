@@ -9,8 +9,10 @@ workflows:
       groups:
         - truevoice_frontend
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: digital.truevoice.app
+        provisioning_profiles:
+          - truevoice_appstore_profile
+        certificates:
+          - "Codemagic CI."
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
