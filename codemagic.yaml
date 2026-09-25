@@ -23,6 +23,10 @@ workflows:
         script: npx cap sync ios
       - name: Install CocoaPods dependencies
         script: cd ios/App && pod install
+      - name: Increment build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $CM_BUILD_NUMBER
       - name: Set up code signing settings on Xcode project
         script: xcode-project use-profiles
       - name: Build ipa for distribution
