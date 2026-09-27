@@ -20,6 +20,21 @@ const config: CapacitorConfig = {
   // committed, so production native builds always load the bundled
   // `dist/` and never reach out to a dev machine.
 
+  // `server.hostname` + `iosScheme: 'https'` make the WebView's real
+  // origin "https://truevoice.digital" instead of the default
+  // "capacitor://localhost" (Capacitor still serves the bundled dist/
+  // files locally -- nothing is fetched over the network). This is
+  // required for the YouTube embeds: YouTube's IFrame Player checks
+  // the page's actual origin, and we were previously just claiming a
+  // fake "https://truevoice.digital" origin parameter that didn't
+  // match where the WebView really was, which is why embeds kept
+  // failing with YouTube's own "configuration error" screen.
+  server: {
+    hostname: 'truevoice.digital',
+    iosScheme: 'https',
+    androidScheme: 'https',
+  },
+
   plugins: {
     SplashScreen: {
       // Matches the PWA manifest's background_color/theme_color
