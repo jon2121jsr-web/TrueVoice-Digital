@@ -28,6 +28,21 @@ export default function ChimeIn() {
   const [messageInput, setMessageInput] = useState("");
   const [sending, setSending] = useState(false);
 
+  // Report / block (Apple Guideline 1.2 -- user-facing moderation for UGC)
+  const [reportedIds, setReportedIds] = useState(() => new Set());
+  const [blockedUsers, setBlockedUsers] = useState(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem("chime_blocked_users") || "[]"));
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Delete account (Apple Guideline 5.1.1(v) -- in-app self-service deletion)
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+
   // Re-render periodically so relative timestamps ("2m ago") stay fresh
   // even when no new message arrives to trigger a render.
   const [, setTimeTick] = useState(0);
@@ -98,6 +113,33 @@ export default function ChimeIn() {
     return () => window.clearInterval(id);
   }, []);
 
+  /* ── Report / block helpers ──────────────────────────────────────────────── */
+  function saveBlocked(next) {
+    setBlockedUsers(next);
+    try {
+      localStorage.setItem("chime_blocked_users", JSON.stringify([...next]));
+    } catch {
+      /* localStorage unavailable -- blocking still works for this session */
+    }
+  }
+
+  async function handleReport(msg) {
+    if (!session || reportedIds.has(msg.id)) return;
+    setReportedIds((prev) => new Set(prev).add(msg.id));
+    await supabaseRealtime.from("chime_message_reports").insert({
+      message_id: msg.id,
+      reporter_id: session.user.id,
+    });
+  }
+
+  function handleBlock(msg) {
+    saveBlocked(new Set(blockedUsers).add(msg.user_id));
+  }
+
+  function handleUnblockAll() {
+    saveBlocked(new Set());
+  }
+
   /* ── Focus trap + Escape-to-close while drawer is open ──────────────────── */
   useEffect(() => {
     if (!isOpen) return;
@@ -161,6 +203,29 @@ export default function ChimeIn() {
     setEmail("");
   }
 
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const { data } = await supabaseRealtime.auth.getSession();
+      const token = data?.session?.access_token;
+      const res = await fetch("/api/delete-account", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Couldn't delete your account. Try again.");
+      await supabaseRealtime.auth.signOut();
+      setMagicLinkSent(false);
+      setEmail("");
+    } catch (err) {
+      setDeleteError(err.message);
+    } finally {
+      setDeleting(false);
+      setDeleteConfirming(false);
+    }
+  }
+
   /* ── Send message ───────────────────────────────────────────────────────── */
   async function handleSend(e) {
     e.preventDefault();
@@ -222,19 +287,95 @@ export default function ChimeIn() {
             <>
               <div className="chime-user-bar">
                 <span className="chime-user-email">{session.user.email}</span>
-                <button type="button" className="chime-signout-btn" onClick={handleSignOut}>
-                  Sign out
-                </button>
+                <span className="chime-user-bar-actions">
+                  <button type="button" className="chime-signout-btn" onClick={handleSignOut}>
+                    Sign out
+                  </button>
+                  <button
+                    type="button"
+                    className="chime-delete-account-btn"
+                    onClick={() => setDeleteConfirming(true)}
+                  >
+                    Delete account
+                  </button>
+                </span>
               </div>
 
-              <div className="chime-feed">
-                {messages.map((m) => (
-                  <div key={m.id} className="chime-message">
-                    <span className="chime-message-name">{m.display_name}</span>
-                    <span className="chime-message-text">{m.message}</span>
-                    <span className="chime-message-time">{formatRelativeTime(m.created_at)}</span>
+              {deleteConfirming && (
+                <div className="chime-delete-confirm">
+                  <p>
+                    Delete your account and all your Chime In messages? This can't be undone.
+                  </p>
+                  {deleteError && <p className="chime-auth-error">{deleteError}</p>}
+                  <div className="chime-delete-confirm-actions">
+                    <button
+                      type="button"
+                      className="chime-delete-confirm-btn"
+                      onClick={handleDeleteAccount}
+                      disabled={deleting}
+                    >
+                      {deleting ? "Deleting…" : "Yes, delete"}
+                    </button>
+                    <button
+                      type="button"
+                      className="chime-delete-cancel-btn"
+                      onClick={() => setDeleteConfirming(false)}
+                      disabled={deleting}
+                    >
+                      Cancel
+                    </button>
                   </div>
-                ))}
+                </div>
+              )}
+
+              {blockedUsers.size > 0 && (
+                <div className="chime-blocked-bar">
+                  <span>
+                    {blockedUsers.size} user{blockedUsers.size === 1 ? "" : "s"} blocked
+                  </span>
+                  <button type="button" className="chime-unblock-btn" onClick={handleUnblockAll}>
+                    Unblock all
+                  </button>
+                </div>
+              )}
+
+              <div className="chime-feed">
+                {messages
+                  .filter((m) => !blockedUsers.has(m.user_id))
+                  .map((m) => {
+                    const isOwn = m.user_id === session.user.id;
+                    const isReported = reportedIds.has(m.id);
+                    return (
+                      <div key={m.id} className="chime-message">
+                        <span className="chime-message-name">{m.display_name}</span>
+                        <span className="chime-message-text">{m.message}</span>
+                        <span className="chime-message-time">{formatRelativeTime(m.created_at)}</span>
+                        {!isOwn && (
+                          <span className="chime-message-actions">
+                            <button
+                              type="button"
+                              className="chime-report-btn"
+                              onClick={() => handleReport(m)}
+                              disabled={isReported}
+                              aria-label={`Report message from ${m.display_name}`}
+                              title="Report this message"
+                            >
+                              {isReported ? "Reported" : "Report"}
+                            </button>
+                            <button
+                              type="button"
+                              className="chime-block-btn"
+                              onClick={() => handleBlock(m)}
+                              aria-label={`Block ${m.display_name}`}
+                              title={`Block ${m.display_name}`}
+                            >
+                              Block
+                            </button>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 <div ref={feedEndRef} />
               </div>
 

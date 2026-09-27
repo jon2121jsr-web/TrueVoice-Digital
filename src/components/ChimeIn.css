@@ -147,6 +147,99 @@
   color: var(--tv-chime-gold);
 }
 
+.chime-user-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chime-delete-account-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #f87171;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.chime-delete-account-btn:hover,
+.chime-delete-account-btn:focus-visible {
+  color: #fca5a5;
+}
+
+/* ── Delete-account confirm panel ─────────────────────────────────────────── */
+.chime-delete-confirm {
+  flex-shrink: 0;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: var(--tv-chime-radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chime-delete-confirm p {
+  margin: 0;
+  color: var(--tv-chime-text);
+  font-size: 0.78rem;
+}
+
+.chime-delete-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.chime-delete-confirm-btn {
+  background: #dc2626;
+  color: var(--tv-chime-text);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 700;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.chime-delete-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chime-delete-cancel-btn {
+  background: transparent;
+  color: var(--tv-chime-text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+/* ── Blocked-users bar ────────────────────────────────────────────────────── */
+.chime-blocked-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--tv-chime-text-muted);
+  font-size: 0.7rem;
+}
+
+.chime-unblock-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--tv-chime-primary-hover);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ── Message feed ─────────────────────────────────────────────────────────── */
 .chime-feed {
   flex: 1;
@@ -186,6 +279,38 @@
   flex-shrink: 0;
   color: var(--tv-chime-text-muted);
   font-size: 0.68rem;
+}
+
+/* ── Report / block per-message actions ───────────────────────────────────── */
+.chime-message-actions {
+  flex-basis: 100%;
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.chime-report-btn,
+.chime-block-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--tv-chime-text-muted);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.chime-report-btn:hover,
+.chime-block-btn:hover {
+  color: var(--tv-chime-gold);
+}
+
+.chime-report-btn:disabled {
+  color: var(--tv-chime-text-muted);
+  opacity: 0.6;
+  text-decoration: none;
+  cursor: default;
 }
 
 /* ── Send form ────────────────────────────────────────────────────────────── */
