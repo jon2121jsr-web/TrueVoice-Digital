@@ -20,13 +20,17 @@ export default function VideoModal({ open, onClose, video }) {
   const description = video.description || "";
 
   // Support embedUrl, videoId, OR youtubeId (videoFeed uses youtubeId)
+  // origin= matches the fix in useYouTubePlayer.js -- the native app's
+  // WebView origin is "capacitor://localhost", which fails YouTube's
+  // origin check and shows their own "configuration error" page instead
+  // of the video, so every embed needs the real production origin.
   const embedUrl =
     video.embedUrl ||
     (video.youtubeId
-      ? `https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&rel=0`
+      ? `https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&rel=0&origin=https://truevoice.digital`
       : null) ||
     (video.videoId
-      ? `https://www.youtube.com/embed/${video.videoId}?autoplay=1&rel=0`
+      ? `https://www.youtube.com/embed/${video.videoId}?autoplay=1&rel=0&origin=https://truevoice.digital`
       : null);
 
   if (!embedUrl) return null;

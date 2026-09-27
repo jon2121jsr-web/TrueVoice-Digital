@@ -120,6 +120,14 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
       rel: 0,
       modestbranding: 1,
       controls: 0,
+      // The native app's WebView origin is "capacitor://localhost", not a
+      // real https origin -- YouTube's IFrame API validates the postMessage
+      // origin it's handed against the page it thinks it's embedded on, and
+      // a non-http(s) scheme fails that check silently, surfacing as
+      // YouTube's own "Video player configuration error" page instead of
+      // playing. Telling it our real production origin explicitly is the
+      // documented fix for exactly this hybrid-app scenario.
+      origin: "https://truevoice.digital",
       // Mobile browsers block a JS-triggered playVideo() call that has no
       // user gesture behind it (which is exactly what our isActive effect
       // does when a card scrolls into view) -- that's why cards needed a

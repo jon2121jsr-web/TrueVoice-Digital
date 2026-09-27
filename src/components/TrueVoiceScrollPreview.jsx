@@ -58,6 +58,11 @@ function loopEmbedSrc(item) {
     rel: "0",
     iv_load_policy: "3",
     disablekb: "1",
+    // Same origin fix as useYouTubePlayer.js / VideoModal.jsx -- without
+    // it the native app's "capacitor://localhost" WebView origin fails
+    // YouTube's check and this card shows their error page instead of
+    // looping the preview.
+    origin: "https://truevoice.digital",
   });
   return `https://www.youtube.com/embed/${item.youtube_id}?${params.toString()}`;
 }
