@@ -58,26 +58,6 @@ export default function VideoModal({ open, onClose, video }) {
         </div>
 
         <div className="tv-modal-body">
-          {/* TEMPORARY diagnostic -- remove once the native YouTube
-              "configuration error" is resolved. A raw iframe has no onError
-              we can hook into from outside (cross-origin), so this just
-              shows exactly what URL got requested and what origin the
-              WebView actually thinks it's running at, so we're not
-              guessing blind on the next TestFlight test. */}
-          <div
-            style={{
-              background: "rgba(0,0,0,0.85)",
-              color: "#0f0",
-              fontSize: 10,
-              fontFamily: "monospace",
-              padding: "4px 6px",
-              wordBreak: "break-all",
-            }}
-          >
-            embedUrl: {embedUrl}
-            <br />
-            origin: {typeof window !== "undefined" ? window.location.origin : "?"}
-          </div>
           <div className="tv-modal-video">
             <iframe
               src={embedUrl}
