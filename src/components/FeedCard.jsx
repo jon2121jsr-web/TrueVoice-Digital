@@ -81,7 +81,7 @@ function CTAStrip({ item }) {
 
 function VideoCard({ item, isActive, isNear, onEnded }) {
   const containerRef = useRef(null);
-  const { ready, muted, toggleMute, stuck, resume } = useYouTubePlayer({
+  const { ready, muted, toggleMute, stuck, resume, errorCode } = useYouTubePlayer({
     containerRef,
     videoId: isNear ? item.youtube_id : null,
     clipStart: item.clip_start_seconds,
@@ -103,6 +103,35 @@ function VideoCard({ item, isActive, isNear, onEnded }) {
           />
         )}
       </div>
+      {errorCode != null && (
+        // TEMPORARY diagnostic overlay -- remove once the native YouTube
+        // "configuration error" is resolved. Shows YouTube's real numeric
+        // error code plus the WebView's actual origin at the moment of
+        // failure, right on screen, since there's no way to attach Mac/
+        // Safari dev tools to a TestFlight build.
+        <div
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            right: 8,
+            zIndex: 999,
+            background: "rgba(0,0,0,0.85)",
+            color: "#0f0",
+            fontSize: 11,
+            fontFamily: "monospace",
+            padding: "6px 8px",
+            borderRadius: 6,
+            wordBreak: "break-all",
+          }}
+        >
+          YT onError code: {String(errorCode)}
+          <br />
+          origin: {typeof window !== "undefined" ? window.location.origin : "?"}
+          <br />
+          href: {typeof window !== "undefined" ? window.location.href : "?"}
+        </div>
+      )}
       <div className="feed-card-scrim" />
       <div className="feed-card-top">
         <span className="feed-tag">{item.item_type === "reel" ? "Reel" : "Snip"}</span>

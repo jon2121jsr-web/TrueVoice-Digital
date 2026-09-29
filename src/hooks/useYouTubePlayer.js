@@ -61,6 +61,11 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
   // hidden (controls: 0) and no way to recover. `resume` below is a real
   // gesture-driven escape hatch for exactly that case.
   const [stuck, setStuck] = useState(false);
+  // TEMPORARY diagnostic (remove once the native "configuration error" is
+  // resolved): captures YouTube's actual numeric error code from onError,
+  // surfaced on-screen in FeedCard so we can see real device data without
+  // Mac/Safari dev tools attached.
+  const [errorCode, setErrorCode] = useState(null);
   // Updated from onStateChange as events actually arrive -- more reliable
   // for the stuck check than calling player.getPlayerState() cold, since
   // that call has to round-trip the postMessage bridge to the iframe.
@@ -175,6 +180,9 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
               // iframe creation and this instant.
               playerRef.current.mute();
             }
+          },
+          onError: (event) => {
+            setErrorCode(event.data);
           },
           onStateChange: (event) => {
             lastStateRef.current = event.data;
@@ -297,5 +305,5 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
     setSharedMuted(!sharedMuted);
   };
 
-  return { ready, muted, toggleMute, stuck, resume };
+  return { ready, muted, toggleMute, stuck, resume, errorCode };
 }
