@@ -19,18 +19,24 @@ export default function VideoModal({ open, onClose, video }) {
   const title = video.title || "Video";
   const description = video.description || "";
 
-  // Support embedUrl, videoId, OR youtubeId (videoFeed uses youtubeId)
-  // origin= matches the fix in useYouTubePlayer.js -- the native app's
-  // WebView origin is "capacitor://localhost", which fails YouTube's
-  // origin check and shows their own "configuration error" page instead
-  // of the video, so every embed needs the real production origin.
+  // Support embedUrl, videoId, OR youtubeId (videoFeed uses youtubeId).
+  //
+  // Real-origin proxy fix: iOS can't make the native app's own address a
+  // genuine https:// origin (Apple platform restriction on WKWebView, not
+  // a config we can flip -- see public/yt-embed.html for the full
+  // explanation), so YouTube rejected a direct embed no matter what
+  // origin parameter we claimed, showing their own "configuration error"
+  // page instead of the video. This points at our own real page instead,
+  // which itself embeds YouTube from a genuine https origin. mute=0
+  // because opening this modal IS the user's play gesture -- they expect
+  // sound, unlike a passive background preview.
   const embedUrl =
     video.embedUrl ||
     (video.youtubeId
-      ? `https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&rel=0&origin=https://truevoice.digital`
+      ? `https://truevoice.digital/yt-embed.html?v=${video.youtubeId}&autoplay=1&mute=0`
       : null) ||
     (video.videoId
-      ? `https://www.youtube.com/embed/${video.videoId}?autoplay=1&rel=0&origin=https://truevoice.digital`
+      ? `https://truevoice.digital/yt-embed.html?v=${video.videoId}&autoplay=1&mute=0`
       : null);
 
   if (!embedUrl) return null;
@@ -52,6 +58,26 @@ export default function VideoModal({ open, onClose, video }) {
         </div>
 
         <div className="tv-modal-body">
+          {/* TEMPORARY diagnostic -- remove once the native YouTube
+              "configuration error" is resolved. A raw iframe has no onError
+              we can hook into from outside (cross-origin), so this just
+              shows exactly what URL got requested and what origin the
+              WebView actually thinks it's running at, so we're not
+              guessing blind on the next TestFlight test. */}
+          <div
+            style={{
+              background: "rgba(0,0,0,0.85)",
+              color: "#0f0",
+              fontSize: 10,
+              fontFamily: "monospace",
+              padding: "4px 6px",
+              wordBreak: "break-all",
+            }}
+          >
+            embedUrl: {embedUrl}
+            <br />
+            origin: {typeof window !== "undefined" ? window.location.origin : "?"}
+          </div>
           <div className="tv-modal-video">
             <iframe
               src={embedUrl}

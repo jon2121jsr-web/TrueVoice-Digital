@@ -45,7 +45,14 @@ function loopEmbedSrc(item) {
   // loop=1 only actually loops a single video when playlist is set to that
   // same video id -- a documented quirk of the YouTube embed player, not
   // an oversight.
+  //
+  // Real-origin proxy fix (see public/yt-embed.html): iOS can't make the
+  // app's own address a genuine https:// origin, so embedding YouTube
+  // directly always failed here regardless of any origin parameter we
+  // passed. This points at our own real page instead, which forwards all
+  // of these same params straight through to its own YT.Player.
   const params = new URLSearchParams({
+    v: item.youtube_id,
     autoplay: "1",
     mute: "1",
     controls: "0",
@@ -58,13 +65,8 @@ function loopEmbedSrc(item) {
     rel: "0",
     iv_load_policy: "3",
     disablekb: "1",
-    // Same origin fix as useYouTubePlayer.js / VideoModal.jsx -- without
-    // it the native app's "capacitor://localhost" WebView origin fails
-    // YouTube's check and this card shows their error page instead of
-    // looping the preview.
-    origin: "https://truevoice.digital",
   });
-  return `https://www.youtube.com/embed/${item.youtube_id}?${params.toString()}`;
+  return `https://truevoice.digital/yt-embed.html?${params.toString()}`;
 }
 
 function PreviewCard({ item, position, isCentered, cardRef, hoverProps }) {

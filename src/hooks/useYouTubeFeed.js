@@ -108,7 +108,13 @@ async function fetchRawVideos(playlistId, maxResults) {
       youtubeId,
       title:        s.title || "",
       thumbnailUrl,
-      embedUrl:     `https://www.youtube.com/embed/${youtubeId}?autoplay=1`,
+      // Real-origin proxy fix (see public/yt-embed.html): iOS can't make
+      // the app's own address a genuine https:// origin, so a direct
+      // YouTube embed always failed here regardless of any origin
+      // parameter. This feeds the show-episode modal (VideoModal) and
+      // ReelsGrid via the raw iframe path -- both are user-tap-to-open,
+      // so mute=0.
+      embedUrl:     `https://truevoice.digital/yt-embed.html?v=${youtubeId}&autoplay=1&mute=0`,
       videoUrl:     `https://www.youtube.com/watch?v=${youtubeId}`,
       speaker:      null,
       source:       null,

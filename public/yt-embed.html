@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>TrueVoice Digital video</title>
+<!--
+  Real-origin proxy for YouTube embeds inside the native app.
+
+  Why this file exists: Apple's WKWebView will not let a native app's own
+  address be "https://..." (Capacitor docs: iOS can't override its local
+  scheme to http/https -- that's a platform restriction, not a config we
+  can flip). YouTube's IFrame Player refuses to play when the origin it's
+  handed doesn't genuinely match where the page is running, which is why
+  embedding YouTube directly inside the app showed YouTube's own
+  "configuration error" (Error 153) no matter what origin parameter we
+  claimed.
+
+  The fix: this file is a real page, actually hosted at
+  https://truevoice.digital/yt-embed.html -- a genuine https address, not
+  a claim. The native app shows THIS page inside an iframe (a normal,
+  allowed network request to a real address) instead of embedding YouTube
+  directly, and this page embeds YouTube from its own real origin, which
+  YouTube accepts without complaint.
+
+  Query params (all optional except v):
+    v              YouTube video id (required)
+    start, end     clip boundaries, seconds
+    autoplay       0/1, default 1
+    mute           0/1, default 1
+    controls       0/1, default 0
+    loop           0/1, default 0 (also set playlist=<v> to actually loop)
+    playlist       comma-separated ids YouTube loops through when loop=1
+    rel            0/1, default 0
+    modestbranding 0/1, default 1
+    playsinline    0/1, default 1
+    iv_load_policy 1 or 3, default 3 (hide annotations)
+    disablekb      0/1, default 0
+
+  postMessage protocol with the parent page (used by the Scroll feed's
+  player controls -- other embeds of this page simply don't use it):
+    parent -> this page, message.source === "tvd-yt-embed-cmd":
+      { type: "play" }
+      { type: "mute" }
+      { type: "unmute" }
+      { type: "seekAndPlay", time: <seconds> }
+    this page -> parent, message.source === "tvd-yt-embed":
+      { type: "ready" }
+      { type: "stateChange", state: <YT numeric player state> }
+      { type: "error", code: <YT numeric error code> }
+-->
+<style>
+  html, body { margin: 0; padding: 0; background: #000; height: 100%; overflow: hidden; }
+  #player { position: absolute; inset: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="player"></div>
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var videoId = params.get("v");
+
+  function flag(name, defaultValue) {
+    var v = params.get(name);
+    if (v === null) return defaultValue;
+    return v !== "0";
+  }
+  function intParam(name, defaultValue) {
+    var v = params.get(name);
+    if (v === null || v === "") return defaultValue;
+    var n = parseInt(v, 10);
+    return Number.isNaN(n) ? defaultValue : n;
+  }
+
+  if (!videoId) {
+    document.body.innerHTML =
+      '<p style="color:#fff;font-family:sans-serif;padding:16px;">Missing video id.</p>';
+    return;
+  }
+
+  var start = intParam("start", 0);
+  var end = params.get("end") ? intParam("end", undefined) : undefined;
+  var autoplay = flag("autoplay", true);
+  var muted = flag("mute", true);
+  var controls = flag("controls", false);
+  var loop = flag("loop", false);
+  var playlist = params.get("playlist") || (loop ? videoId : undefined);
+  var rel = flag("rel", false);
+  var modestbranding = flag("modestbranding", true);
+  var playsinline = flag("playsinline", true);
+  var ivLoadPolicy = intParam("iv_load_policy", 3);
+  var disablekb = flag("disablekb", false);
+
+  var player = null;
+
+  function postToParent(msg) {
+    try {
+      window.parent.postMessage(
+        Object.assign({ source: "tvd-yt-embed" }, msg),
+        "*"
+      );
+    } catch (e) { /* no parent, or parent gone -- nothing to do */ }
+  }
+
+  window.addEventListener("message", function (event) {
+    var data = event.data;
+    if (!data || data.source !== "tvd-yt-embed-cmd" || !player) return;
+    if (data.type === "play") player.playVideo();
+    else if (data.type === "mute") player.mute();
+    else if (data.type === "unmute") player.unMute();
+    else if (data.type === "seekAndPlay") {
+      player.seekTo(data.time || 0, true);
+      player.playVideo();
+    }
+  });
+
+  window.onYouTubeIframeAPIReady = function () {
+    var playerVars = {
+      start: start,
+      playsinline: playsinline ? 1 : 0,
+      rel: rel ? 1 : 0,
+      modestbranding: modestbranding ? 1 : 0,
+      controls: controls ? 1 : 0,
+      disablekb: disablekb ? 1 : 0,
+      iv_load_policy: ivLoadPolicy,
+      autoplay: autoplay ? 1 : 0,
+      mute: muted ? 1 : 0,
+      // This page's own window.location.origin is the real, genuine
+      // origin YouTube is validating against -- unlike the native app
+      // shell, this is an actual https address, so there's nothing to
+      // fake here.
+      origin: window.location.origin,
+    };
+    if (end) playerVars.end = end;
+    if (loop) {
+      playerVars.loop = 1;
+      playerVars.playlist = playlist;
+    }
+
+    player = new YT.Player("player", {
+      videoId: videoId,
+      playerVars: playerVars,
+      events: {
+        onReady: function () {
+          postToParent({ type: "ready" });
+        },
+        onStateChange: function (event) {
+          postToParent({ type: "stateChange", state: event.data });
+        },
+        onError: function (event) {
+          postToParent({ type: "error", code: event.data });
+        },
+      },
+    });
+  };
+
+  var tag = document.createElement("script");
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
+})();
+</script>
+</body>
+</html>
