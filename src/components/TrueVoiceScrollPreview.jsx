@@ -69,12 +69,32 @@ function loopEmbedSrc(item) {
   return `https://truevoice.digital/yt-embed.html?${params.toString()}`;
 }
 
-function PreviewCard({ item, position, isCentered, cardRef, hoverProps }) {
+function PreviewCard({ item, position, isCentered, cardRef, hoverProps, loopIframeRef }) {
   const poster = posterFor(item);
   const isVerse = item.item_type === "verse";
   const isVideo = item.item_type === "reel" || item.item_type === "snip";
   const meta = [item.speaker, item.source_show].filter(Boolean).join(" · ");
   const showLoop = isCentered && isVideo && item.youtube_id;
+
+  // Register this card's own loop iframe into the single shared ref while
+  // it's mounted, so whichever card is centered can be told to stop()
+  // before the next one takes over (see stopActiveLoop in the parent).
+  // Guarded so an unmount only clears the shared ref if it's still
+  // pointing at *this* card's node -- mount/unmount order between the
+  // outgoing and incoming card isn't guaranteed, and an unguarded clear
+  // could wipe out the next card's ref instead of this one's.
+  const myIframeElRef = useRef(null);
+  function setLoopIframeEl(el) {
+    if (el) {
+      myIframeElRef.current = el;
+      if (loopIframeRef) loopIframeRef.current = el;
+    } else {
+      if (loopIframeRef && loopIframeRef.current === myIframeElRef.current) {
+        loopIframeRef.current = null;
+      }
+      myIframeElRef.current = null;
+    }
+  }
 
   function handleClick() {
     trackEvent("home_scroll_preview_click", {
@@ -102,6 +122,7 @@ function PreviewCard({ item, position, isCentered, cardRef, hoverProps }) {
           allow="autoplay; encrypted-media"
           tabIndex={-1}
           aria-hidden="true"
+          ref={setLoopIframeEl}
         />
       ) : (
         poster && <img className="tvs-card-poster" src={poster} alt="" loading="lazy" />
@@ -136,6 +157,26 @@ export default function TrueVoiceScrollPreview() {
   const scrollerRef = useRef(null);
   const cardRefs = useRef([]);
   const [centeredId, setCenteredId] = useState(null);
+
+  const activeLoopIframeRef = useRef(null);
+  const centeredIdRef = useRef(null);
+  useEffect(() => { centeredIdRef.current = centeredId; }, [centeredId]);
+
+  // Explicitly stop() whichever centered-card preview is currently loaded
+  // before switching to the next one -- WKWebView doesn't reliably kill an
+  // embedded YouTube player's audio just because its iframe is removed
+  // from the DOM (same underlying issue fixed in ReelsGrid.jsx), which
+  // was letting a previous card's preview audio keep playing underneath
+  // the next one.
+  function stopActiveLoop() {
+    const win = activeLoopIframeRef.current?.contentWindow;
+    if (!win) return;
+    try {
+      win.postMessage({ source: "tvd-yt-embed-cmd", type: "stop" }, "*");
+    } catch {
+      /* iframe already gone -- nothing to stop */
+    }
+  }
 
   // Mouse/trackpad devices don't "scroll a card to center" the way a phone's
   // touch-swipe does -- on a wide screen several cards can already be fully
@@ -175,7 +216,11 @@ export default function TrueVoiceScrollPreview() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && entry.intersectionRatio > 0.65) {
-            setCenteredId(entry.target.dataset.itemId);
+            const newId = entry.target.dataset.itemId;
+            if (centeredIdRef.current !== newId) {
+              stopActiveLoop();
+              setCenteredId(newId);
+            }
           }
         });
       },
@@ -209,9 +254,16 @@ export default function TrueVoiceScrollPreview() {
                     isCentered={centeredId === item.id}
                     cardRef={(el) => { cardRefs.current[idx] = el; }}
                     hoverProps={supportsHover ? {
-                      onMouseEnter: () => setCenteredId(item.id),
-                      onMouseLeave: () => setCenteredId((prev) => (prev === item.id ? null : prev)),
+                      onMouseEnter: () => {
+                        stopActiveLoop();
+                        setCenteredId(item.id);
+                      },
+                      onMouseLeave: () => {
+                        if (centeredId === item.id) stopActiveLoop();
+                        setCenteredId((prev) => (prev === item.id ? null : prev));
+                      },
                     } : undefined}
+                    loopIframeRef={activeLoopIframeRef}
                   />
                 ))}
                 <Link

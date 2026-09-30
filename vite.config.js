@@ -134,7 +134,7 @@ export default defineConfig({
         // preview cards (nav, social icons, the Chime In tab) and is the
         // most likely source of unrelated audio bleeding into a video
         // slot, since that hijacked "video" was actually the whole app.
-        navigateFallbackDenylist: [/^\/api\//, /^\/yt-embed\.html$/],
+        navigateFallbackDenylist: [/^\/api\//, /^\/yt-embed\.html/],
       },
 
       devOptions: {
