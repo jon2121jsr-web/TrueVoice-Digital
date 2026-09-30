@@ -43,6 +43,7 @@
       { type: "play" }
       { type: "mute" }
       { type: "unmute" }
+      { type: "stop" }
       { type: "seekAndPlay", time: <seconds> }
     this page -> parent, message.source === "tvd-yt-embed":
       { type: "ready" }
@@ -109,6 +110,7 @@
     if (data.type === "play") player.playVideo();
     else if (data.type === "mute") player.mute();
     else if (data.type === "unmute") player.unMute();
+    else if (data.type === "stop") player.stopVideo();
     else if (data.type === "seekAndPlay") {
       player.seekTo(data.time || 0, true);
       player.playVideo();

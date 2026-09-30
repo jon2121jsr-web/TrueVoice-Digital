@@ -3,7 +3,7 @@
 // No static data files required.
 // ✅ The Cut with Erica removed April 2026
 // ✅ Capturing Christianity, The Beat by Allen Parr, Cold Case Christianity added April 2026
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useYouTubeFeed } from "../hooks/useYouTubeFeed";
 import { trackVideoPlay } from '../lib/analytics.js';
 import "./ReelsGrid.css";
@@ -45,6 +45,7 @@ function SkeletonRow() {
 
 function ReelsGrid() {
   const [activeVideo, setActiveVideo] = useState(null);
+  const iframeRef = useRef(null);
 
   const pigskinFeed   = useYouTubeFeed({ channelId: CHANNEL_IDS.PIGSKIN,                maxResults: 50, filterFn: pigskinFilter });
   const denishaFeed   = useYouTubeFeed({ channelId: CHANNEL_IDS.DENISHA,                maxResults: 10 });
@@ -97,11 +98,34 @@ function ReelsGrid() {
     description: "Cold-case detective methodology applied to the evidence for the Christian worldview.",
   });
 
+  // Explicitly stop() the currently-loaded video before swapping to a new
+  // one (or closing) -- WKWebView doesn't reliably kill an embedded
+  // YouTube player's audio just because the iframe's src changes or the
+  // iframe is removed from the DOM, which was letting the previous
+  // video's sound keep playing underneath the next one. stopVideo() (via
+  // the yt-embed.html postMessage bridge) unloads the video outright
+  // instead of just pausing it, and the iframe's key={activeVideo.id}
+  // below forces a real remount for the next video too, so nothing about
+  // the old player instance survives the switch.
+  function stopCurrentVideo() {
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    try {
+      win.postMessage({ source: "tvd-yt-embed-cmd", type: "stop" }, "*");
+    } catch {
+      /* iframe already gone -- nothing to stop */
+    }
+  }
+
   const handleOpen = (video) => {
+    stopCurrentVideo();
     setActiveVideo(video);
     trackVideoPlay(video.youtubeId, video.title);
   };
-  const handleClose = () => setActiveVideo(null);
+  const handleClose = () => {
+    stopCurrentVideo();
+    setActiveVideo(null);
+  };
 
   const renderChannel = (channelTitle, items, feedState) => (
     <section className="reels-channel" key={channelTitle}>
@@ -185,6 +209,8 @@ function ReelsGrid() {
             <div className="reel-modal-body">
               <div className="reel-modal-video-wrapper">
                 <iframe
+                  key={activeVideo.id}
+                  ref={iframeRef}
                   src={activeVideo.embedUrl}
                   title={activeVideo.title}
                   frameBorder="0"
