@@ -123,7 +123,18 @@ export default defineConfig({
         ],
 
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        // yt-embed.html must never get the SPA-shell fallback treatment --
+        // every video preview across the app (ReelsGrid, Scroll, the
+        // homepage TrueVoice Scroll rail) loads it inside an <iframe>, and
+        // an iframe load counts as a "navigation" to Workbox just like a
+        // real page visit. Without this, once the service worker is
+        // actively controlling the page, any iframe pointed at
+        // yt-embed.html silently got swapped for the full index.html
+        // homepage instead -- which is what was showing up inside video
+        // preview cards (nav, social icons, the Chime In tab) and is the
+        // most likely source of unrelated audio bleeding into a video
+        // slot, since that hijacked "video" was actually the whole app.
+        navigateFallbackDenylist: [/^\/api\//, /^\/yt-embed\.html$/],
       },
 
       devOptions: {
