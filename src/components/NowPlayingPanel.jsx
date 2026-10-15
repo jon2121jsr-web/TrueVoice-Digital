@@ -1,8 +1,8 @@
 // src/components/NowPlayingPanel.jsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 import { trackStreamPlay } from '../lib/analytics.js';
-import { getActiveShow, getNextShow, showSchedule } from "../showSchedule.js";
+import PulseLive from "../features/pulse/PulseLive.jsx";
 import "./NowPlayingPanel.css";
 
 function toNum(v, fallback = 0) {
@@ -18,30 +18,19 @@ function useIsOwner() {
   }, []);
 }
 
-function Waveform() {
-  return (
-    <span className="tv-waveform" aria-hidden="true">
-      {[0, 1, 2, 3, 4].map(i => (
-        <span key={i} className="tv-wave-bar" style={{ "--i": i }} />
-      ))}
-    </span>
-  );
-}
-
 export function NowPlayingPanel({
   streamUrl,
   audioRef,
-  showHistory = false,
   onStatusChange,
   isFloating = false,
+  compact = false,
+  media,
 }) {
   const [loading,        setLoading]        = useState(true);
   const [error,          setError]          = useState(null);
   const [isPlaying,      setIsPlaying]      = useState(false);
   const [listeners,      setListeners]      = useState(null);
   const [displaySong,    setDisplaySong]    = useState(null);
-  const [activeShow,     setActiveShow]     = useState(() => getActiveShow());
-  const [nextShow,       setNextShow]       = useState(() => getNextShow());
   const [isReconnecting, setIsReconnecting] = useState(false);
 
   const isOwner = useIsOwner();
@@ -54,7 +43,9 @@ export function NowPlayingPanel({
   const pendingSongRef = useRef(null);
   const pendingFlipRef = useRef(null);
   const isPlayingRef   = useRef(false);
-  const wantsPlaybackRef = useRef(false); // user INTENT (set only in handleTogglePlay)
+  const wantsPlaybackRef = useRef(false); // user intent, shared by UI and Media Session
+  const recoveryTimerRef = useRef(null);
+  const playbackEpochRef = useRef(0);
   const streamUrlRef   = useRef(streamUrl);
   useEffect(() => { streamUrlRef.current = streamUrl; }, [streamUrl]);
 
@@ -117,7 +108,7 @@ export function NowPlayingPanel({
     load();
     const id = window.setInterval(load, 15_000);
     return () => { alive = false; window.clearInterval(id); };
-  }, []);
+  }, [STREAM_DELAY_SEC]);
 
   /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {
@@ -133,34 +124,6 @@ export function NowPlayingPanel({
     }, 1_000);
     return () => window.clearInterval(id);
   }, []);
-
-  /* ── Update activeShow / nextShow every 60 seconds ─────────────────────── */
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setActiveShow(getActiveShow());
-      setNextShow(getNextShow());
-    }, 60_000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  /* ── Weekly programming ticker segments ────────────────────────────────── */
-  const pigskinShow = useMemo(() => showSchedule.find(s => s.id === 'pigskin') || null, []);
-
-  /*
-  const tickerSegments = useMemo(() => {
-    const segs = [];
-    if (activeShow) {
-      segs.push({ key: 'live', live: true, text: `Live now · ${activeShow.name}` });
-    }
-    if (nextShow && (!activeShow || nextShow.name !== activeShow.name)) {
-      segs.push({ key: 'next', live: false, text: `Next: ${nextShow.name} at ${nextShow.etStart} (${nextShow.phxStart})` });
-    }
-    if (pigskinShow && activeShow?.id !== 'pigskin') {
-      segs.push({ key: 'pigskin', live: false, text: `Pigskin Frenzy · Saturdays ${pigskinShow.etRange} (${pigskinShow.phxRange})` });
-    }
-    return segs;
-  }, [activeShow, nextShow, pigskinShow]);
-  */
 
   /* ── Derived display values ────────────────────────────────────────────── */
   const title  = displaySong?.title  || (loading ? "Loading…" : "Live Stream");
@@ -194,7 +157,6 @@ export function NowPlayingPanel({
     // flight at a time, so they can't stack and repeatedly .load() the
     // element (each .load() drops the buffer and can itself trigger another
     // "stalled", which was causing the reconnect storm behind the pausing).
-    const recoveryTimerRef = { current: null };
     const clearRecoveryTimer = () => {
       if (recoveryTimerRef.current) {
         clearTimeout(recoveryTimerRef.current);
@@ -206,13 +168,16 @@ export function NowPlayingPanel({
       recoveryTimerRef.current = setTimeout(() => {
         recoveryTimerRef.current = null;
         if (!wantsPlaybackRef.current || !el.paused) return;
+        const epoch = playbackEpochRef.current;
         const onFallback = el.src.includes(AZURACAST_FALLBACK);
         if (!onFallback) el.src = streamUrlRef.current;
         el.load();
         el.play().catch(() => {
+          if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
           el.src = AZURACAST_FALLBACK;
           el.load();
           el.play().catch(() => {
+            if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
             setError("Stream unavailable. Tap to retry.");
             setIsPlaying(false);
             isPlayingRef.current = false;
@@ -221,7 +186,12 @@ export function NowPlayingPanel({
       }, delayMs);
     };
 
-    const onPlay  = () => { setIsPlaying(true);  isPlayingRef.current = true; };
+    const onPlay = () => {
+      // A pending play promise must not resurrect radio after a video handoff.
+      if (!wantsPlaybackRef.current) { el.pause(); return; }
+      setIsPlaying(true);
+      isPlayingRef.current = true;
+    };
     const onPause = () => {
       setIsPlaying(false);
       isPlayingRef.current = false;
@@ -271,10 +241,12 @@ export function NowPlayingPanel({
       setIsReconnecting(false);
       if (!wantsPlaybackRef.current || !el.paused) return; // only if user wants playback
       clearRecoveryTimer(); // supersede any pending debounced attempt — retry now
+      const epoch = playbackEpochRef.current;
       setIsReconnecting(true);
       el.src = streamUrlRef.current; // primary first
       el.load();
       el.play().catch(() => {
+        if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
         el.src = AZURACAST_FALLBACK; // then fallback
         el.load();
         el.play().catch(() => {});
@@ -308,167 +280,85 @@ export function NowPlayingPanel({
     };
   }, [audioRef]);
 
-  /* ── Stream control ────────────────────────────────────────────────────── */
-  const handleTogglePlay = () => {
+  /* ── Shared controller commands: no second state or audio element ─────── */
+  const pauseRadio = useCallback(() => {
+    wantsPlaybackRef.current = false;
+    playbackEpochRef.current += 1;
+    window.clearTimeout(recoveryTimerRef.current);
+    recoveryTimerRef.current = null;
+    audioRef?.current?.pause();
+    isPlayingRef.current = false;
+    setIsPlaying(false);
+    setIsReconnecting(false);
+  }, [audioRef]);
+
+  const playRadio = useCallback(({ reconnect = false } = {}) => {
     const el = audioRef?.current;
     if (!el) return;
     try {
-      if (!isPlaying) {
+        media?.stopVideo();
+        window.clearTimeout(recoveryTimerRef.current);
+        recoveryTimerRef.current = null;
         setError(null);
         wantsPlaybackRef.current = true; // user wants playback
+        const epoch = ++playbackEpochRef.current;
         // Always reload the live stream src before playing to snap to
         // the live edge — prevents the stale-buffer glitch after pause.
         const currentSrc = el.src;
-        if (!currentSrc || (!currentSrc.includes("live365") && !currentSrc.includes("truevoice"))) {
+        if (reconnect || !currentSrc || (!currentSrc.includes("live365") && !currentSrc.includes("truevoice"))) {
           el.src = streamUrlRef.current;
         }
         el.load();
         const p = el.play();
-        trackStreamPlay(displaySong?.title ?? 'TrueVoice Radio');
+        trackStreamPlay(displaySongRef.current?.title ?? 'TrueVoice Radio');
         if (p?.catch) p.catch(() => {
+          if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
+          if (reconnect) {
+            el.src = AZURACAST_FALLBACK;
+            el.load();
+            el.play().catch(() => {
+              if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
+              setError("Tap again to start audio.");
+              setIsPlaying(false);
+            });
+            return;
+          }
           setError("Tap again to start audio.");
           setIsPlaying(false);
         });
         setIsPlaying(true);
-      } else {
-        wantsPlaybackRef.current = false; // user stopped playback
-        // Pause only — keep src intact so lock screen Play can resume
-        el.pause();
-        setIsPlaying(false);
-      }
     } catch {
       setError("Tap again to start audio.");
       setIsPlaying(false);
     }
+  }, [audioRef, media, AZURACAST_FALLBACK]);
+
+  useLayoutEffect(() => {
+    const el = audioRef?.current;
+    const detach = media?.attachRadio({ play: playRadio, pause: pauseRadio });
+    // Capture the element: React may clear audioRef before unmount cleanup.
+    // Stop radio synchronously before Scroll's next player can be activated.
+    return () => { pauseRadio(); el?.pause(); detach?.(); };
+  }, [audioRef, media, playRadio, pauseRadio]);
+
+  const handleTogglePlay = () => {
+    if (isPlayingRef.current) pauseRadio();
+    else playRadio();
   };
 
-  /* ── RENDER: Floating compact ──────────────────────────────────────────── */
-  if (isFloating) {
-    return (
-      <div className="tv-now-playing tv-radio-card tv-radio-card--float">
-        {/* Album art thumbnail */}
-        <div className="tv-float-art">
-          {art ? (
-            <img src={art} alt={title} className="tv-float-art-img" />
-          ) : (
-            <div className="tv-float-art-fallback">
-              <img src="/truevoice-favicon.png" alt="" aria-hidden="true" className="tv-float-art-favicon" />
-            </div>
-          )}
-        </div>
-
-        {/* Track info */}
-        <div className="tv-float-info">
-          <span className="tv-float-title">{title}</span>
-          <span className="tv-float-artist">{artist}</span>
-        </div>
-
-        {/* Controls */}
-        <div className="tv-float-controls">
-          {isPlaying && <Waveform />}
-          <button
-            type="button"
-            className="tv-btn-listen tv-btn-listen--sm"
-            onPointerUp={handleTogglePlay}
-            onClick={(e) => e.preventDefault()}
-          >
-            {isPlaying ? "Stop" : "Listen Live"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ── RENDER: Full card ─────────────────────────────────────────────────── */
   return (
-    <div className="tv-now-playing tv-radio-card">
-
-      {/* Top banner */}
-      <div className="tv-radio-banner">
-        <span className="tv-banner-wordmark">
-          TrueVoice<span className="tv-banner-dot">.</span>Digital
-        </span>
-        <div className="tv-onair-pill">
-          <span className="tv-onair-dot" aria-hidden="true" />
-          ON AIR
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="tv-radio-body">
-
-        {/* Left panel */}
-        <div className="tv-radio-left">
-
-          {/* Song / artist — always shown, regardless of live show status.
-              The weekly ticker below now covers "what show is live". */}
-          <div className="tv-radio-eyebrow">
-            <Waveform />
-            <span>Now Playing</span>
-          </div>
-          <h2 className="tv-radio-title">{isReconnecting ? "Reconnecting…" : title}</h2>
-          <p className="tv-radio-artist">{artist}</p>
-
-          {error && <p className="tv-radio-error">{error}</p>}
-
-          <button
-            type="button"
-            className="tv-btn-listen"
-            onPointerUp={handleTogglePlay}
-            onClick={(e) => e.preventDefault()}
-          >
-            <Waveform />
-            {isPlaying ? "Stop" : "Listen Live"}
-          </button>
-
-          {isOwner && listeners != null && !Number.isNaN(listeners) && (
-            <span className="tv-listeners" title="Live listeners (owner view)">
-              {listeners} listening
-            </span>
-          )}
-        </div>
-
-        {/* Right panel — album art in all states */}
-        <div className="tv-radio-right">
-          <div className="tv-art-frame">
-            {art ? (
-              <img
-                src={art}
-                alt={`${title} cover art`}
-                className="tv-art-img"
-                loading="lazy"
-              />
-            ) : (
-              <div className="tv-art-fallback">
-                <img
-                  src="/truevoice-favicon.png"
-                  alt=""
-                  className="tv-art-fallback-logo"
-                  aria-hidden="true"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      {/* ── Weekly programming ticker ── */}
-      {/*
-      {tickerSegments.length > 0 && (
-        <div className="tv-live-ticker">
-          <div className="tv-ticker-track">
-            {[...tickerSegments, ...tickerSegments].flatMap((seg, i) => ([
-              <span className="tv-ticker-seg" key={`seg-${i}`}>
-                {seg.live && <span className="tv-ticker-dot" aria-hidden="true" />}
-                {seg.text}
-              </span>,
-              <span className="tv-ticker-sep" key={`sep-${i}`} aria-hidden="true">/</span>,
-            ]))}
-          </div>
-        </div>
-      )}
-      */}
-    </div>
+    <PulseLive
+      title={title}
+      artist={artist}
+      art={art}
+      isPlaying={isPlaying}
+      isReconnecting={isReconnecting}
+      loading={loading}
+      error={error}
+      onTogglePlay={handleTogglePlay}
+      isFloating={isFloating}
+      compact={compact}
+      listeners={isOwner ? listeners : null}
+    />
   );
 }

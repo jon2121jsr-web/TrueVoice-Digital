@@ -1,0 +1,104 @@
+.tv-now-playing.pulse-live {
+  padding: 0;
+  color: #f5f7fc;
+  border: 1px solid #344254;
+  border-radius: 24px;
+  background: radial-gradient(ellipse at 95% 0%, #33294e 0%, transparent 60%), #101724;
+  box-shadow: 0 22px 60px #09101c30;
+  overflow: hidden;
+  min-width: 0;
+}
+.pulse-live__header, .pulse-live__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px 24px;
+}
+.pulse-live__brand { font-size: 11px; letter-spacing: .18em; color: #c5cadd; }
+.pulse-live__brand strong { color: #73ecda; }
+.pulse-live__badge { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.pulse-live__badge i { width: 7px; height: 7px; background: #ff958d; border-radius: 50%; box-shadow: 0 0 14px #ff958d65; }
+.pulse-live__body { display: grid; grid-template-columns: minmax(110px, .8fr) minmax(0, 1fr); gap: 24px; padding: 8px 24px 28px; align-items: center; }
+.pulse-live__art { aspect-ratio: 1; border-radius: 18px; overflow: hidden; background: linear-gradient(135deg, #224443, #362756); box-shadow: 0 12px 32px #0005; }
+.pulse-live__art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.pulse-live__art img.pulse-live__fallback { object-fit: contain; padding: 25%; }
+.pulse-live__track { min-width: 0; }
+.pulse-live__eyebrow { color: #a89aca; font-size: 10px; letter-spacing: .15em; line-height: 1.6; margin: 0 0 12px; }
+.pulse-live__track h2 { font-size: clamp(24px, 3vw, 38px); line-height: 1.15; letter-spacing: -.035em; margin: 0; overflow-wrap: anywhere; }
+.pulse-live__artist { color: #c9d2df; font-size: 16px; margin: 10px 0 16px; overflow-wrap: anywhere; }
+.pulse-live__status { color: #73ecda; font-size: 12px; margin: 0; }
+.pulse-live__error { color: #ffb6ae; font-size: 12px; overflow-wrap: anywhere; }
+.pulse-live__play { grid-column: 1 / -1; display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 52px; padding: 14px 24px; border-radius: 14px; background: #73ecda; color: #081c20; font-size: 15px; font-weight: 800; touch-action: manipulation; transition: background .2s; }
+.pulse-live__play:hover { background: #a2ffed; }
+.pulse-live__play:focus-visible, .pulse-live a:focus-visible { outline: 3px solid #c4acff; outline-offset: 4px; }
+.pulse-live__footer { border-top: 1px solid #ffffff12; font-size: 12px; color: #bfc6d6; }
+.pulse-live__footer a { color: #c4acff; text-decoration: none; }
+.pulse-player-dock .tv-player-surface .tv-now-playing.pulse-live--floating {
+  position: fixed;
+  z-index: 9999;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition: opacity 180ms ease, transform 220ms ease, visibility 0s;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: none;
+  height: auto !important;
+  border-radius: 18px 18px 0 0;
+  padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: #101724;
+  box-shadow: 0 -8px 40px #0005;
+}
+.pulse-live--floating .pulse-live__header { display: none; }
+.pulse-live--floating .pulse-live__body { max-width: 1052px; margin: auto; padding: 0; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 14px; }
+.pulse-live--floating .pulse-live__art { border-radius: 10px; }
+.pulse-live--floating .pulse-live__eyebrow { display: none; }
+.pulse-live--floating .pulse-live__track h2 { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0; }
+.pulse-live--floating .pulse-live__artist { font-size: 12px; margin: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pulse-live--floating .pulse-live__status { font-size: 10px; }
+.pulse-live--floating .pulse-live__error { margin: 3px 0; }
+.pulse-live--floating .pulse-live__play { grid-column: auto; min-height: 44px; padding: 10px 16px; }
+.pulse-live--strip .pulse-live__header { display: none; }
+.pulse-live--strip .pulse-live__body { padding: 16px; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 16px; }
+.pulse-live--strip .pulse-live__art { border-radius: 10px; }
+.pulse-live--strip .pulse-live__eyebrow { display: none; }
+.pulse-live--strip .pulse-live__track h2 { font-size: 16px; letter-spacing: 0; }
+.pulse-live--strip .pulse-live__artist { font-size: 13px; margin: 4px 0; }
+.pulse-live--strip .pulse-live__status { font-size: 11px; }
+.pulse-live--strip .pulse-live__play { grid-column: auto; min-height: 44px; padding: 10px 16px; }
+.pulse-radio-strip .tv-verse-card[hidden] { display: none; }
+.pulse-player-dock .tv-player-surface .pulse-live--floating.pulse-live--inactive {
+  opacity: 0;
+  transform: translateY(100%);
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 220ms ease, visibility 0s 220ms;
+}
+/* The full card always occupies its original grid cell, including offscreen. */
+.pulse-live:not(.pulse-live--floating).pulse-live--inactive { pointer-events: none; }
+.tv-main.tv-main--pulse {
+  padding-top: 16px;
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+}
+.tv-main--pulse .tv-hero { gap: 18px; margin-bottom: 22px; }
+.tv-main--pulse .tv-verse-card { border: 1px solid #34425430; border-radius: 24px; }
+@media (prefers-reduced-motion: reduce) {
+  .pulse-player-dock .tv-player-surface .pulse-live--floating,
+  .pulse-player-dock .tv-player-surface .pulse-live--floating.pulse-live--inactive,
+  .pulse-live__play { transition: none; }
+}
+
+@media (max-width: 520px) {
+  .pulse-live__header, .pulse-live__footer { padding: 18px; }
+  .pulse-live__body { grid-template-columns: minmax(0, 1fr); padding: 4px 18px 22px; gap: 20px; }
+  .pulse-live__art { width: min(100%, 280px); justify-self: center; }
+  .pulse-live__track h2 { font-size: 28px; }
+  .pulse-live--floating .pulse-live__body { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; }
+  .pulse-live--floating .pulse-live__play { padding: 10px; }
+  .pulse-live--floating .pulse-live__play span { display: none; }
+  .pulse-live--strip .pulse-live__body { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding: 12px; }
+  .pulse-live--strip .pulse-live__play { padding: 10px; }
+  .pulse-live--strip .pulse-live__play span { display: none; }
+}

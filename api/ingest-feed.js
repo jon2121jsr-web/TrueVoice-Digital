@@ -1,3 +1,4 @@
+import { isRestrictedPreview, rejectPreview } from './_lib/previewGuard.js';
 // api/ingest-feed.js
 // Daily automated ingest for the Spiritual Scrolling feed (/scroll).
 // Triggered by Vercel Cron (see vercel.json "crons"). Protected by
@@ -17,7 +18,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
+const supabaseAdmin = isRestrictedPreview() ? null : createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
@@ -198,6 +199,7 @@ async function ingestVerseOfTheDay() {
 
 // ─── Handler ────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
+  if (rejectPreview(res)) return;
   // Vercel Cron sends the CRON_SECRET as a bearer token when configured;
   // also accept it as a ?secret= query param for a manual test run.
   const authHeader = req.headers.authorization || "";

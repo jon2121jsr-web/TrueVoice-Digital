@@ -6,13 +6,9 @@
 // Raw API results are cached for 5 minutes per channel/playlist+maxResults pair.
 
 import { useEffect, useState } from "react";
-import { API_BASE, IS_NATIVE_APP } from "../lib/apiBase";
+import { fetchYouTubeCatalog } from "../lib/youtubeCatalog";
 
-const API_KEY      = import.meta.env.VITE_YOUTUBE_API_KEY;
-const BASE_URL     = "https://www.googleapis.com/youtube/v3";
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const IS_PROD      = import.meta.env.PROD;
-const USE_PROXY    = IS_PROD || IS_NATIVE_APP;
 
 const CACHE_VERSION = 'v1';
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -38,7 +34,7 @@ function setCache(channelId, data) {
       data,
       timestamp: Date.now()
     }));
-  } catch {} // silent fail if storage full
+  } catch { /* storage unavailable */ }
 }
 
 const UPLOADS_CACHE_KEY = 'yt_uploads_cache_v1';
@@ -54,7 +50,7 @@ function loadUploadsCache() {
 function saveUploadsCache(cache) {
   try {
     localStorage.setItem(UPLOADS_CACHE_KEY, JSON.stringify(cache));
-  } catch {}
+  } catch { /* storage unavailable */ }
 }
 
 const uploadsCache = loadUploadsCache();  // channelId  → uploadsPlaylistId
@@ -62,12 +58,7 @@ const rawCache     = {};  // cacheKey   → { videos, at }
 
 async function resolveUploadsPlaylistId(channelId) {
   if (uploadsCache[channelId]) return uploadsCache[channelId];
-  const url  = USE_PROXY
-    ? `${API_BASE}/api/youtube?endpoint=channels&part=contentDetails&id=${channelId}`
-    : `${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${API_KEY}`;
-  const res  = await fetch(url);
-  if (!res.ok) throw new Error(`channels API ${res.status}`);
-  const data = await res.json();
+  const data = await fetchYouTubeCatalog("channels", { part: "contentDetails", id: channelId });
   const id   = data?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
   if (!id) throw new Error(`No uploads playlist for ${channelId}`);
   uploadsCache[channelId] = id;
@@ -76,12 +67,7 @@ async function resolveUploadsPlaylistId(channelId) {
 }
 
 async function fetchRawVideos(playlistId, maxResults) {
-  const url = USE_PROXY
-    ? `${API_BASE}/api/youtube?endpoint=playlistItems&part=snippet&playlistId=${playlistId}&maxResults=${maxResults}`
-    : `${BASE_URL}/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResults}&key=${API_KEY}`;
-  const res  = await fetch(url);
-  if (!res.ok) throw new Error(`playlistItems API ${res.status}`);
-  const data = await res.json();
+  const data = await fetchYouTubeCatalog("playlistItems", { part: "snippet", playlistId, maxResults });
   return (data?.items || []).map((item) => {
     const s         = item.snippet;
     const youtubeId = s?.resourceId?.videoId;
@@ -129,7 +115,6 @@ export function useYouTubeFeed({ channelId, playlistId, maxResults = 10, filterF
   useEffect(() => {
     const sourceId = channelId || playlistId;
     if (!sourceId) { setState(s => ({ ...s, loading: false })); return; }
-    if (!API_KEY)  { setState(s => ({ ...s, loading: false, error: "VITE_YOUTUBE_API_KEY not set" })); return; }
 
     const cached = rawCache[cacheKey];
     if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
@@ -170,7 +155,7 @@ export function useYouTubeFeed({ channelId, playlistId, maxResults = 10, filterF
 
     run();
     return () => { alive = false; };
-  }, [cacheKey]); // filterFn intentionally omitted — must be a module-level constant
+  }, [cacheKey, channelId, playlistId, maxResults, filterFn]); // filterFn intentionally omitted — must be a module-level constant
 
   return state;
 }

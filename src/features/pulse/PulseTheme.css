@@ -1,0 +1,191 @@
+/* Homepage only. Shared components keep their original theme on other routes. */
+.tv-app--pulse {
+  --pulse-canvas: #0a1120;
+  --pulse-surface: #121b2c;
+  --pulse-card: #1c283b;
+  --pulse-text: #f4f7fc;
+  --pulse-muted: #a9b6cb;
+  --pulse-teal: #69e5d8;
+  --pulse-violet: #c6b1ea;
+  --pulse-border: rgba(151, 177, 211, .2);
+  --pulse-radius: 20px;
+  --pulse-card-radius: 14px;
+  --pulse-shadow: 0 12px 30px rgba(0, 0, 0, .16);
+  /* Adapt the existing components' variable-based styles to the same palette. */
+  --tv-bg: var(--pulse-surface);
+  --tv-bg-alt: var(--pulse-card);
+  --tv-text-main: var(--pulse-text);
+  --tv-text-muted: var(--pulse-muted);
+  --tv-primary: var(--pulse-teal);
+  --tv-primary-dark: var(--pulse-teal);
+  --tv-border-subtle: var(--pulse-border);
+  --tv-radius-lg: var(--pulse-radius);
+  --tv-radius-md: var(--pulse-card-radius);
+  --tv-shadow-soft: var(--pulse-shadow);
+  background: var(--pulse-canvas);
+  color: var(--pulse-text);
+  color-scheme: dark;
+}
+/* Match the overscroll canvas only while the homepage is mounted. */
+body:has(.tv-app--pulse) { background: #0a1120; }
+.tv-app.tv-app--pulse .tv-main { background: var(--pulse-canvas); }
+/* Keep chat reachable without covering narrow discovery rails or the radio dock. */
+@media (max-width: 768px) {
+  .tv-app--pulse .chime-tab {
+    position: fixed;
+    top: auto;
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: max(calc(12px + env(safe-area-inset-bottom, 0px)), calc(12px + var(--chime-dock-height, 0px)));
+    transform: none;
+    writing-mode: horizontal-tb;
+    display: block;
+    width: fit-content;
+    max-width: calc(100% - 32px);
+    min-height: 44px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 10px 14px;
+    border: 1px solid var(--pulse-border);
+    border-radius: 999px;
+    background: var(--pulse-card);
+    color: var(--pulse-teal);
+    z-index: 10000;
+  }
+}
+
+/* Header remains in normal flow; social actions and Give keep their behavior. */
+.tv-app.tv-app--pulse .tv-header {
+  background: var(--pulse-canvas);
+  color: var(--pulse-text);
+  border-bottom: 1px solid var(--pulse-border);
+}
+.tv-app--pulse .tv-brand { letter-spacing: .025em; }
+.tv-app--pulse .tv-header-give {
+  background: var(--pulse-teal);
+  color: var(--pulse-canvas);
+  box-shadow: none;
+  border: 1px solid transparent;
+  min-height: 44px;
+}
+.tv-app--pulse .tv-header-give:hover { background: var(--pulse-teal); filter: brightness(1.08); box-shadow: none; }
+.tv-app.tv-app--pulse .tv-social-link {
+  background: var(--pulse-card);
+  color: var(--pulse-text);
+  border-color: var(--pulse-border);
+  box-shadow: none;
+}
+.tv-app.tv-app--pulse .tv-social-link:hover { background: var(--pulse-surface); border-color: var(--pulse-teal); }
+.tv-app.tv-app--pulse .tv-footer .tv-social-link { background: var(--pulse-card); color: var(--pulse-text); border-color: var(--pulse-border); }
+
+/* Outer sections, then inner cards: two distinct surface levels. */
+.tv-app--pulse :is(.tv-section, .pulse-featured, .tv-gear-section) {
+  background: var(--pulse-surface);
+  border: 1px solid var(--pulse-border);
+  border-radius: var(--pulse-radius);
+  padding: 22px;
+  margin: 0 0 24px;
+  box-shadow: var(--pulse-shadow);
+  min-width: 0;
+}
+.tv-app--pulse :is(.tv-section-title, .pulse-featured__heading h2) { font-size: 20px; font-weight: 700; letter-spacing: -.025em; margin-bottom: 12px; }
+.tv-app--pulse :is(.tv-connect-card, .reel-card, .tv-podcast-card, .tv-merch-card) {
+  background: var(--pulse-card);
+  color: var(--pulse-text);
+  border: 1px solid var(--pulse-border);
+  border-radius: var(--pulse-card-radius);
+  box-shadow: none;
+}
+.tv-app--pulse :is(.tv-connect-card, .reel-card, .tv-merch-card):hover { border-color: var(--pulse-violet); box-shadow: var(--pulse-shadow); }
+.tv-app--pulse :is(.tv-connect-card-description, .tv-gear-subtitle, .reel-modal-subtitle, .reel-modal-description) { color: var(--pulse-muted); }
+.tv-app--pulse .tv-connect { margin-top: 0; }
+.tv-app--pulse .tv-connect-header h2 { margin-top: 0; font-size: 20px; letter-spacing: -.025em; }
+.tv-app--pulse .tv-connect-header p { color: var(--pulse-muted); opacity: 1; }
+.tv-app--pulse .tv-connect-card-body { padding: 14px; }
+.tv-connect-card-thumb { position: relative; }
+.tv-connect-thumbnail { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tv-app--pulse :is(.tv-connect-thumbnail, .reel-thumb)[data-fallback="true"] { object-fit: contain; padding: 24px; background: var(--pulse-card); }
+.tv-app--pulse .tv-connect-card-tag { color: var(--pulse-violet); background: var(--pulse-surface); border: 1px solid var(--pulse-border); }
+.tv-app--pulse .tv-connect-card-top { flex-wrap: wrap; }
+.tv-app--pulse .reel-meta { padding: 12px 14px; }
+.tv-app--pulse .reel-title { color: var(--pulse-text); }
+.tv-app--pulse .reels-channel-header { gap: 10px; flex-wrap: wrap; }
+.tv-app--pulse .tv-podcast-heading { min-width: 0; overflow-wrap: anywhere; }
+.tv-app--pulse .tv-podcast-episode-chip { background: var(--pulse-surface); }
+.tv-app--pulse .tv-podcast-episode-chip:hover { background: var(--pulse-card); border-color: var(--pulse-violet); }
+
+/* Keep the approved live card and dock geometry, visibility, and motion intact. */
+.tv-app--pulse .pulse-listening { background: var(--pulse-surface); border-color: var(--pulse-border); }
+.tv-app--pulse .tv-main--pulse .pulse-listening .tv-verse-card { background: var(--pulse-card); color: var(--pulse-text); border-color: var(--pulse-border); }
+.tv-app--pulse :is(.pulse-intro__eyebrow, .pulse-intro__modes > a[aria-current]) { color: var(--pulse-teal); }
+.tv-app--pulse :is(.pulse-intro h1 span, .pulse-intro__modes > a, .pulse-listening .votd h3) { color: var(--pulse-violet); }
+.tv-app--pulse .pulse-intro__modes > a[aria-current="page"] { color: var(--pulse-teal); border-color: var(--pulse-teal); background: rgba(105, 229, 216, .1); }
+.tv-app--pulse .pulse-intro__modes > a:not([aria-current="page"]) { color: var(--pulse-muted); }
+.tv-app--pulse .pulse-intro__modes > a:focus-visible { outline-color: var(--pulse-teal); }
+.tv-app--pulse :is(.pulse-intro__signature, .pulse-intro__modes > span:last-child, .pulse-listening .votd-ref) { color: var(--pulse-muted); }
+.tv-app--pulse .pulse-featured .hero-section { border-color: var(--pulse-border); }
+
+/* Scroll remains a poster-led discovery rail; its verse tiles get a quiet accent. */
+.tv-app--pulse .tvs-card { background: var(--pulse-card); border-color: var(--pulse-border); color: var(--pulse-text); }
+.tv-app--pulse .tvs-card--verse { background: linear-gradient(155deg, var(--pulse-card), var(--pulse-surface)); border-color: var(--pulse-violet); }
+.tv-app--pulse .tvs-card-verse-body { color: var(--pulse-text); }
+.tv-app--pulse .tvs-card--verse :is(.tvs-card-tag, .tvs-card-play) { background: var(--pulse-surface); color: var(--pulse-violet); border-color: var(--pulse-border); }
+.tv-app--pulse .tvs-card-verse-ref { color: var(--pulse-violet); opacity: 1; }
+.tv-app--pulse :is(.tvs-more-arrow, .tvs-card-meta) { color: var(--pulse-violet); }
+.tv-app--pulse :is(.reel-thumb-wrap--skeleton, .reel-skeleton-line, .tvs-card--skeleton) { background: var(--pulse-card); }
+
+/* Fades end at the outer surface, never at a pale global background. */
+.tv-app--pulse :is(.reels-scroller-wrap, .tvs-scroller-wrap, .tv-connect-scroller-wrap, .tv-podcast-scroller-wrap)::after { background: linear-gradient(to right, transparent, var(--pulse-surface)); }
+.tv-app--pulse .reels-scroller-wrap::before { background: linear-gradient(to left, transparent, var(--pulse-surface)); }
+.tv-app--pulse :is(.reels-scroller, .tvs-scroller, .tv-connect-scroller, .tv-podcast-scroller, .tv-podcast-episodes-scroller) { scrollbar-width: thin; scrollbar-color: var(--pulse-muted) var(--pulse-surface); }
+.tv-app--pulse :is(.reels-scroller, .tvs-scroller, .tv-connect-scroller, .tv-podcast-scroller, .tv-podcast-episodes-scroller)::-webkit-scrollbar-track { background: var(--pulse-surface); }
+.tv-app--pulse :is(.reels-scroller, .tvs-scroller, .tv-connect-scroller, .tv-podcast-scroller, .tv-podcast-episodes-scroller)::-webkit-scrollbar-thumb { background: var(--pulse-muted); border-radius: 999px; }
+
+/* Action colors are consistent while retaining the existing link targets. */
+.tv-app--pulse :is(.tv-btn-secondary, .tv-support-btn-outline) { background: var(--pulse-card); color: var(--pulse-teal); border: 1px solid var(--pulse-border); }
+.tv-app--pulse :is(.tv-btn-secondary, .tv-support-btn-outline):hover { background: var(--pulse-surface); border-color: var(--pulse-teal); }
+.tv-app--pulse .tv-donate-btn { background: var(--pulse-card); color: var(--pulse-text); border: 1px solid var(--pulse-border); box-shadow: none; min-height: 80px; }
+.tv-app--pulse .tv-donate-btn.monthly { background: var(--pulse-teal); color: var(--pulse-canvas); border-color: transparent; }
+.tv-app--pulse .tv-donate-btn:hover { border-color: var(--pulse-teal); filter: brightness(1.08); }
+.tv-app--pulse .tv-support-subtext { opacity: 1; }
+
+/* Merchandise keeps its photos and badges, with less empty promotional space. */
+.tv-app--pulse .tv-gear-section::before { background: radial-gradient(ellipse at 50% 0%, rgba(198, 177, 234, .08), transparent 60%); }
+.tv-app--pulse .tv-gear-section::after { opacity: .025; }
+.tv-app--pulse .tv-gear-header { margin-bottom: 24px; }
+.tv-app--pulse .tv-gear-title { color: var(--pulse-text); font-size: clamp(24px, 3vw, 34px); }
+.tv-app--pulse :is(.tv-gear-eyebrow, .tv-gear-accent) { color: var(--pulse-violet); }
+.tv-app--pulse .tv-gear-eyebrow { background: var(--pulse-card); border-color: var(--pulse-border); }
+.tv-app--pulse .tv-gear-accent::after { background: var(--pulse-violet); }
+.tv-app--pulse .tv-merch-info { background: var(--pulse-card); padding: 16px; }
+.tv-app--pulse .tv-merch-visual::after { background: linear-gradient(to bottom, transparent 60%, var(--pulse-card)); }
+.tv-app--pulse :is(.tv-merch-name, .tv-merch-price) { color: var(--pulse-text); }
+.tv-app--pulse .tv-merch-name { margin: 8px 0 0; overflow-wrap: anywhere; }
+.tv-app--pulse .tv-merch-price { margin-bottom: 4px; }
+.tv-app--pulse .tv-merch-buy-btn { color: var(--pulse-canvas); min-height: 44px; letter-spacing: .025em; }
+
+/* Video modal chrome uses the same surface; iframe behavior stays untouched. */
+.tv-app--pulse .reel-modal { background: var(--pulse-surface); color: var(--pulse-text); border: 1px solid var(--pulse-border); }
+.tv-app--pulse .reel-modal-header { border-color: var(--pulse-border); }
+.tv-app--pulse .reel-modal-close { color: var(--pulse-text); min-width: 44px; min-height: 44px; }
+.tv-app--pulse .reel-modal-link { color: var(--pulse-teal); }
+.tv-app--pulse .tv-modal { background: var(--pulse-surface); color: var(--pulse-text); border: 1px solid var(--pulse-border); }
+.tv-app--pulse .tv-modal-header { border-color: var(--pulse-border); }
+.tv-app--pulse .tv-modal-subtitle { color: var(--pulse-muted); opacity: 1; }
+.tv-app--pulse .tv-modal-close { background: var(--pulse-card); color: var(--pulse-text); min-width: 44px; min-height: 44px; }
+.tv-app--pulse .tv-footer { color: var(--pulse-muted); border-top: 1px solid var(--pulse-border); margin-top: 8px; padding-top: 24px; }
+.tv-app--pulse .tv-footer a { color: var(--pulse-muted); }
+.tv-app--pulse .tv-footer-attrib { opacity: 1; }
+.tv-app--pulse :is(a, button):focus-visible { outline: 2px solid var(--pulse-teal); outline-offset: 3px; }
+
+@media (max-width: 640px) {
+  .tv-app--pulse :is(.tv-section, .pulse-featured, .tv-gear-section) { padding: 16px; margin-bottom: 20px; }
+  .tv-app--pulse .tv-gear-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tv-app--pulse .tv-merch-info { padding: 12px; }
+  .tv-app--pulse .tv-merch-buy-btn { font-size: 12px; }
+}
+@media (max-width: 360px) {
+  .tv-app--pulse .tv-gear-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-app--pulse :is(.reel-thumb-wrap--skeleton, .reel-skeleton-line, .tvs-card--skeleton) { animation: none; }
+}

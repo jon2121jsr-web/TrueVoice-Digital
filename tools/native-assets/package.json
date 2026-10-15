@@ -1,0 +1,9 @@
+{
+  "name": "truevoice-native-assets",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Optional native artwork generator; excluded from normal release installs",
+  "dependencies": {
+    "@capacitor/assets": "3.0.5"
+  }
+}

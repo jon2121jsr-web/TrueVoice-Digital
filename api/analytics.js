@@ -1,3 +1,4 @@
+import { isRestrictedPreview, rejectPreview } from './_lib/previewGuard.js';
 /**
  * Analytics Event Collector — /api/analytics.js
  *
@@ -39,12 +40,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
+const supabase = isRestrictedPreview() ? null : createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
 export default async function handler(req, res) {
+  if (rejectPreview(res)) return;
   // Accept both POST (fetch) and OPTIONS (CORS preflight)
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

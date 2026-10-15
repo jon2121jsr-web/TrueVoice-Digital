@@ -8,7 +8,7 @@
 // a relative path is correct and preferred) untouched.
 import { Capacitor } from "@capacitor/core";
 
-const LIVE_SITE_ORIGIN = "https://www.truevoice.digital";
+export const LIVE_SITE_ORIGIN = "https://www.truevoice.digital";
 
 export const IS_NATIVE_APP = Capacitor.isNativePlatform();
 

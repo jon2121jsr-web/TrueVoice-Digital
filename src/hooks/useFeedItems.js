@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { selectScrollItems } from "../lib/scrollItems";
 
 export function useFeedItems({ limit = 30 } = {}) {
   const [state, setState] = useState({ items: [], loading: true, error: null });
@@ -22,7 +23,9 @@ export function useFeedItems({ limit = 30 } = {}) {
         .from("feed_items")
         .select("*")
         .in("status", ["auto_active", "active"])
+        .neq("item_type", "verse")
         .order("published_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(poolSize);
 
       if (!alive) return;
@@ -31,7 +34,7 @@ export function useFeedItems({ limit = 30 } = {}) {
         return;
       }
       setState({
-        items: interleaveBySource(data ?? []).slice(0, limit),
+        items: selectScrollItems(data ?? [], limit),
         loading: false,
         error: null,
       });
@@ -42,34 +45,4 @@ export function useFeedItems({ limit = 30 } = {}) {
   }, [limit]);
 
   return state;
-}
-
-// Round-robins items across their `source` (channel/show) so a single
-// prolific source's back-to-back uploads don't cluster into consecutive
-// cards. Each source's own items keep their original (recency) order --
-// they're just spread out across the feed instead of bunched together.
-function interleaveBySource(items) {
-  const buckets = new Map();
-  const order = [];
-  for (const item of items) {
-    const key = item.source || item.item_type || "misc";
-    if (!buckets.has(key)) {
-      buckets.set(key, []);
-      order.push(key);
-    }
-    buckets.get(key).push(item);
-  }
-
-  const result = [];
-  let remaining = items.length;
-  while (remaining > 0) {
-    for (const key of order) {
-      const bucket = buckets.get(key);
-      if (bucket.length) {
-        result.push(bucket.shift());
-        remaining -= 1;
-      }
-    }
-  }
-  return result;
 }

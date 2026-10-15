@@ -10,7 +10,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useYouTubePlayer } from "../hooks/useYouTubePlayer";
-import { useVerseRadioAudio } from "../hooks/useVerseRadioAudio";
 import ReactionRail from "./ReactionRail";
 import { trackEvent } from "../lib/analytics";
 import "./FeedCard.css";
@@ -81,7 +80,7 @@ function CTAStrip({ item }) {
 
 function VideoCard({ item, isActive, isNear, onEnded }) {
   const containerRef = useRef(null);
-  const { ready, muted, toggleMute, stuck, resume } = useYouTubePlayer({
+  const { ready, muted, toggleMute, stuck, resume, errorCode } = useYouTubePlayer({
     containerRef,
     videoId: isNear ? item.youtube_id : null,
     clipStart: item.clip_start_seconds,
@@ -107,7 +106,7 @@ function VideoCard({ item, isActive, isNear, onEnded }) {
       <div className="feed-card-top">
         <span className="feed-tag">{item.item_type === "reel" ? "Reel" : "Snip"}</span>
       </div>
-      {isNear && (
+      {isActive && isNear && (
         <button
           type="button"
           className="feed-mute-btn"
@@ -117,7 +116,8 @@ function VideoCard({ item, isActive, isNear, onEnded }) {
           {muted ? "\u{1F507}" : "\u{1F50A}"}
         </button>
       )}
-      {isActive && stuck && (
+      {isActive && errorCode && <p className="feed-video-error" role="status">This video cannot play here (YouTube {errorCode}).</p>}
+      {isActive && stuck && !errorCode && (
         <button
           type="button"
           className="feed-resume-btn"
@@ -133,30 +133,6 @@ function VideoCard({ item, isActive, isNear, onEnded }) {
           {[item.speaker, item.source_show].filter(Boolean).join(" · ")}
         </p>
       </div>
-    </>
-  );
-}
-
-function VerseCard({ item, isActive }) {
-  // TrueVoice's live radio stream, playing while this card is on screen --
-  // same feed-wide mute preference as the video cards, not reset per card.
-  const { muted, toggleMute } = useVerseRadioAudio(isActive);
-
-  return (
-    <>
-      <div className="feed-card-verse-body">
-        <p className="feed-verse-text">&ldquo;{item.verse_text}&rdquo;</p>
-        <p className="feed-verse-ref">{item.verse_ref}</p>
-      </div>
-      <button
-        type="button"
-        className="feed-mute-btn feed-mute-btn--verse"
-        onClick={toggleMute}
-        aria-label={muted ? "Unmute" : "Mute"}
-      >
-        {muted ? "\u{1F507}" : "\u{1F50A}"}
-      </button>
-      <div className="feed-verse-mark">truevoice.digital</div>
     </>
   );
 }
@@ -196,8 +172,6 @@ export default function FeedCard({
   let inner = null;
   if (item.item_type === "reel" || item.item_type === "snip") {
     inner = <VideoCard item={item} isActive={isActive} isNear={isNear} onEnded={onEnded} />;
-  } else if (item.item_type === "verse") {
-    inner = <VerseCard item={item} isActive={isActive} />;
   } else if (item.item_type === "meme" && item.image_url) {
     inner = <MemeCard item={item} />;
   }

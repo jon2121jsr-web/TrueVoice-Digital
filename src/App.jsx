@@ -1,11 +1,21 @@
+import { IS_PREVIEW } from './lib/previewSafety';
 // src/App.jsx  — v10  (Capturing Christianity, The Beat by Allen Parr, Cold Case Christianity added April 2026)
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Routes, Route, Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
 import AdminDashboard from "./pages/AdminDashboard";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import PulseExplore from "./pages/PulseExplore";
+import { consumeHandoffQuery, resolveShowHandoff } from "./lib/queryHandoff";
+import { createVideoQueue, queueDestination } from "./features/pulse/videoQueue";
+import { exploreVideoLocation } from "./features/pulse/videoEngagement";
+import { videoDiagnostic } from "./features/pulse/videoDiagnostics";
+import { MediaCoordinationContext } from "./features/pulse/MediaCoordinationContext";
+import { createMediaCoordinator, stopEmbeddedVideo } from "./features/pulse/mediaCoordinator";
 import "./App.css";
 
 import Hero from "./components/Hero";
+import PulseIntro from "./features/pulse/PulseIntro.jsx";
+import "./features/pulse/PulseHome.css";
 import { NowPlayingPanel } from "./components/NowPlayingPanel";
 import { VerseOfTheDay } from "./components/VerseOfTheDay";
 import PodcastList from "./components/PodcastList";
@@ -20,6 +30,7 @@ import HeroMerchSlide from "./components/HeroMerchSlide.jsx";
 import PullToRefresh from "./components/PullToRefresh";
 import ChimeIn from "./components/ChimeIn";
 import ScrollFeed from "./components/ScrollFeed";
+import "./features/pulse/PulseTheme.css";
 
 import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
 import { preferredStreamUrl } from "./lib/streamUrl";
@@ -74,9 +85,6 @@ const LIVE_STREAM_URL = preferredStreamUrl(
   import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL
 );
 
-const AZURACAST_FALLBACK_URL =
-  "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
-
 // ─── Social links ─────────────────────────────────────────────────────────────
 const SOCIAL = {
   youtube:
@@ -129,27 +137,16 @@ function setMediaSessionMetadata({ title, artist, artUrl }) {
   });
 }
 
-function reconnectAndPlay(audioEl) {
-  if (!audioEl) return;
-  audioEl.src = LIVE_STREAM_URL;
-  audioEl.load();
-  audioEl.play().catch(() => {
-    audioEl.src = AZURACAST_FALLBACK_URL;
-    audioEl.load();
-    audioEl.play().catch(() => {});
-  });
-}
-
-function wireMediaSessionControls(audioEl) {
+function wireMediaSessionControls(audioEl, media) {
   if (!audioEl || !("mediaSession" in navigator)) return;
 
   try {
     navigator.mediaSession.setActionHandler("play", () => {
-      reconnectAndPlay(audioEl);
+      media.playRadio({ reconnect: true });
     });
 
     navigator.mediaSession.setActionHandler("pause", () => {
-      try { audioEl.pause(); } catch { /* ignore */ }
+      media.pauseAll();
     });
 
     ["previoustrack", "nexttrack", "seekbackward", "seekforward", "seekto"]
@@ -173,6 +170,10 @@ function wireMediaSessionControls(audioEl) {
     audioEl.removeEventListener("play",  syncPlaybackState);
     audioEl.removeEventListener("pause", syncPlaybackState);
     audioEl.removeEventListener("ended", syncPlaybackState);
+    try {
+      navigator.mediaSession.setActionHandler("play", null);
+      navigator.mediaSession.setActionHandler("pause", null);
+    } catch { /* unsupported action */ }
   };
 }
 
@@ -255,6 +256,16 @@ function App() {
   // /scroll and / -- that's the whole point of client-side routing).
   const location = useLocation();
   const navigate = useNavigate();
+  const isExplore = !!matchPath("/explore", location.pathname);
+  const hasPulseLayout = !["/admin", "/privacy", "/scroll", "/scroll/:id"]
+    .some((path) => matchPath(path, location.pathname));
+  const media = useMemo(() => createMediaCoordinator(), []);
+  const videoIframeRef = useRef(null);
+  const previousPathRef = useRef(location.pathname);
+  useLayoutEffect(() => {
+    if (previousPathRef.current !== location.pathname && hasPulseLayout) window.scrollTo(0, 0);
+    previousPathRef.current = location.pathname;
+  }, [location.pathname, hasPulseLayout]);
 
   // Native app only (no-ops entirely on the web build -- see
   // src/lib/pushNotifications.js). Deliberately [] -- this registers the
@@ -273,16 +284,19 @@ function App() {
   const [nowPlaying, setNowPlaying] = useState({
     title: "", artist: "", artUrl: "",
   });
+  const nowPlayingRef = useRef(nowPlaying);
+  useEffect(() => { nowPlayingRef.current = nowPlaying; }, [nowPlaying]);
 
   const [videoOpen,   setVideoOpen]   = useState(false);
   const [activeVideo, setActiveVideo] = useState(null);
+  const [videoQueue, setVideoQueue] = useState(null);
+  const videoQueueRef = useRef(null);
+  const videoSessionRef = useRef(0);
   const [showThanks,  setShowThanks]  = useState(false);
 
   // Floating player
-  const sentinelRef        = useRef(null);
   const surfaceRef         = useRef(null);
   const [isFloatingPlayer, setIsFloatingPlayer] = useState(false);
-  const [dockHeight,       setDockHeight]       = useState(0);
 
   const handleStatusChange = useCallback((status) => {
     if (!status) return;
@@ -327,6 +341,7 @@ function App() {
   }, []);
 
   const handleHeaderGiveClick = () => {
+    if (isExplore) { navigate("/#tv-support-section"); return; }
     document.getElementById("tv-support-section")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -343,17 +358,21 @@ function App() {
   }, []);
 
   // Stripe thanks param
+  const processedThanksRef = useRef(null);
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (!params.get("thanks")) return;
+    const params = new URLSearchParams(location.search);
+    if (!params.get("thanks") || params.has("listen") || params.has("show")) return;
+    if (processedThanksRef.current === location.key) return;
+    processedThanksRef.current = location.key;
     setShowThanks(true);
     params.delete("thanks");
-    const qs     = params.toString();
-    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-    window.history.replaceState({}, "", newUrl);
+    navigate(consumeHandoffQuery(location, ["thanks"]), { replace: true, state: location.state });
+  }, [location, navigate]);
+  useEffect(() => {
+    if (!showThanks) return;
     const t = window.setTimeout(() => setShowThanks(false), 9000);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [showThanks]);
 
   // Scroll "Listen Live" CTA handoff -- /scroll's CTAStrip lands here as
   // /?listen=1. This is a same-document client-side navigation (React
@@ -361,16 +380,18 @@ function App() {
   // "sticky" as far as the browser's autoplay policy is concerned -- no
   // second tap needed. Depends on location.search (not []) so it fires on
   // every arrival here, not just the first real page load of the session.
+  const processedListenRef = useRef(null);
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (!params.get("listen")) return;
+    if (!hasPulseLayout || !params.get("listen") || params.has("show")) return;
+    if (processedListenRef.current === location.key) return;
+    processedListenRef.current = location.key;
+    if (params.get("thanks")) setShowThanks(true);
     params.delete("listen");
-    const qs     = params.toString();
-    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-    window.history.replaceState({}, "", newUrl);
-    reconnectAndPlay(playerRef.current);
+    navigate(consumeHandoffQuery(location, ["listen", "thanks"]), { replace: true, state: location.state });
+    media.playRadio({ reconnect: true });
     surfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [location.search]);
+  }, [location, hasPulseLayout, media, navigate]);
 
   // Wire MediaSession AFTER first user-initiated play
   useEffect(() => {
@@ -381,26 +402,35 @@ function App() {
     let wired = false;
 
     const onFirstPlay = () => {
+      if (audioEl.paused) return;
+      const current = nowPlayingRef.current;
+      setMediaSessionMetadata({
+        title: current.title || STATION_NAME,
+        artist: current.artist || "Streaming",
+        artUrl: current.artUrl || DEFAULT_MEDIA_ART,
+      });
       if (wired) return;
       wired = true;
-      cleanupFn = wireMediaSessionControls(audioEl);
+      cleanupFn = wireMediaSessionControls(audioEl, media);
     };
 
     audioEl.addEventListener("play", onFirstPlay);
+    if (!audioEl.paused) onFirstPlay();
     return () => {
       audioEl.removeEventListener("play", onFirstPlay);
       cleanupFn?.();
     };
-  }, []);
+  }, [hasPulseLayout, media]);
 
   // Update MediaSession metadata whenever song changes
   useEffect(() => {
+    if (!hasPulseLayout || media.isVideoActive()) return;
     setMediaSessionMetadata({
       title:  nowPlaying.title  || STATION_NAME,
       artist: nowPlaying.artist || "Streaming",
       artUrl: nowPlaying.artUrl || DEFAULT_MEDIA_ART,
     });
-  }, [nowPlaying]);
+  }, [nowPlaying, hasPulseLayout, media]);
 
   // Dynamic video feeds
   const pigskinFeed           = useYouTubeFeed({ channelId:  PIGSKIN_CHANNEL_ID,         maxResults: 10, filterFn: pigskinEpisodeFilter });
@@ -424,20 +454,50 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
     [VIDEO_SECTIONS.GIVE_ME_AN_ANSWER]:      giveMeAnAnswerFeed.videos,
   };
 
-  const openVideoForSection = (sectionKey) => {
-    const chosen = (feedBySection[sectionKey] || [])[0] || null;
-    if (!chosen) {
-      console.warn("No active video for section:", sectionKey);
-      return;
-    }
-    setActiveVideo(chosen);
-    setVideoOpen(true);
-  };
-
-  const closeVideo = () => {
+  const closeVideo = useCallback(() => {
+    videoQueueRef.current = null;
+    setVideoQueue(null);
+    stopEmbeddedVideo(videoIframeRef.current);
     setVideoOpen(false);
     setActiveVideo(null);
-  };
+    media.endVideo(closeVideo);
+  }, [media]);
+
+  const openVideo = useCallback((chosen, collection) => {
+    if (!chosen) return;
+    const queue = collection ? createVideoQueue(collection, chosen) : null;
+    if (collection && !queue) return;
+    stopEmbeddedVideo(videoIframeRef.current);
+    media.startVideo(closeVideo);
+    const session = queue ? { ...queue, sessionId: ++videoSessionRef.current } : null;
+    videoQueueRef.current = session;
+    setVideoQueue(session);
+    setActiveVideo(chosen);
+    setVideoOpen(true);
+  }, [media, closeVideo]);
+  const advanceVideo = useCallback((step, expectedId) => {
+    const next = queueDestination(videoQueueRef.current, step, expectedId);
+    videoDiagnostic("queue-advance", { step, expectedId, accepted: !!next, nextId: next?.videos[next.index]?.youtubeId });
+    if (!next) return;
+    // Invalidate stale ended callbacks before replacing the iframe.
+    videoQueueRef.current = next;
+    stopEmbeddedVideo(videoIframeRef.current);
+    media.startVideo(closeVideo);
+    setVideoQueue(next);
+    setActiveVideo(next.videos[next.index]);
+    if (isExplore) navigate(exploreVideoLocation(location, next.videos[next.index].youtubeId || next.videos[next.index].videoId), { replace: true, state: location.state });
+  }, [media, closeVideo, isExplore, navigate, location]);
+  const openVideoForSection = (sectionKey) => openVideo((feedBySection[sectionKey] || [])[0]);
+
+  // Stop audible video on navigation; never resume radio as a side effect.
+  useLayoutEffect(() => () => media.stopVideo(), [location.pathname, media]);
+
+  useEffect(() => {
+    if (isExplore || !location.hash) return;
+    const id = location.hash.slice(1);
+    if (!["tv-support-section", "tv-connect-section"].includes(id)) return;
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [isExplore, location.hash]);
 
   // Scroll "Watch Latest Episode" / "Visit Show Channel" CTA handoff --
   // /?show=<slug>[&autoplay=1]. Originals (Pigskin Frenzy, Denisha, TVD
@@ -447,78 +507,65 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
   // visitor to TrueVoice Connect to browse -- there's no "TrueVoice
   // episode" of theirs to force-play. Same location.search-dependent
   // pattern as the Listen Live handoff above, for the same reason.
+  const handoffFeed = {
+    [VIDEO_SECTIONS.PIGSKIN_FRENZY]: pigskinFeed,
+    [VIDEO_SECTIONS.DENISHA]: denishaFeed,
+    [VIDEO_SECTIONS.TVD_SHORTS]: tvdShortsFeed,
+    [VIDEO_SECTIONS.CAPTURING_CHRISTIANITY]: capturingFeed,
+    [VIDEO_SECTIONS.BEAT_ALLEN_PARR]: beatFeed,
+    [VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY]: coldCaseFeed,
+    [VIDEO_SECTIONS.BIBLE_PROJECT]: bibleProjectFeed,
+    [VIDEO_SECTIONS.GIVE_ME_AN_ANSWER]: giveMeAnAnswerFeed,
+  }[SHOW_SLUG_TO_SECTION[new URLSearchParams(location.search).get("show")]];
+  const processedShowRef = useRef(null);
+  const [handoffNotice, setHandoffNotice] = useState("");
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const show = params.get("show");
-    if (!show) return;
+    if (!hasPulseLayout || !show) return;
+    const token = `${location.key}:${location.pathname}:${location.search}`;
+    if (processedShowRef.current === token) return;
     const autoplay = params.get("autoplay") === "1";
-    params.delete("show");
-    params.delete("autoplay");
-    const qs     = params.toString();
-    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-    window.history.replaceState({}, "", newUrl);
-
     const section = SHOW_SLUG_TO_SECTION[show];
-    if (autoplay && section) {
-      openVideoForSection(section);
-    } else {
+    const result = resolveShowHandoff(show, autoplay, section, handoffFeed);
+    if (result.action === "wait") return;
+    processedShowRef.current = token;
+    setHandoffNotice(result.message || "");
+    if (params.get("thanks")) setShowThanks(true);
+    if (!autoplay && params.get("listen")) media.playRadio({ reconnect: true });
+    if (result.action === "open") {
+      openVideo(result.video);
+    } else if (result.action === "browse") {
       document.getElementById("tv-connect-section")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search]);
+    navigate(consumeHandoffQuery(location, ["show", "autoplay", "listen", "thanks"]), { replace: true, state: location.state });
+  }, [location, hasPulseLayout, handoffFeed, openVideo, navigate, media]);
 
-  // Dock height observer -- keyed on location.pathname for the same reason
-  // as the CTA handoff effects above: App itself never unmounts on a
-  // client-side route change, only the wildcard route's JSX (Hero, player,
-  // etc.) does, whenever pathname leaves "/" for /scroll or /admin. With a
-  // [] dependency this effect only ever ran once, on the very first real
-  // page load -- so its observer kept watching that ORIGINAL surfaceRef
-  // node forever, even after it was removed from the DOM by a later route
-  // change, and never reconnected to the fresh node created when the
-  // wildcard route remounts on returning to "/". Re-running it on every
-  // pathname change (dep array below) makes it reconnect to whichever
-  // surfaceRef node is actually live right now.
+  // Observe the full in-flow player, not its top edge. Below-viewport cards
+  // must not activate the dock; only a card entirely above the viewport does.
   useEffect(() => {
-    const el = surfaceRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(([entry]) => {
-      setDockHeight(entry?.contentRect?.height || 0);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [location.pathname]);
-
-  // Floating player sentinel -- same reconnect-on-route-change fix as the
-  // dock height observer above. Without it, leaving "/" for /scroll while
-  // the player happened to be floating left isFloatingPlayer stuck true
-  // forever (the observer driving it was watching a node that no longer
-  // existed) -- so coming back to "/" and scrolling to the very top still
-  // showed the docked slot as an empty spacer while the real player stayed
-  // pinned floating at the bottom, since nothing was left alive to ever
-  // flip isFloatingPlayer back to false.
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || typeof IntersectionObserver === "undefined") {
-      setIsFloatingPlayer(false);
-      return;
-    }
-    const io = new IntersectionObserver(
-      ([entry]) => setIsFloatingPlayer(!entry.isIntersecting),
-      { root: null, threshold: 0, rootMargin: "-12px 0px 0px 0px" }
-    );
-    io.observe(sentinel);
+    const surface = surfaceRef.current;
+    setIsFloatingPlayer(false);
+    if (isExplore || !surface || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => {
+      const above = !entry.isIntersecting &&
+        entry.boundingClientRect.height > 0 &&
+        entry.boundingClientRect.bottom <= (entry.rootBounds?.top ?? 0);
+      setIsFloatingPlayer((previous) => previous === above ? previous : above);
+    }, { root: null, threshold: 0 });
+    io.observe(surface);
     return () => io.disconnect();
-  }, [location.pathname]);
-
+  }, [location.pathname, isExplore]);
   return (
+    <MediaCoordinationContext.Provider value={media}>
     <Routes>
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/scroll" element={<ScrollFeed />} />
       <Route path="/scroll/:id" element={<ScrollFeed />} />
-      <Route path="*" element={
-        <div className="app-container tv-app">
+      <Route element={
+        <div className="app-container tv-app tv-app--pulse">
           <PullToRefresh />
 
           {/* ── HEADER ── */}
@@ -550,12 +597,10 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
             </div>
           </header>
 
-          {/* ── HERO ── */}
-          <Hero />
 
           <audio ref={playerRef} preload="metadata" playsInline />
 
-          <main className={`tv-main ${isFloatingPlayer ? "tv-main--player-floating" : ""}`}>
+          <main className="tv-main tv-main--pulse">
 
             {showThanks && (
               <div style={{
@@ -567,33 +612,46 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
               </div>
             )}
 
-            <div className="tv-hero">
-              <div className={`tv-player-dock ${isFloatingPlayer ? "is-floating" : ""}`}>
-                <div ref={sentinelRef} className="tv-player-sentinel" aria-hidden="true" />
+            <section className="pulse-listening" aria-labelledby="pulse-title">
+              <PulseIntro />
+              <div className={isExplore ? "pulse-radio-strip" : "tv-hero"}>
+                <div className="tv-player-dock pulse-player-dock">
+                  <div ref={surfaceRef} className="tv-player-surface">
+                    <NowPlayingPanel
+                      streamUrl={LIVE_STREAM_URL}
+                      audioRef={playerRef}
+                      onStatusChange={handleStatusChange}
+                      isFloating={isFloatingPlayer}
+                      compact={isExplore}
+                      media={media}
+                    />
+                  </div>
+                </div>
 
-                {isFloatingPlayer && (
-                  <div
-                    className="tv-player-spacer"
-                    style={{ height: dockHeight || 0 }}
-                    aria-hidden="true"
-                  />
-                )}
-
-                <div ref={surfaceRef} className="tv-player-surface">
-                  <NowPlayingPanel
-                    streamUrl={LIVE_STREAM_URL}
-                    audioRef={playerRef}
-                    showHistory={false}
-                    onStatusChange={handleStatusChange}
-                    isFloating={isFloatingPlayer}
-                  />
+                <div className="tv-verse-card" hidden={isExplore}>
+                  <VerseOfTheDay />
                 </div>
               </div>
+            </section>
 
-              <div className="tv-verse-card">
-                <VerseOfTheDay />
+            {handoffNotice && <p role="status">{handoffNotice}</p>}
+            <Outlet context={{ discoveryChannels: [
+              { id: VIDEO_SECTIONS.PIGSKIN_FRENZY, title: "Pigskin Frenzy", creator: "Joel Norris", feed: pigskinFeed },
+              { id: VIDEO_SECTIONS.DENISHA, title: "Living the Reclaimed Life", creator: "Denisha Workizer", feed: denishaFeed },
+              { id: VIDEO_SECTIONS.CAPTURING_CHRISTIANITY, title: "Capturing Christianity", creator: "Cameron Bertuzzi", feed: capturingFeed },
+              { id: VIDEO_SECTIONS.BEAT_ALLEN_PARR, title: "The Beat by Allen Parr", creator: "Allen Parr", feed: beatFeed },
+              { id: VIDEO_SECTIONS.COLD_CASE_CHRISTIANITY, title: "Cold Case Christianity", creator: "J. Warner Wallace", feed: coldCaseFeed },
+              { id: VIDEO_SECTIONS.BIBLE_PROJECT, title: "BibleProject", creator: "BibleProject", feed: bibleProjectFeed },
+              { id: VIDEO_SECTIONS.GIVE_ME_AN_ANSWER, title: "Give Me An Answer", creator: "Stuart & Cliffe Knechtle", feed: giveMeAnAnswerFeed },
+            ], openChannel: openVideoForSection, openVideo, activeVideoId: videoOpen ? activeVideo?.youtubeId || activeVideo?.videoId : null }} />
+            {!isExplore && <>
+            <section className="pulse-featured" aria-labelledby="pulse-featured-title">
+              <div className="pulse-featured__heading">
+                <h2 id="pulse-featured-title">Featured / Discover</h2>
+                <p>Fresh voices. Familiar favorites.</p>
               </div>
-            </div>
+              <Hero />
+            </section>
 
             {/* <RecentTracksBar /> */}
 
@@ -613,7 +671,7 @@ onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CH
             </section>
 
             <section className="tv-section tv-section--stacked"><ReelsGrid /></section>
-            <section className="tv-section tv-section--stacked"><PodcastList /></section>
+            <PodcastList />
 
             {/* ── SUPPORT THE MISSION ── */}
             <section id="tv-support-section" className="tv-section">
@@ -631,7 +689,8 @@ onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CH
                 ].map(({ href, label, sub }) => (
                   <a
                     key={label}
-                    href={href}
+                    href={IS_PREVIEW ? undefined : href}
+                    aria-disabled={IS_PREVIEW || undefined}
                     className="tv-support-btn tv-support-btn-primary tv-donate-btn"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -645,6 +704,7 @@ onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CH
             </section>
 
             <MerchSection />
+            </>}
 
             {/* ── FOOTER ── */}
             <footer className="tv-footer">
@@ -676,12 +736,17 @@ onCapturingChristianity={()   => openVideoForSection(VIDEO_SECTIONS.CAPTURING_CH
             />
           )}
 
-          <VideoModal open={videoOpen} onClose={closeVideo} video={activeVideo} />
+          <VideoModal open={videoOpen} onClose={closeVideo} video={activeVideo} iframeRef={videoIframeRef} queue={videoQueue} onAdvance={advanceVideo} />
 
           <ChimeIn />
         </div>
-      } />
+      }>
+        <Route index element={null} />
+        <Route path="explore" element={<PulseExplore />} />
+        <Route path="*" element={null} />
+      </Route>
     </Routes>
+    </MediaCoordinationContext.Provider>
   );
 }
 

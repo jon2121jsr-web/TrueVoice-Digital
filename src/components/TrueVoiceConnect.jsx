@@ -4,6 +4,7 @@
 // ✅ The Cut with Erica removed April 2026
 // ✅ New Episodes and Shorts & Reels removed April 2026 (re-enable when needed)
 import React from "react";
+import VideoThumbnail from "./VideoThumbnail";
 import { useYouTubeLatest } from "../hooks/useYouTubeLatest";
 
 const CHANNEL_IDS = {
@@ -14,16 +15,6 @@ const CHANNEL_IDS = {
   COLD_CASE_CHRISTIANITY: "UCVFe7xhG6rl0ruoMQCJDtnw",
   BIBLE_PROJECT:          "UCVfwlh9XpX2Y_tQfjeln9QA",
   GIVE_ME_AN_ANSWER:      "UCKr-liguaGWMf3f94eQXsug",
-};
-
-const FALLBACKS = {
-  pigskin:               "https://img.youtube.com/vi/gC4VikZ0dcA/maxresdefault.jpg",
-  denisha:               "https://img.youtube.com/vi/default/maxresdefault.jpg",
-  capturingChristianity: "https://img.youtube.com/vi/default/maxresdefault.jpg",
-  beatAllenParr:         "https://img.youtube.com/vi/default/maxresdefault.jpg",
-  coldCase:              "https://img.youtube.com/vi/default/maxresdefault.jpg",
-  bibleProject:          "https://img.youtube.com/vi/default/maxresdefault.jpg",
-  giveMeAnAnswer:        "https://img.youtube.com/vi/default/maxresdefault.jpg",
 };
 
 export default function TrueVoiceConnect({
@@ -50,7 +41,8 @@ export default function TrueVoiceConnect({
       description: "The boldest takes in College Football. Unfiltered analysis. Unashamed faith.",
       tag:         "CFB",
       onClick:     onPigskinFrenzy,
-      thumbnail:   pigskinLatest.thumbnail   || FALLBACKS.pigskin,
+      latest: pigskinLatest,
+      thumbnail: pigskinLatest.thumbnail,
     },
     {
       id:          "denisha-workizer",
@@ -58,7 +50,8 @@ export default function TrueVoiceConnect({
       description: "Denisha Workizer — where faith meets real life. You were made for more.",
       tag:         "FAITH",
       onClick:     onDenisha,
-      thumbnail:   denishaLatest.thumbnail || FALLBACKS.denisha,
+      latest: denishaLatest,
+      thumbnail: denishaLatest.thumbnail,
     },
     {
       id:          "capturing-christianity",
@@ -66,7 +59,8 @@ export default function TrueVoiceConnect({
       description: "Apologetics, philosophy & theology with Cameron Bertuzzi — the rational case for Christian faith.",
       tag:         "APOLOGETICS",
       onClick:     onCapturingChristianity,
-      thumbnail:   capturingLatest.thumbnail || FALLBACKS.capturingChristianity,
+      latest: capturingLatest,
+      thumbnail: capturingLatest.thumbnail,
     },
     {
       id:          "beat-allen-parr",
@@ -74,7 +68,8 @@ export default function TrueVoiceConnect({
       description: "Biblical Encouragement And Truth — tackling hard theological questions with clarity and grace.",
       tag:         "BIBLE",
       onClick:     onBeatAllenParr,
-      thumbnail:   beatLatest.thumbnail      || FALLBACKS.beatAllenParr,
+      latest: beatLatest,
+      thumbnail: beatLatest.thumbnail,
     },
     {
       id:          "cold-case-christianity",
@@ -82,7 +77,8 @@ export default function TrueVoiceConnect({
       description: "J. Warner Wallace applies cold-case detective methodology to examine the evidence for the Christian worldview.",
       tag:         "APOLOGETICS",
       onClick:     onColdCaseChristianity,
-      thumbnail:   coldCaseLatest.thumbnail  || FALLBACKS.coldCase,
+      latest: coldCaseLatest,
+      thumbnail: coldCaseLatest.thumbnail,
     },
     {
       id:          "bible-project",
@@ -90,7 +86,8 @@ export default function TrueVoiceConnect({
       description: "Animated videos and podcasts that help you experience the Bible as a unified story that leads to Jesus.",
       tag:         "BIBLE",
       onClick:     onBibleProject,
-      thumbnail:   bibleProjectLatest.thumbnail || FALLBACKS.bibleProject,
+      latest: bibleProjectLatest,
+      thumbnail: bibleProjectLatest.thumbnail,
     },
     {
       id:          "give-me-an-answer",
@@ -98,7 +95,8 @@ export default function TrueVoiceConnect({
       description: "Stuart & Cliffe Knechtle take faith to the streets — real conversations answering hard questions about Jesus.",
       tag:         "APOLOGETICS",
       onClick:     onGiveMeAnAnswer,
-      thumbnail:   giveMeAnAnswerLatest.thumbnail || FALLBACKS.giveMeAnAnswer,
+      latest: giveMeAnAnswerLatest,
+      thumbnail: giveMeAnAnswerLatest.thumbnail,
     },
   ];
 
@@ -125,16 +123,8 @@ export default function TrueVoiceConnect({
             >
               <div
                 className="tv-connect-card-thumb"
-                style={
-                  card.thumbnail
-                    ? {
-                        backgroundImage:    `url(${card.thumbnail})`,
-                        backgroundSize:     "cover",
-                        backgroundPosition: "center",
-                      }
-                    : {}
-                }
               >
+                <VideoThumbnail src={card.thumbnail} videoId={card.latest.videoId} className="tv-connect-thumbnail" />
                 <span className="tv-connect-play-icon">▶</span>
               </div>
 
@@ -144,6 +134,8 @@ export default function TrueVoiceConnect({
                   <span className="tv-connect-card-tag">{card.tag}</span>
                 </div>
                 <p className="tv-connect-card-description">{card.description}</p>
+                {card.latest.loading && <p className="tv-connect-card-description" role="status">Loading video…</p>}
+                {card.latest.error && <p className="tv-connect-card-description" role="status">Video unavailable. Please try again later.</p>}
               </div>
             </button>
           ))}

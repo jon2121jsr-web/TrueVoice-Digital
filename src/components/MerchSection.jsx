@@ -1,3 +1,4 @@
+import { IS_PREVIEW } from '../lib/previewSafety';
 import "./MerchSection.css";
 
 const MERCH_PRODUCTS = [
@@ -88,7 +89,7 @@ function MerchCard({ product }) {
       </div>
 
       <div className="tv-merch-info">
-        <span className="tv-merch-scripture" style={{ color: product.accent }}>
+        <span className="tv-merch-scripture" style={{ color: `var(--pulse-violet, ${product.accent})` }}>
           {product.scripture}
         </span>
         <h3 className="tv-merch-name">{product.name}</h3>
@@ -96,8 +97,9 @@ function MerchCard({ product }) {
 
         <button
           className="tv-merch-buy-btn"
-          onClick={() => window.open("https://shop.truevoice.digital", "_blank", "noopener,noreferrer")}
-          style={{ background: product.accent }}
+          disabled={IS_PREVIEW}
+          onClick={() => { if (!IS_PREVIEW) window.open("https://shop.truevoice.digital", "_blank", "noopener,noreferrer"); }}
+          style={{ background: `var(--pulse-teal, ${product.accent})` }}
         >
           Shop Now →
         </button>

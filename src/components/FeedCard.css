@@ -193,3 +193,5 @@
   font-size: 16px;
   z-index: 5;
 }
+/* A real embed error is distinct from an autoplay prompt. */
+.feed-video-error { position: absolute; top: 90px; left: 20px; right: 20px; z-index: 4; padding: 12px; border-radius: 12px; background: #121b2cee; color: #f4f7fc; font-size: 13px; }

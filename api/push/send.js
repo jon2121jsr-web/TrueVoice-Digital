@@ -1,3 +1,4 @@
+import { isRestrictedPreview, rejectPreview } from '../_lib/previewGuard.js';
 /**
  * Push Notification Send — /api/push/send.js
  *
@@ -35,7 +36,7 @@ import { verifyAdmin } from '../_lib/adminAuth.js';
 // Serverless functions can be reused across invocations on the same
 // warm instance — guard against re-initializing the Firebase app, which
 // throws if called twice.
-if (!admin.apps.length) {
+if (!isRestrictedPreview() && !admin.apps.length) {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
   admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
@@ -49,6 +50,7 @@ function chunk(arr, size) {
 }
 
 export default async function handler(req, res) {
+  if (rejectPreview(res)) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const verified = await verifyAdmin(req);

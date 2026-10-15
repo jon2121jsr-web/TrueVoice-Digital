@@ -86,3 +86,4 @@
   color: #8b96c2;
   margin: 0;
 }
+.scroll-feed-notice { position: fixed; top: calc(58px + env(safe-area-inset-top)); left: 16px; right: 16px; z-index: 20; margin: 0; padding: 10px 14px; border-radius: 12px; background: #121b2cee; color: #f4f7fc; font-size: 12px; }

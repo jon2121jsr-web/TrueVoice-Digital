@@ -1,3 +1,4 @@
+import { isRestrictedPreview, rejectPreview } from './_lib/previewGuard.js';
 /**
  * Stripe Webhook Handler — /api/stripe-webhook.js
  *
@@ -40,9 +41,9 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
+const stripe = isRestrictedPreview() ? null : new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
 
-const supabase = createClient(
+const supabase = isRestrictedPreview() ? null : createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
@@ -59,6 +60,7 @@ async function getRawBody(req) {
 }
 
 export default async function handler(req, res) {
+  if (rejectPreview(res)) return;
   if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
   const rawBody = await getRawBody(req);

@@ -1,3 +1,4 @@
+import { IS_PREVIEW, previewReadOnlyFetch } from './previewSafety';
 import { createClient } from '@supabase/supabase-js';
 
 // Separate client with realtime enabled — used only by ChimeIn.
@@ -8,9 +9,11 @@ export const supabaseRealtime = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY,
   {
     realtime: { enabled: true },
+    ...(IS_PREVIEW ? { global: { fetch: previewReadOnlyFetch(import.meta.env.VITE_SUPABASE_URL) } } : {}),
     auth: {
-      persistSession: true,
-      autoRefreshToken: true,
+      detectSessionInUrl: !IS_PREVIEW,
+      persistSession: !IS_PREVIEW,
+      autoRefreshToken: !IS_PREVIEW,
     }
   }
 );

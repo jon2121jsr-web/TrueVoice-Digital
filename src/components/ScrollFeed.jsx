@@ -1,7 +1,8 @@
 // src/components/ScrollFeed.jsx
 // The TrueVoice Scroll feed -- vertical snap-scroll, bounded by a fixed
 // set rather than infinite. Route: /scroll
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { MediaCoordinationContext } from "../features/pulse/MediaCoordinationContext";
 import { Link, useParams } from "react-router-dom";
 import { useFeedItems } from "../hooks/useFeedItems";
 import { useAuthSession } from "../hooks/useAuthSession";
@@ -11,6 +12,25 @@ import FeedCard from "./FeedCard";
 import "./ScrollFeed.css";
 
 export default function ScrollFeed() {
+  const media = useContext(MediaCoordinationContext);
+  useLayoutEffect(() => {
+    media?.pauseRadio();
+    return () => media?.stopVideo();
+  }, [media]);
+
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    try {
+      navigator.mediaSession.setActionHandler("play", () => media?.playVideo());
+      navigator.mediaSession.setActionHandler("pause", () => media?.pauseVideo());
+    } catch { /* action unsupported */ }
+    return () => {
+      try {
+        navigator.mediaSession.setActionHandler("play", null);
+        navigator.mediaSession.setActionHandler("pause", null);
+      } catch { /* action unsupported */ }
+    };
+  }, [media]);
   const { id: deepLinkId } = useParams();
   const { items, loading, error } = useFeedItems({ limit: 30 });
   const { session } = useAuthSession();
@@ -22,7 +42,7 @@ export default function ScrollFeed() {
   const maxSeenRef = useRef(0);
   const containerRef = useRef(null);
   const cardRefs = useRef([]);
-  const didJumpRef = useRef(false);
+  const didJumpRef = useRef(null);
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
@@ -49,12 +69,12 @@ export default function ScrollFeed() {
   // Runs once; a visitor scrolling around afterward isn't fighting a
   // re-jump on every render.
   useEffect(() => {
-    if (didJumpRef.current || !deepLinkId || items.length === 0) return;
+    if (didJumpRef.current === deepLinkId || !deepLinkId || items.length === 0) return;
     const idx = items.findIndex((item) => item.id === deepLinkId);
-    if (idx === -1) return;
-    didJumpRef.current = true;
-    setActiveIndex(idx);
-    cardRefs.current[idx]?.scrollIntoView({ behavior: "auto", block: "start" });
+    didJumpRef.current = deepLinkId;
+    const destination = idx === -1 ? 0 : idx;
+    setActiveIndex(destination);
+    cardRefs.current[destination]?.scrollIntoView({ behavior: "auto", block: "start" });
   }, [deepLinkId, items]);
 
   useEffect(() => {
@@ -105,6 +125,9 @@ export default function ScrollFeed() {
   return (
     <div className="scroll-feed" ref={containerRef}>
       <Link to="/" className="scroll-feed-home">← TrueVoice.Digital</Link>
+      {deepLinkId && !items.some((item) => item.id === deepLinkId) && (
+        <p className="scroll-feed-notice" role="status">That item isn't in today's feed. Showing today's set.</p>
+      )}
 
       {items.map((item, idx) => (
         <div

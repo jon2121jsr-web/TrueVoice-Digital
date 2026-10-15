@@ -1,0 +1,17 @@
+.pulse-intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 24px; padding: 0 0 18px; color: #f5f7fc; }
+.pulse-intro__eyebrow { display: flex; align-items: center; gap: 8px; grid-column: 1 / -1; color: #73ecda; font-size: 11px; font-weight: 800; letter-spacing: .18em; }
+.pulse-intro__live-dot { width: 7px; height: 7px; border-radius: 50%; background: #73ecda; box-shadow: 0 0 12px #73ecda60; }
+.pulse-intro h1 { margin: 0; font-size: clamp(16px, 2vw, 22px); line-height: 1.4; letter-spacing: -.025em; }
+.pulse-intro h1 span { color: #c5b7e9; }
+.pulse-intro__signature { grid-column: 1 / -1; margin: 0; font-size: 12px; line-height: 1.5; color: #b8c4d6; }
+.pulse-intro__modes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; font-size: 10px; font-weight: 750; letter-spacing: .07em; }
+.pulse-intro__modes > a[aria-current="page"] { color: #73ecda; border-color: #69e5d8; background: #143337; }
+.pulse-intro__modes > a { color: #d1c0ff; text-decoration: none; min-height: 44px; padding: 0 12px; border: 1px solid transparent; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; box-sizing: border-box; }
+.pulse-intro__modes > a:hover { text-decoration: underline; }
+.pulse-intro__modes > a:focus-visible { outline: 2px solid #b5a4f7; outline-offset: 4px; }
+.pulse-intro__modes > span:last-child { color: #b8c4d6; }
+.pulse-intro__modes small { font-size: 9px; letter-spacing: 0; font-weight: 400; }
+@media (max-width: 900px) {
+  .pulse-intro { grid-template-columns: minmax(0, 1fr); gap: 6px; padding-bottom: 12px; }
+  .pulse-intro__modes { gap: 8px 18px; }
+}

@@ -52,6 +52,41 @@ export default function ChimeIn() {
   const feedEndRef = useRef(null);
   const lastFocusedRef = useRef(null);
 
+  // Measure presentation only: chat never changes radio state or dock visibility.
+  useEffect(() => {
+    const tab = tabRef.current;
+    const app = tab?.closest(".tv-app--pulse");
+    if (!app) return;
+    let dock;
+    const update = () => {
+      const next = app.querySelector(".pulse-live--floating");
+      if (next !== dock) {
+        resize?.disconnect();
+        visibility.disconnect();
+        dock = next;
+        if (dock) {
+          resize?.observe(dock);
+          visibility.observe(dock, { attributes: true, attributeFilter: ["aria-hidden"] });
+        }
+      }
+      const height = dock?.getAttribute("aria-hidden") === "false" ? dock.getBoundingClientRect().height : 0;
+      tab.style.setProperty("--chime-dock-height", `${height}px`);
+    };
+    const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    const visibility = new MutationObserver(update);
+    const layout = new MutationObserver(update);
+    layout.observe(app, { childList: true, subtree: true });
+    window.addEventListener("resize", update);
+    update();
+    return () => {
+      resize?.disconnect();
+      visibility.disconnect();
+      layout.disconnect();
+      window.removeEventListener("resize", update);
+      tab.style.removeProperty("--chime-dock-height");
+    };
+  }, []);
+
   const toggleDrawer = () => setIsOpen((open) => !open);
   const closeDrawer = () => setIsOpen(false);
 

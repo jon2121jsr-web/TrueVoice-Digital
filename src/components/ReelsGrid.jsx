@@ -3,7 +3,10 @@
 // No static data files required.
 // ✅ The Cut with Erica removed April 2026
 // ✅ Capturing Christianity, The Beat by Allen Parr, Cold Case Christianity added April 2026
-import { useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { MediaCoordinationContext } from "../features/pulse/MediaCoordinationContext";
+import VideoThumbnail from "./VideoThumbnail";
+import { withVideoControls } from "../lib/videoEmbed";
 import { useYouTubeFeed } from "../hooks/useYouTubeFeed";
 import { trackVideoPlay } from '../lib/analytics.js';
 import "./ReelsGrid.css";
@@ -44,6 +47,7 @@ function SkeletonRow() {
 }
 
 function ReelsGrid() {
+  const media = useContext(MediaCoordinationContext);
   const [activeVideo, setActiveVideo] = useState(null);
   const iframeRef = useRef(null);
 
@@ -107,7 +111,7 @@ function ReelsGrid() {
   // instead of just pausing it, and the iframe's key={activeVideo.id}
   // below forces a real remount for the next video too, so nothing about
   // the old player instance survives the switch.
-  function stopCurrentVideo() {
+  const stopCurrentVideo = useCallback(() => {
     const win = iframeRef.current?.contentWindow;
     if (!win) return;
     try {
@@ -115,16 +119,24 @@ function ReelsGrid() {
     } catch {
       /* iframe already gone -- nothing to stop */
     }
-  }
+  }, []);
+
+  const handleClose = useCallback(() => {
+    stopCurrentVideo();
+    setActiveVideo(null);
+    media?.endVideo(handleClose);
+  }, [stopCurrentVideo, media]);
+
+  useEffect(() => () => {
+    stopCurrentVideo();
+    media?.endVideo(handleClose);
+  }, [stopCurrentVideo, media, handleClose]);
 
   const handleOpen = (video) => {
+    media?.startVideo(handleClose);
     stopCurrentVideo();
     setActiveVideo(video);
     trackVideoPlay(video.youtubeId, video.title);
-  };
-  const handleClose = () => {
-    stopCurrentVideo();
-    setActiveVideo(null);
   };
 
   const renderChannel = (channelTitle, items, feedState) => (
@@ -140,6 +152,10 @@ function ReelsGrid() {
 
       {feedState.loading ? (
         <SkeletonRow />
+      ) : feedState.error ? (
+        <p className="reels-intro" role="status">Videos could not load. Please try again later.</p>
+      ) : items.length === 0 ? (
+        <p className="reels-intro">No videos available right now.</p>
       ) : (
         <div className="reels-scroller-wrap">
           <div className="reels-scroller">
@@ -151,11 +167,11 @@ function ReelsGrid() {
                 onClick={() => handleOpen(item)}
               >
                 <div className="reel-thumb-wrap">
-                  <img
+                  <VideoThumbnail
                     src={item.thumbnailUrl}
+                    videoId={item.youtubeId}
                     alt={item.title}
                     className="reel-thumb"
-                    loading="lazy"
                   />
                   <div className="reel-play-pill">Watch</div>
                 </div>
@@ -211,7 +227,7 @@ function ReelsGrid() {
                 <iframe
                   key={activeVideo.id}
                   ref={iframeRef}
-                  src={activeVideo.embedUrl}
+                  src={withVideoControls(activeVideo.embedUrl)}
                   title={activeVideo.title}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

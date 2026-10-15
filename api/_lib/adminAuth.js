@@ -1,3 +1,4 @@
+import { isRestrictedPreview } from './previewGuard.js';
 /**
  * Shared server-side admin verification for api/admin-*.js.
  *
@@ -11,12 +12,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
+const supabaseAdmin = isRestrictedPreview() ? null : createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
 export async function verifyAdmin(req) {
+  if (isRestrictedPreview()) return { error: 'Operation unavailable in Preview', status: 403 };
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) {

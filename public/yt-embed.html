@@ -94,6 +94,30 @@
   var disablekb = flag("disablekb", false);
 
   var player = null;
+  var progressEnabled = flag("progress", false);
+  var progressTimer = null;
+  var currentState = -1;
+  function stopProgress() {
+    if (progressTimer !== null) window.clearInterval(progressTimer);
+    progressTimer = null;
+  }
+  function reportProgress() {
+    if (!progressEnabled || !player) return;
+    try {
+      postToParent({ type: "progress", videoId: videoId, currentTime: player.getCurrentTime(),
+        duration: player.getDuration(), state: currentState, start: start, end: end });
+    } catch (e) { /* player not initialized yet */ }
+  }
+  function updateProgress() {
+    stopProgress();
+    reportProgress();
+    // Paused polling reads real position for seeking; it never advances time.
+    if (progressEnabled && !document.hidden && [1, 2, 3].indexOf(currentState) !== -1) {
+      progressTimer = window.setInterval(reportProgress, 500);
+    }
+  }
+  document.addEventListener("visibilitychange", updateProgress);
+  window.addEventListener("pagehide", stopProgress);
 
   function postToParent(msg) {
     try {
@@ -106,14 +130,17 @@
 
   window.addEventListener("message", function (event) {
     var data = event.data;
-    if (!data || data.source !== "tvd-yt-embed-cmd" || !player) return;
+    if (event.source !== window.parent || !data || data.source !== "tvd-yt-embed-cmd" || !player) return;
     if (data.type === "play") player.playVideo();
     else if (data.type === "mute") player.mute();
     else if (data.type === "unmute") player.unMute();
-    else if (data.type === "stop") player.stopVideo();
+    else if (data.type === "stop") { stopProgress(); currentState = -1; player.stopVideo(); }
     else if (data.type === "seekAndPlay") {
       player.seekTo(data.time || 0, true);
       player.playVideo();
+    }
+    if (["play", "mute", "unmute", "stop", "seekAndPlay"].indexOf(data.type) !== -1) {
+      postToParent({ type: "commandReceived", command: data.type, executed: true });
     }
   });
 
@@ -146,12 +173,22 @@
       events: {
         onReady: function () {
           postToParent({ type: "ready" });
+          reportProgress();
         },
         onStateChange: function (event) {
           postToParent({ type: "stateChange", state: event.data });
+          currentState = event.data;
+          updateProgress();
         },
         onError: function (event) {
+          stopProgress();
+          currentState = -1;
           postToParent({ type: "error", code: event.data });
+        },
+        onAutoplayBlocked: function () {
+          stopProgress();
+          currentState = -1;
+          postToParent({ type: "autoplayBlocked" });
         },
       },
     });

@@ -1,7 +1,9 @@
+import { IS_PREVIEW } from './previewSafety';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export async function recordVisit(path, referrer, userAgent) {
+  if (IS_PREVIEW) return;
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/page_visits`, {
@@ -18,7 +20,7 @@ export async function recordVisit(path, referrer, userAgent) {
         user_agent: userAgent
       })
     });
-  } catch {}
+  } catch { /* Best-effort visit logging. */ }
 }
 
 export async function readAllVisits(days = 7) {

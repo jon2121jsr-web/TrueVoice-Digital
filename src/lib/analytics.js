@@ -1,3 +1,4 @@
+import { IS_PREVIEW } from './previewSafety';
 /**
  * TrueVoice Analytics Tracker
  * Lightweight custom event tracker — no third-party dependencies.
@@ -65,6 +66,7 @@ function getUtmProps() {
 }
 
 function send(eventName, props = {}) {
+  if (IS_PREVIEW) return;
   const payload = {
     site:      SITE_ID,
     event:     eventName,

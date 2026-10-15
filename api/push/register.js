@@ -1,3 +1,4 @@
+import { isRestrictedPreview, rejectPreview } from '../_lib/previewGuard.js';
 /**
  * Push Device Registration — /api/push/register.js
  *
@@ -20,7 +21,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
+const supabase = isRestrictedPreview() ? null : createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
@@ -28,6 +29,7 @@ const supabase = createClient(
 const VALID_PLATFORMS = new Set(['ios', 'android']);
 
 export default async function handler(req, res) {
+  if (rejectPreview(res)) return;
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

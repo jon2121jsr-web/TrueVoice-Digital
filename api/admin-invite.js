@@ -1,3 +1,4 @@
+import { rejectPreview } from './_lib/previewGuard.js';
 /**
  * Admin Invite — /api/admin-invite.js
  *
@@ -13,6 +14,7 @@
 import { verifyAdmin } from './_lib/adminAuth.js';
 
 export default async function handler(req, res) {
+  if (rejectPreview(res)) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const verified = await verifyAdmin(req);
