@@ -30,12 +30,15 @@ export default defineConfig(({ mode }) => {
       registerType: 'autoUpdate',
 
       includeAssets: [
+        'truevoice-waveform-v1.svg',
         'truevoice-favicon.png',
-        'apple-touch-icon.png',
-        'apple-touch-icon-167.png',
-        'apple-touch-icon-152.png',
         'icon-192.png',
         'icon-512.png',
+        'apple-touch-icon-waveform-v1.png',
+        'apple-touch-icon-167-waveform-v1.png',
+        'apple-touch-icon-152-waveform-v1.png',
+        'icon-192-waveform-v1.png',
+        'icon-512-waveform-v1.png',
       ],
 
       manifest: {
@@ -52,19 +55,19 @@ export default defineConfig(({ mode }) => {
         categories: ['music', 'lifestyle', 'entertainment'],
         icons: [
           {
-            src: '/icon-192.png',
+            src: '/icon-192-waveform-v1.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/icon-512.png',
+            src: '/icon-512-waveform-v1.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/icon-512.png',
+            src: '/icon-512-waveform-v1.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
@@ -80,10 +83,10 @@ export default defineConfig(({ mode }) => {
           // the blank/missing icon on the lock screen.
           // =====================================================
           {
-            src: '/apple-touch-icon.png',
+            src: '/apple-touch-icon-waveform-v1.png',
             sizes: '180x180',
             type: 'image/png',
-            purpose: 'apple touch icon',
+            purpose: 'any',
           },
         ],
       },
@@ -95,13 +98,9 @@ export default defineConfig(({ mode }) => {
 
         runtimeCaching: [
           {
-            // AzuraCast now-playing API — network first, short cache
+            // Never replay an old song from the worker's metadata cache.
             urlPattern: /^https:\/\/stream\.truevoice\.digital\/api\//,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'azuracast-api',
-              expiration: { maxAgeSeconds: 30 },
-            },
+            handler: 'NetworkOnly',
           },
           {
             // Live365 stream — never cache audio streams

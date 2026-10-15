@@ -2,13 +2,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { fetchNowPlaying } from "../services/api";
 import { trackStreamPlay } from '../lib/analytics.js';
+import { createMetadataTimeline, metadataDelaySeconds, METADATA_POLL_MS } from "../lib/metadataTimeline";
 import PulseLive from "../features/pulse/PulseLive.jsx";
 import "./NowPlayingPanel.css";
-
-function toNum(v, fallback = 0) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
 
 function useIsOwner() {
   return useMemo(() => {
@@ -35,13 +31,13 @@ export function NowPlayingPanel({
 
   const isOwner = useIsOwner();
 
-  const STREAM_DELAY_SEC   = toNum(import.meta.env.VITE_STREAM_DELAY_SEC, 65);
+  const STREAM_DELAY_SEC   = metadataDelaySeconds(import.meta.env.VITE_STREAM_DELAY_SEC);
   const AZURACAST_FALLBACK = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
   // ── All mutable tracking in refs so polling closure never goes stale ──────
+  const metadataRef = useRef(null);
   const displaySongRef = useRef(null);
-  const pendingSongRef = useRef(null);
-  const pendingFlipRef = useRef(null);
+  useEffect(() => { displaySongRef.current = displaySong; }, [displaySong]);
   const isPlayingRef   = useRef(false);
   const wantsPlaybackRef = useRef(false); // user intent, shared by UI and Media Session
   const recoveryTimerRef = useRef(null);
@@ -59,11 +55,16 @@ export function NowPlayingPanel({
     el.src = streamUrl;
   }, [audioRef, streamUrl]);
 
-  /* ── Poll AzuraCast every 15 seconds ──────────────────────────────────── */
+  /* ── Poll fresh AzuraCast metadata every 5 seconds ──────────────────────────────────── */
   useEffect(() => {
     let alive = true;
+    let inFlight = false;
+    const timeline = createMetadataTimeline(STREAM_DELAY_SEC);
+    metadataRef.current = timeline;
 
     async function load() {
+      if (inFlight) return;
+      inFlight = true;
       try {
         const result = await fetchNowPlaying();
         if (!alive) return;
@@ -80,21 +81,8 @@ export function NowPlayingPanel({
 
         if (!song?.title) { if (alive) setLoading(false); return; }
 
-        const incomingId = song.id    || song.title;
-        const currentId  = displaySongRef.current?.id    || displaySongRef.current?.title;
-        const pendingId  = pendingSongRef.current?.song?.id || pendingSongRef.current?.song?.title;
-
-        if (!displaySongRef.current) {
-          displaySongRef.current = song;
-          setDisplaySong(song);
-        } else if (incomingId !== currentId && incomingId !== pendingId) {
-          pendingSongRef.current  = { song };
-          pendingFlipRef.current  = Date.now() + (STREAM_DELAY_SEC * 1000);
-        } else if (incomingId === currentId) {
-          if (pendingId && pendingId !== incomingId) {
-            // keep — different song is legitimately queued
-          }
-        }
+        const nextSong = timeline.observe(result.now_playing);
+        if (nextSong) setDisplaySong(nextSong);
 
         setError(null);
         setLoading(false);
@@ -102,25 +90,21 @@ export function NowPlayingPanel({
         if (!alive) return;
         setError(err?.message || "Failed to load now playing.");
         setLoading(false);
+      } finally {
+        inFlight = false;
       }
     }
 
     load();
-    const id = window.setInterval(load, 15_000);
+    const id = window.setInterval(load, METADATA_POLL_MS);
     return () => { alive = false; window.clearInterval(id); };
   }, [STREAM_DELAY_SEC]);
 
   /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {
     const id = window.setInterval(() => {
-      if (!pendingSongRef.current || !pendingFlipRef.current) return;
-      if (Date.now() >= pendingFlipRef.current) {
-        const next = pendingSongRef.current.song;
-        displaySongRef.current = next;
-        pendingSongRef.current = null;
-        pendingFlipRef.current = null;
-        setDisplaySong(next);
-      }
+      const nextSong = metadataRef.current?.tick();
+      if (nextSong) setDisplaySong(nextSong);
     }, 1_000);
     return () => window.clearInterval(id);
   }, []);

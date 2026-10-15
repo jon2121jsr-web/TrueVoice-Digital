@@ -126,9 +126,8 @@ test('generated worker preserves LIVE365 network-only and metadata/font/image ca
   assert.equal(live.method, 'GET');
   assert.equal(live.handler.options.cacheName, undefined);
   const metadata = find('https://stream.truevoice.digital/api/nowplaying/1');
-  assert.equal(metadata.handler.kind, 'NetworkFirst');
-  assert.equal(metadata.handler.options.cacheName, 'azuracast-api');
-  assert.equal(metadata.handler.options.plugins[0].options.maxAgeSeconds, 30);
+  assert.equal(metadata.handler.kind, 'NetworkOnly');
+  assert.equal(metadata.handler.options.cacheName, undefined);
   const fonts = find('https://fonts.googleapis.com/css2?family=Fixture');
   assert.equal(fonts.handler.kind, 'CacheFirst');
   assert.equal(fonts.handler.options.plugins[0].options.maxEntries, 10);

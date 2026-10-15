@@ -133,7 +133,7 @@ const controller = (await compiled("./src/components/NowPlayingPanel.jsx", [{
         export const useCallback = (fn,d) => h().memo(() => fn,d);
         export const useEffect = (fn,d) => h().effect(fn,d);
         export const useLayoutEffect = (fn,d) => h().effect(fn,d);`,
-      api: `export async function fetchNowPlaying(){ globalThis.__pulseHarness.fetches++; return {now_playing:{song:{id:'fixture',title:'Test track',artist:'Test artist'}}}; }`,
+      api: `export async function fetchNowPlaying(){ const h=globalThis.__pulseHarness; h.fetches++; return h.response ?? {now_playing:{song:{id:'fixture',title:'Test track',artist:'Test artist'}}}; }`,
       analytics: "export function trackStreamPlay() {}",
       view: "export default function PulseLive() { return null; }",
     }[path] }));
@@ -156,6 +156,40 @@ class Harness {
   render(props) { this.cursor = 0; globalThis.__pulseHarness = this; const view = this.component(props); this.pending.splice(0).forEach((fn) => fn()); return view; }
   unmount() { this.slots.forEach((slot) => slot?.cleanup?.()); }
 }
+
+test('LIVE controller polls single-flight and publishes title/art together without restarting audio', async () => {
+  const oldWindow = globalThis.window, oldNow = Date.now;
+  const intervals = new Map();
+  globalThis.window = { location: { search: '' }, clearTimeout() {}, setInterval(fn, ms) { intervals.set(ms, fn); return ms; }, clearInterval(ms) { intervals.delete(ms); } };
+  Date.now = () => 250_000;
+  const h = new Harness();
+  const props = { audioRef: { current: null } };
+  try {
+    h.render(props);
+    intervals.get(5000)(); // Initial fetch has not settled yet.
+    assert.equal(h.fetches, 1);
+    await Promise.resolve();
+    await Promise.resolve();
+    let view = h.render(props);
+    assert.equal(view.props.title, 'Test track');
+    h.response = { now_playing: { played_at: 200, song: { id: 'new', title: 'New track', art: 'new.jpg' } } };
+    intervals.get(5000)();
+    await Promise.resolve();
+    await Promise.resolve();
+    view = h.render(props);
+    assert.equal(view.props.title, 'New track');
+    assert.equal(view.props.art, 'new.jpg');
+    assert.equal(view.props.isPlaying, false);
+    intervals.get(1000)();
+    assert.equal(h.render(props).props.title, 'New track');
+  } finally {
+    h.unmount();
+    assert.equal(intervals.size, 0);
+    globalThis.window = oldWindow;
+    Date.now = oldNow;
+    delete globalThis.__pulseHarness;
+  }
+});
 
 test("same controller retains state through compact/full changes and cancels video recovery races", async () => {
   const originalWindow = globalThis.window;

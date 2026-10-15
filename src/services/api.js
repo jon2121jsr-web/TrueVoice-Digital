@@ -11,7 +11,7 @@ const STATION_SLUG =
 export async function fetchNowPlaying() {
   const url = `${BASE_URL}/api/nowplaying/${STATION_SLUG}`;
 
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     throw new Error(`NowPlaying HTTP ${res.status} ${res.statusText}`);
   }
@@ -34,7 +34,7 @@ export async function fetchNowPlaying() {
 
   const rawNext = root.playing_next || null;
 
-  const live365Count = null; // Live365 no longer in use
+  const live365Count = null; // Listener counts here come from AzuraCast, not LIVE365.
   const rawAzuraListeners = root.listeners ?? null;
 
   let mountTotal = 0;
