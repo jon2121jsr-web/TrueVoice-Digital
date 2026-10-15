@@ -10,9 +10,7 @@
 .pulse-featured__heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 12px; }
 .pulse-featured__heading h2 { font-size: 18px; margin: 0; }
 .pulse-featured__heading p { color: var(--tv-text-muted); font-size: 12px; margin: 0; }
-.pulse-featured .hero-section { height: clamp(220px, 25vw, 300px); border-radius: 20px; border: 1px solid #344254; }
-.pulse-featured .hero-slider { height: calc(100% - 32px); }
-.pulse-featured .hero-dots { bottom: -28px; }
+.pulse-featured .hero-section { border-radius: 20px; border: 1px solid #344254; }
 .pulse-featured .hero-arrow { opacity: .75; }
 .pulse-featured .hero-slide-img { transform: none; }
 @media (max-width: 900px) {
@@ -27,5 +25,4 @@
   .pulse-listening .pulse-live:not(.pulse-live--floating) .pulse-live__header,
   .pulse-listening .pulse-live:not(.pulse-live--floating) .pulse-live__footer { padding: 14px; }
   .pulse-listening .pulse-live__eyebrow { font-size: 9px; margin-bottom: 8px; }
-  .pulse-featured .hero-section { height: 220px; }
 }

@@ -183,6 +183,26 @@
 .hero-arrow--prev { left: 14px; }
 .hero-arrow--next { right: 14px; }
 
+/* Approved artwork stays intact at every width. Controls have their own rail. */
+.hero-section.hero-section--artwork { height: auto; background: #030b16; }
+.hero-section--artwork::before { display: none; }
+.hero-section--artwork .hero-slider {
+  height: auto;
+  aspect-ratio: 1958 / 803;
+  padding-bottom: 44px;
+  box-sizing: content-box;
+}
+.hero-section--artwork .hero-slide { inset: 0 0 44px; }
+.hero-section--artwork .hero-media,
+.hero-section--artwork .hero-artwork-link { width: 100%; height: 100%; }
+.hero-artwork-link { display: block; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.hero-section--artwork .hero-slide-img { object-fit: contain; object-position: center; transform: none; }
+.hero-section--artwork .hero-dots { bottom: 8px; }
+.hero-section--artwork .hero-arrow { top: auto; bottom: 5px; transform: none; width: 34px; height: 34px; }
+.hero-section--artwork .hero-arrow:hover { transform: none; }
+.hero-artwork-link:focus-visible { outline: 3px solid #00d9eb; outline-offset: -4px; }
+.hero-section--artwork .hero-dot:focus-visible { outline: 2px solid #00d9eb; outline-offset: 4px; }
+
 /* Show arrows on hover over the slider */
 .hero-slider:hover .hero-arrow {
   opacity: 1;

@@ -571,7 +571,27 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
           {/* ── HEADER ── */}
           <header className="tv-header">
             <div className="tv-header-inner">
-              <div className="tv-brand">TrueVoice.Digital</div>
+              <div className="tv-brand" aria-label="TrueVoice.Digital — Faithful Voices. Inspired Content.">
+                <svg className="tv-brand-wave" viewBox="0 0 56 56" aria-hidden="true" focusable="false">
+                  <defs>
+                    <linearGradient id="tv-brand-blue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#00d9eb" />
+                      <stop offset="100%" stopColor="#0086ff" />
+                    </linearGradient>
+                  </defs>
+                  <g fill="url(#tv-brand-blue)">
+                    <rect x="2" y="23" width="7" height="14" rx="3.5" />
+                    <rect x="13" y="16" width="7" height="28" rx="3.5" />
+                    <rect x="24" y="8" width="7" height="42" rx="3.5" />
+                    <rect x="35" y="0" width="7" height="56" rx="3.5" />
+                    <rect x="46" y="10" width="7" height="38" rx="3.5" />
+                  </g>
+                </svg>
+                <span className="tv-brand-copy">
+                  <span className="tv-brand-wordmark">TrueVoice<span>.Digital</span></span>
+                  <span className="tv-brand-tagline">Faithful Voices. Inspired Content.</span>
+                </span>
+              </div>
 
               <div className="tv-header-actions">
                 <div

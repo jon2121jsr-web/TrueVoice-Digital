@@ -1,75 +1,33 @@
 // src/components/Hero.jsx
 // ✅ Touch swipe left/right + mouse drag to navigate slides
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./Hero.css";
-import HeroMerchSlide from "./HeroMerchSlide.jsx";
-import HeroPigskinSlide from "./HeroPigskinSlide.jsx";
-// import HeroRyanSlide from "./HeroRyanSlide.jsx";
-// import HeroDeepEndSlide from "./HeroDeepEndSlide.jsx";
-// import HeroRyanScheduleSlide from "./HeroRyanScheduleSlide.jsx";
-// import HeroDenishaSlide from "./HeroDenishaSlide.jsx";
-
 // Minimum px travel before we count it as a swipe (not a tap)
 const SWIPE_THRESHOLD = 40;
 
 export default function Hero() {
-  const slides = useMemo(
-    () => [
-      // 1 — Brand cover (TrueVoice.Digital — Faithful Voices. Inspired Content.)
-      {
-        src: "/images/TrueVoice Digital Brand Hero Banner.png",
-        alt: "TrueVoice Digital — Faithful Voices. Inspired Content.",
-        fit: "contain",
-        position: "center center",
-        kind: "legacy",
-      },
-      // 2 — Ryan Kliesch (new)
-      // {
-      //   kind: "component",
-      //   component: HeroRyanSlide,
-      //   alt: "Ryan Kliesch on TrueVoice Digital — Coming Soon",
-      // },
-      // 3 — Ryan Kliesch schedule
-      // {
-      //   kind: "component",
-      //   component: HeroRyanScheduleSlide,
-      //   alt: "The Ryan Kliesch Show-gram — Live Mon–Fri on TrueVoice Digital",
-      // },
-      // 4 — Denisha Workizer — The Reclaimed Life
-      // {
-      //   kind: "component",
-      //   component: HeroDenishaSlide,
-      //   alt: "The Reclaimed Life with Denisha Workizer on TrueVoice Digital",
-      // },
-      // 5 — Merch
-      {
-        kind: "component",
-        component: HeroMerchSlide,
-        alt: "TrueVoice Gear — Shop Now",
-      },
-      // 6 — Pigskin Frenzy
-      {
-        kind: "component",
-        component: HeroPigskinSlide,
-        alt: "Pigskin Frenzy with Joel Norris",
-      },
-      // 7 — Poster slide
-      {
-        src: "/images/hero-slide-4.png",
-        alt: "TrueVoice Digital — Featured",
-        fit: "contain",
-        position: "center",
-        kind: "poster",
-      },
-      // 8 — The Deep End (replaces hero-coming.png)
-      // {
-      //   kind: "component",
-      //   component: HeroDeepEndSlide,
-      //   alt: "The Deep End with Scott & Ryan — Coming Soon",
-      // },
-    ],
-    []
-  );
+  const slides = useMemo(() => [
+    {
+      src: "/images/TrueVoice Digital_ Music Is the Heartbeat.png",
+      alt: "TrueVoice Digital — Music is the heartbeat. Discovery is the experience.",
+      width: 1958, height: 803,
+    },
+    {
+      src: "/images/TrueVoice Gear_ Faith in Bold.png",
+      alt: "TrueVoice Gear — Faith in Bold. Shop TrueVoice Gear.",
+      width: 1958, height: 803, gear: true,
+    },
+    {
+      src: "/images/TrueVoice.Digital Network Showcase(1).png",
+      alt: "TrueVoice.Digital Network Showcase — Faithful Voices. Inspired Content.",
+      width: 1960, height: 802,
+    },
+    {
+      src: "/images/TrueVoice Digital_ Faith in Sound.png",
+      alt: "TrueVoice Digital — Faith in Sound. Music, podcasts, teaching, stories and community.",
+      width: 1958, height: 803,
+    },
+  ], []);
 
   const [active, setActive] = useState(0);
   const intervalRef = useRef(null);
@@ -78,21 +36,21 @@ export default function Hero() {
   const dragStart = useRef(null); // { x, y } at pointer down
   const isDragging = useRef(false);
 
-  const startAutoPlay = () => {
+  const stopAutoPlay = useCallback(() => {
+    if (intervalRef.current) window.clearInterval(intervalRef.current);
+  }, []);
+
+  const startAutoPlay = useCallback(() => {
     stopAutoPlay();
     intervalRef.current = window.setInterval(() => {
       setActive((prev) => (prev + 1) % slides.length);
     }, 7000);
-  };
-
-  const stopAutoPlay = () => {
-    if (intervalRef.current) window.clearInterval(intervalRef.current);
-  };
+  }, [slides.length, stopAutoPlay]);
 
   useEffect(() => {
     startAutoPlay();
     return stopAutoPlay;
-  }, [slides.length]);
+  }, [startAutoPlay, stopAutoPlay]);
 
   const goTo = (idx) => {
     if (idx < 0 || idx >= slides.length) return;
@@ -143,7 +101,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="hero-section" aria-label="TrueVoice Hero">
+    <section className="hero-section hero-section--artwork" aria-label="TrueVoice Hero">
       <div
         className="hero-slider"
         role="region"
@@ -156,60 +114,38 @@ export default function Hero() {
         onClick={handleClick}
         style={{ cursor: "grab", userSelect: "none" }}
       >
-        {slides.map((s, idx) => {
+        {slides.map((slide, idx) => {
           const isActive = idx === active;
-
-          if (s.kind === "component" && s.component) {
-            const Component = s.component;
-            return (
-              <div
-                key={`component-${idx}`}
-                className={`hero-slide ${isActive ? "is-active" : ""}`}
-                aria-hidden={isActive ? "false" : "true"}
-                data-kind="component"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Component />
-              </div>
-            );
-          }
-
-          const mediaStyle = s.cover
-            ? {
-                width: "100%",
-                height: "100%",
-                padding: 0,
-                borderRadius: 0,
-                background: "none",
-                boxShadow: "none",
-              }
-            : {};
-
-          return (
-            <div
-              key={s.src}
-              className={`hero-slide ${isActive ? "is-active" : ""}`}
-              aria-hidden={isActive ? "false" : "true"}
-              data-kind={s.kind || "legacy"}
-            >
-              <div className="hero-media" style={mediaStyle}>
-                <img
-                  className="hero-slide-img"
-                  src={s.src}
-                  alt={isActive ? s.alt : ""}
-                  loading={idx === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                  draggable="false"
-                  style={{
-                    objectFit: s.fit || "contain",
-                    objectPosition: s.position || "center",
-                    borderRadius: s.cover ? 0 : undefined,
-                    pointerEvents: "none", // prevent img drag interfering
-                  }}
-                />
-              </div>
-            </div>
-          );
+          const artwork = <img
+            className="hero-slide-img"
+            src={slide.src}
+            alt={isActive ? slide.alt : ""}
+            width={slide.width}
+            height={slide.height}
+            loading={idx === 0 ? "eager" : "lazy"}
+            decoding="async"
+            draggable="false"
+          />;
+          return <div
+            key={slide.src}
+            className={"hero-slide " + (isActive ? "is-active" : "")}
+            aria-hidden={!isActive}
+            inert={!isActive}
+            data-kind="artwork"
+          >
+            {slide.gear ? <button
+              type="button"
+              className="hero-artwork-link"
+              aria-label="Shop TrueVoice Gear"
+              onClick={(event) => {
+                // A swipe must not activate the button embedded in the artwork.
+                if (isDragging.current) return;
+                event.stopPropagation();
+                document.querySelector('.tv-gear-section')
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            >{artwork}</button> : <div className="hero-media">{artwork}</div>}
+          </div>;
         })}
 
         {/* ── Prev / Next chevron arrows ── */}
