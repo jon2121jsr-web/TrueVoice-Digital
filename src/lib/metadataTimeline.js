@@ -13,7 +13,7 @@ const songKey = song => song.id || `${song.artist || ''}\n${song.title}`;
 const sameSong = (a, b) => a && b && ['id', 'title', 'artist', 'album', 'art'].every(key => a[key] === b[key]);
 
 export function createMetadataTimeline(delaySec = 0) {
-  const offsetMs = metadataDelaySeconds(delaySec) * 1000;
+  let offsetMs = metadataDelaySeconds(delaySec) * 1000;
   let current = null;
   let pending = null;
   let latestStart = 0;
@@ -27,6 +27,16 @@ export function createMetadataTimeline(delaySec = 0) {
   }
 
   return {
+    setDelay(seconds, now = Date.now()) {
+      const nextOffset = metadataDelaySeconds(seconds) * 1000;
+      if (nextOffset === offsetMs) return null;
+      offsetMs = nextOffset;
+      // Keep the visible song and stale-snapshot guard. Only retime the pending
+      // occurrence; never replay history or blank the UI during a source change.
+      if (!pending) return null;
+      pending.due = Math.min(pending.start * 1000 + offsetMs, now + offsetMs);
+      return now >= pending.due ? publish(pending.song) : null;
+    },
     observe(np, now = Date.now()) {
       const song = np?.song;
       if (!song?.title) return null;

@@ -138,7 +138,7 @@ const controller = (await compiled("./src/components/NowPlayingPanel.jsx", [{
       view: "export default function PulseLive() { return null; }",
     }[path] }));
   },
-}])).NowPlayingPanel;
+}], { VITE_STREAM_DELAY_SEC: '15' })).NowPlayingPanel;
 
 class Harness {
   slots = []; pending = []; cursor = 0; fetches = 0;
@@ -187,6 +187,114 @@ test('LIVE controller polls single-flight and publishes title/art together witho
     assert.equal(intervals.size, 0);
     globalThis.window = oldWindow;
     Date.now = oldNow;
+    delete globalThis.__pulseHarness;
+  }
+});
+
+test('song polling, listener changes and buffering events never reset a playing audio element', async () => {
+  const oldWindow = globalThis.window, oldDocument = globalThis.document;
+  const oldTimeout = globalThis.setTimeout, oldClear = globalThis.clearTimeout;
+  const intervals = new Map(), timers = new Map(), events = new Map();
+  let source = '', sourceWrites = 0, loads = 0, plays = 0, pauses = 0, timerId = 0;
+  const audio = {
+    get src() { return source; }, set src(value) { sourceWrites++; source = value; }, paused: true,
+    load() { loads++; },
+    play() { plays++; this.paused = false; events.get('play')?.(); return Promise.resolve(); },
+    pause() { pauses++; this.paused = true; events.get('pause')?.(); },
+    addEventListener: (event, listener) => events.set(event, listener), removeEventListener: event => events.delete(event),
+  };
+  globalThis.window = { location: { search: '' }, setInterval(fn, ms) { intervals.set(ms, fn); return ms; },
+    clearInterval: ms => intervals.delete(ms), clearTimeout: id => timers.delete(id), addEventListener() {}, removeEventListener() {} };
+  globalThis.document = { hidden: false, visibilityState: 'visible', addEventListener() {}, removeEventListener() {} };
+  globalThis.setTimeout = fn => { const id = ++timerId; timers.set(id, fn); return id; };
+  globalThis.clearTimeout = window.clearTimeout;
+  const h = new Harness(), media = createMediaCoordinator();
+  const props = { audioRef: { current: audio }, streamUrl: 'https://streaming.live365.com/a61535', media };
+  try {
+    h.render(props); await Promise.resolve();
+    media.playRadio(); h.render(props);
+    const initial = { sourceWrites, loads, plays, pauses };
+    for (let n = 1; n <= 6; n++) {
+      h.response = { listeners: { current: n }, now_playing: { played_at: n, song: { id: `song-${n}`, title: `Song ${n}`, art: `art-${n}.jpg` } } };
+      intervals.get(5000)(); await Promise.resolve(); await Promise.resolve();
+      const view = h.render({ ...props, compact: n % 2 === 0, isFloating: n % 2 === 1 });
+      assert.equal(view.props.title, `Song ${n}`);
+      events.get('waiting')(); events.get('stalled')();
+      for (const [id, callback] of timers) { timers.delete(id); callback(); }
+      events.get('playing')(); h.render(props);
+    }
+    assert.deepEqual({ sourceWrites, loads, plays, pauses }, initial);
+    assert.equal(h.fetches, 7);
+    media.pauseRadio(); media.playRadio();
+    assert.equal(loads, initial.loads + 1); // A deliberate resume still snaps to live.
+  } finally {
+    h.unmount(); globalThis.window = oldWindow; globalThis.document = oldDocument;
+    globalThis.setTimeout = oldTimeout; globalThis.clearTimeout = oldClear;
+    delete globalThis.__pulseHarness;
+  }
+});
+
+test('actual primary rejection selects fallback timing from currentSrc and preserves pending metadata', async () => {
+  const oldWindow = globalThis.window, oldDocument = globalThis.document, oldNow = Date.now;
+  const intervals = new Map(), listeners = new Map();
+  const primary = 'https://streaming.live365.com/a61535';
+  const fallback = 'https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3';
+  let assigned = primary, selected = primary, now = 180_000, rejectPrimary = false;
+  let loads = 0, plays = 0, writes = 0;
+  const emit = event => [...(listeners.get(event) || [])].forEach(fn => fn());
+  const audio = {
+    get src() { return assigned; }, set src(value) { writes++; assigned = value; },
+    get currentSrc() { return selected; }, paused: true,
+    load() { loads++; selected = assigned; emit('loadedmetadata'); },
+    play() {
+      plays++; this.paused = false; emit('play');
+      if (rejectPrimary && assigned === primary) { rejectPrimary = false; return Promise.reject(new Error('Primary failed')); }
+      emit('playing'); return Promise.resolve();
+    },
+    pause() { this.paused = true; emit('pause'); },
+    addEventListener(event, fn) { if (!listeners.has(event)) listeners.set(event, new Set()); listeners.get(event).add(fn); },
+    removeEventListener(event, fn) { listeners.get(event)?.delete(fn); },
+  };
+  globalThis.window = { location: { search: '' }, setInterval(fn, ms) { intervals.set(ms, fn); return ms; },
+    clearInterval: ms => intervals.delete(ms), clearTimeout() {}, addEventListener() {}, removeEventListener() {} };
+  globalThis.document = { hidden: false, visibilityState: 'visible', addEventListener() {}, removeEventListener() {} };
+  Date.now = () => now;
+  const h = new Harness(), media = createMediaCoordinator();
+  const props = { audioRef: { current: audio }, streamUrl: primary, media };
+  const response = (id, start) => ({ now_playing: { played_at: start, song: { id, title: id, art: `${id}.jpg` } } });
+  h.response = response('A', 100);
+  try {
+    h.render(props); await Promise.resolve(); await Promise.resolve();
+    media.playRadio(); h.render(props);
+    now = 202_000; h.response = response('B', 200);
+    intervals.get(5000)(); await Promise.resolve(); await Promise.resolve();
+    assert.equal(h.render(props).props.title, 'A');
+    // An assigned fallback is not yet the selected/playing resource.
+    assigned = fallback; now = 220_000; intervals.get(1000)();
+    assert.equal(h.render(props).props.title, 'A');
+    rejectPrimary = true; media.playRadio({ reconnect: true });
+    await Promise.resolve(); await Promise.resolve();
+    assert.equal(audio.currentSrc, fallback);
+    assert.equal(h.render(props).props.title, 'B');
+    assert.equal(h.render(props).props.art, 'B.jpg');
+    assert.equal(h.fetches, 2); // No poll restart or extra source-change request.
+    const transport = { loads, plays, writes };
+    now = 255_000; intervals.get(1000)(); h.render(props);
+    assert.deepEqual({ loads, plays, writes }, transport);
+    now = 302_000; h.response = response('C', 300);
+    intervals.get(5000)(); await Promise.resolve(); await Promise.resolve();
+    media.playRadio({ reconnect: true }); // Existing explicit primary retry.
+    assert.equal(audio.currentSrc, primary);
+    selected = ''; now = 315_000; intervals.get(1000)();
+    assert.equal(h.render(props).props.title, 'B'); // Empty resource does not reset to 15.
+    selected = primary; now = 355_000; intervals.get(1000)();
+    assert.equal(h.render(props).props.title, 'C');
+    assert.equal(h.fetches, 3);
+  } finally {
+    h.unmount();
+    assert.equal([...listeners.values()].reduce((count, set) => count + set.size, 0), 0);
+    assert.equal(intervals.size, 0);
+    globalThis.window = oldWindow; globalThis.document = oldDocument; Date.now = oldNow;
     delete globalThis.__pulseHarness;
   }
 });

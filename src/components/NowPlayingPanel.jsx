@@ -3,7 +3,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { fetchNowPlaying } from "../services/api";
 import { trackStreamPlay } from '../lib/analytics.js';
 import { createMetadataTimeline, metadataDelaySeconds, METADATA_POLL_MS } from "../lib/metadataTimeline";
+import { live365MetadataDelaySeconds, streamMetadataTiming } from "../lib/streamMetadataTiming.js";
 import PulseLive from "../features/pulse/PulseLive.jsx";
+import { observeRadioDiagnostics, radioDiagnostic } from "../features/pulse/radioDiagnostics.js";
 import "./NowPlayingPanel.css";
 
 function useIsOwner() {
@@ -32,10 +34,12 @@ export function NowPlayingPanel({
   const isOwner = useIsOwner();
 
   const STREAM_DELAY_SEC   = metadataDelaySeconds(import.meta.env.VITE_STREAM_DELAY_SEC);
+  const LIVE365_METADATA_DELAY_SEC = live365MetadataDelaySeconds(import.meta.env.VITE_LIVE365_METADATA_DELAY_SEC);
   const AZURACAST_FALLBACK = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
   // ── All mutable tracking in refs so polling closure never goes stale ──────
   const metadataRef = useRef(null);
+  const syncSourceTimingRef = useRef(null);
   const displaySongRef = useRef(null);
   useEffect(() => { displaySongRef.current = displaySong; }, [displaySong]);
   const isPlayingRef   = useRef(false);
@@ -44,6 +48,11 @@ export function NowPlayingPanel({
   const playbackEpochRef = useRef(0);
   const streamUrlRef   = useRef(streamUrl);
   useEffect(() => { streamUrlRef.current = streamUrl; }, [streamUrl]);
+
+  useEffect(() => observeRadioDiagnostics(audioRef?.current, () => ({
+    wantsPlayback: wantsPlaybackRef.current,
+    videoActive: media?.isVideoActive() ?? false,
+  })), [audioRef, media]);
 
   /* ── Pre-warm stream connection on mount ───────────────────────────────── */
   // Sets src early so the browser opens the connection and begins buffering
@@ -61,6 +70,17 @@ export function NowPlayingPanel({
     let inFlight = false;
     const timeline = createMetadataTimeline(STREAM_DELAY_SEC);
     metadataRef.current = timeline;
+    const el = audioRef?.current;
+    const syncSourceTiming = () => {
+      if (!alive || !el?.currentSrc) return; // Keep timing during transient empties.
+      const timing = streamMetadataTiming(el.currentSrc, STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC);
+      const nextSong = timeline.setDelay(timing.seconds);
+      if (nextSong) setDisplaySong(nextSong);
+    };
+    const sourceEvents = ['loadstart', 'loadedmetadata', 'playing'];
+    syncSourceTimingRef.current = syncSourceTiming;
+    sourceEvents.forEach(event => el?.addEventListener(event, syncSourceTiming));
+    syncSourceTiming();
 
     async function load() {
       if (inFlight) return;
@@ -81,6 +101,7 @@ export function NowPlayingPanel({
 
         if (!song?.title) { if (alive) setLoading(false); return; }
 
+        syncSourceTiming();
         const nextSong = timeline.observe(result.now_playing);
         if (nextSong) setDisplaySong(nextSong);
 
@@ -97,12 +118,21 @@ export function NowPlayingPanel({
 
     load();
     const id = window.setInterval(load, METADATA_POLL_MS);
-    return () => { alive = false; window.clearInterval(id); };
-  }, [STREAM_DELAY_SEC]);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+      sourceEvents.forEach(event => el?.removeEventListener(event, syncSourceTiming));
+      if (metadataRef.current === timeline) {
+        metadataRef.current = null;
+        syncSourceTimingRef.current = null;
+      }
+    };
+  }, [STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, audioRef]);
 
   /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {
     const id = window.setInterval(() => {
+      syncSourceTimingRef.current?.();
       const nextSong = metadataRef.current?.tick();
       if (nextSong) setDisplaySong(nextSong);
     }, 1_000);
@@ -154,6 +184,7 @@ export function NowPlayingPanel({
         if (!wantsPlaybackRef.current || !el.paused) return;
         const epoch = playbackEpochRef.current;
         const onFallback = el.src.includes(AZURACAST_FALLBACK);
+        radioDiagnostic('recovery-reload', el);
         if (!onFallback) el.src = streamUrlRef.current;
         el.load();
         el.play().catch(() => {
@@ -227,6 +258,7 @@ export function NowPlayingPanel({
       clearRecoveryTimer(); // supersede any pending debounced attempt — retry now
       const epoch = playbackEpochRef.current;
       setIsReconnecting(true);
+      radioDiagnostic('online-reload', el);
       el.src = streamUrlRef.current; // primary first
       el.load();
       el.play().catch(() => {
@@ -266,6 +298,7 @@ export function NowPlayingPanel({
 
   /* ── Shared controller commands: no second state or audio element ─────── */
   const pauseRadio = useCallback(() => {
+    radioDiagnostic('command-pause', audioRef?.current);
     wantsPlaybackRef.current = false;
     playbackEpochRef.current += 1;
     window.clearTimeout(recoveryTimerRef.current);
@@ -280,6 +313,7 @@ export function NowPlayingPanel({
     const el = audioRef?.current;
     if (!el) return;
     try {
+        radioDiagnostic('command-play', el, { reconnect });
         media?.stopVideo();
         window.clearTimeout(recoveryTimerRef.current);
         recoveryTimerRef.current = null;
