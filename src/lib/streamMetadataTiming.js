@@ -7,9 +7,15 @@ export function live365MetadataDelaySeconds(value) {
     ? 55 : number;
 }
 
+export function azuracastMetadataDelaySeconds(value, legacyDelay = 0) {
+  const number = Number(value);
+  return value == null || String(value).trim() === '' || !Number.isFinite(number) || number < 0
+    ? metadataDelaySeconds(legacyDelay) : number;
+}
+
 // Classify the resource selected by HTMLMediaElement.currentSrc, never the
 // configured/assigned primary URL. This chooses timing only, not audio routing.
-export function streamMetadataTiming(currentSrc, legacyDelay = 0, live365Delay = 55) {
+export function streamMetadataTiming(currentSrc, legacyDelay = 0, live365Delay = 55, azuracastDelay) {
   let source = 'other';
   try {
     const url = new URL(currentSrc);
@@ -24,6 +30,8 @@ export function streamMetadataTiming(currentSrc, legacyDelay = 0, live365Delay =
   } catch { /* Unknown sources retain the existing build offset. */ }
   return {
     source,
-    seconds: source === 'live365' ? live365MetadataDelaySeconds(live365Delay) : metadataDelaySeconds(legacyDelay),
+    seconds: source === 'live365' ? live365MetadataDelaySeconds(live365Delay)
+      : source === 'azuracast' ? azuracastMetadataDelaySeconds(azuracastDelay, legacyDelay)
+      : metadataDelaySeconds(legacyDelay),
   };
 }

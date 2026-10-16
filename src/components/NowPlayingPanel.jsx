@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { fetchNowPlaying } from "../services/api";
 import { trackStreamPlay } from '../lib/analytics.js';
 import { createMetadataTimeline, metadataDelaySeconds, METADATA_POLL_MS } from "../lib/metadataTimeline";
-import { live365MetadataDelaySeconds, streamMetadataTiming } from "../lib/streamMetadataTiming.js";
+import { azuracastMetadataDelaySeconds, live365MetadataDelaySeconds, streamMetadataTiming } from "../lib/streamMetadataTiming.js";
 import PulseLive from "../features/pulse/PulseLive.jsx";
 import { observeRadioDiagnostics, radioDiagnostic } from "../features/pulse/radioDiagnostics.js";
 import "./NowPlayingPanel.css";
@@ -35,6 +35,7 @@ export function NowPlayingPanel({
 
   const STREAM_DELAY_SEC   = metadataDelaySeconds(import.meta.env.VITE_STREAM_DELAY_SEC);
   const LIVE365_METADATA_DELAY_SEC = live365MetadataDelaySeconds(import.meta.env.VITE_LIVE365_METADATA_DELAY_SEC);
+  const AZURACAST_METADATA_DELAY_SEC = azuracastMetadataDelaySeconds(import.meta.env.VITE_AZURACAST_METADATA_DELAY_SEC, STREAM_DELAY_SEC);
   const AZURACAST_FALLBACK = "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
 
   // ── All mutable tracking in refs so polling closure never goes stale ──────
@@ -73,7 +74,7 @@ export function NowPlayingPanel({
     const el = audioRef?.current;
     const syncSourceTiming = () => {
       if (!alive || !el?.currentSrc) return; // Keep timing during transient empties.
-      const timing = streamMetadataTiming(el.currentSrc, STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC);
+      const timing = streamMetadataTiming(el.currentSrc, STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC);
       const nextSong = timeline.setDelay(timing.seconds);
       if (nextSong) setDisplaySong(nextSong);
     };
@@ -127,7 +128,7 @@ export function NowPlayingPanel({
         syncSourceTimingRef.current = null;
       }
     };
-  }, [STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, audioRef]);
+  }, [STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC, audioRef]);
 
   /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {

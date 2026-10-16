@@ -118,7 +118,8 @@ async function compiled(file, plugins = [], env = {}) {
 
 // Execute the existing controller with deterministic hook slots, audio, and timers.
 // These are command/lifetime tests, not browser autoplay or audible-playback tests.
-const controller = (await compiled("./src/components/NowPlayingPanel.jsx", [{
+async function compileController(env = {}) {
+  return (await compiled("./src/components/NowPlayingPanel.jsx", [{
   name: "controller-fixtures",
   setup(build) {
     build.onResolve({ filter: /^react$/ }, () => ({ path: "hooks", namespace: "fixture" }));
@@ -138,7 +139,9 @@ const controller = (await compiled("./src/components/NowPlayingPanel.jsx", [{
       view: "export default function PulseLive() { return null; }",
     }[path] }));
   },
-}], { VITE_STREAM_DELAY_SEC: '15' })).NowPlayingPanel;
+}], { VITE_STREAM_DELAY_SEC: '15', ...env })).NowPlayingPanel;
+}
+const controller = await compileController();
 
 class Harness {
   slots = []; pending = []; cursor = 0; fetches = 0;
@@ -294,6 +297,46 @@ test('actual primary rejection selects fallback timing from currentSrc and prese
     h.unmount();
     assert.equal([...listeners.values()].reduce((count, set) => count + set.size, 0), 0);
     assert.equal(intervals.size, 0);
+    globalThis.window = oldWindow; globalThis.document = oldDocument; Date.now = oldNow;
+    delete globalThis.__pulseHarness;
+  }
+});
+
+test('build-time AzuraCast override reaches the controller without changing audio transport', async () => {
+  const overrideController = await compileController({ VITE_AZURACAST_METADATA_DELAY_SEC: '2' });
+  const oldWindow = globalThis.window, oldDocument = globalThis.document, oldNow = Date.now;
+  let now = 180_000, loads = 0, plays = 0, pauses = 0;
+  const intervals = new Map();
+  globalThis.window = { location: { search: '' }, setInterval(fn, ms) { intervals.set(ms, fn); return ms; },
+    clearInterval: ms => intervals.delete(ms), clearTimeout() {}, addEventListener() {}, removeEventListener() {} };
+  globalThis.document = { hidden: false, visibilityState: 'visible', addEventListener() {}, removeEventListener() {} };
+  Date.now = () => now;
+  const response = (id, start) => ({ now_playing: { played_at: start, song: { id, title: id, art: `${id}.jpg` } } });
+  try {
+    for (const [component, expectedAtTwoSeconds] of [[controller, 'A'], [overrideController, 'B']]) {
+      now = 180_000;
+      const audio = { src: 'https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3',
+        currentSrc: 'https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3', paused: false,
+        addEventListener() {}, removeEventListener() {}, load() { loads++; }, play() { plays++; return Promise.resolve(); }, pause() { pauses++; } };
+      const h = new Harness(component), props = { audioRef: { current: audio }, streamUrl: 'https://streaming.live365.com/a61535' };
+      const pausesBefore = pauses;
+      h.response = response('A', 100);
+      try {
+        h.render(props); await Promise.resolve(); await Promise.resolve();
+        now = 201_000; h.response = response('B', 200);
+        intervals.get(5000)(); await Promise.resolve(); await Promise.resolve();
+        assert.equal(h.render(props).props.title, 'A');
+        now = 202_000; intervals.get(1000)();
+        assert.equal(h.render(props).props.title, expectedAtTwoSeconds);
+        now = 215_000; intervals.get(1000)();
+        assert.equal(h.render(props).props.title, 'B');
+        assert.equal(h.fetches, 2);
+        assert.equal(loads, 0); assert.equal(plays, 0);
+        assert.equal(pauses, pausesBefore);
+      } finally { h.unmount(); }
+    }
+    assert.equal(intervals.size, 0);
+  } finally {
     globalThis.window = oldWindow; globalThis.document = oldDocument; Date.now = oldNow;
     delete globalThis.__pulseHarness;
   }

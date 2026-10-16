@@ -3,9 +3,40 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { build } from 'esbuild';
 import { createMetadataTimeline, metadataDelaySeconds, METADATA_POLL_MS } from '../src/lib/metadataTimeline.js';
-import { live365MetadataDelaySeconds, streamMetadataTiming } from '../src/lib/streamMetadataTiming.js';
+import { azuracastMetadataDelaySeconds, live365MetadataDelaySeconds, streamMetadataTiming } from '../src/lib/streamMetadataTiming.js';
 
 const track = (id, start, art = `${id}.jpg`) => ({ played_at: start, song: { id, title: id, artist: 'Artist', art } });
+
+test('AzuraCast override affects only its selected source and preserves absent/invalid defaults', () => {
+  const azura = 'https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3';
+  for (const value of [undefined, null, '', '  ', 'invalid', 'Infinity', Infinity, -1, '-2']) {
+    assert.equal(azuracastMetadataDelaySeconds(value, 15), 15);
+    assert.deepEqual(streamMetadataTiming(azura, 15, 55, value), { source: 'azuracast', seconds: 15 });
+  }
+  for (const value of [2, '2', ' 2 ']) assert.deepEqual(streamMetadataTiming(azura, 15, 55, value), { source: 'azuracast', seconds: 2 });
+  assert.equal(streamMetadataTiming(azura, 15, 55, '0').seconds, 0);
+  assert.deepEqual(streamMetadataTiming('https://streaming.live365.com/a61535', 15, undefined, '2'), { source: 'live365', seconds: 55 });
+  for (const url of ['https://unknown.invalid/radio', 'https://stream.truevoice.digital.evil.invalid/radio', '']) {
+    assert.deepEqual(streamMetadataTiming(url, 15, 55, '2'), { source: 'other', seconds: 15 });
+  }
+});
+
+test('selected source changes use 55, AzuraCast override 2, and legacy 15 without duplicate flips', () => {
+  const timeline = createMetadataTimeline(55);
+  const select = url => streamMetadataTiming(url, 15, 55, '2').seconds;
+  timeline.observe(track('A', 100), 180_000);
+  timeline.observe(track('B', 200), 200_500);
+  assert.equal(timeline.setDelay(select('https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3'), 201_000), null);
+  assert.deepEqual(timeline.tick(202_000), track('B', 200).song);
+  timeline.observe(track('C', 300), 300_500);
+  assert.equal(timeline.setDelay(select('https://unknown.invalid/radio'), 301_000), null);
+  assert.equal(timeline.tick(302_000), null);
+  assert.equal(timeline.setDelay(select('https://streaming.live365.com/a61535'), 310_000), null);
+  assert.equal(timeline.tick(315_000), null);
+  assert.deepEqual(timeline.tick(355_000), track('C', 300).song);
+  assert.equal(timeline.tick(356_000), null);
+  assert.equal(timeline.observe(track('B', 200), 357_000), null);
+});
 
 test('source timing uses exact LIVE365 station/CDN identity and preserves legacy offsets elsewhere', () => {
   for (const url of ['https://streaming.live365.com/a61535?cache=1', 'https://das-edge93-live365-dal05.cdnstream.com/a61535']) {
