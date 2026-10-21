@@ -1,4 +1,9 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "fix/pulse-postlaunch-1a": false
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
