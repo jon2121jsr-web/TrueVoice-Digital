@@ -29,6 +29,7 @@ function PlayerView({
       aria-label={strip ? "PULSE LIVE radio strip" : compact ? "PULSE LIVE floating player" : "PULSE LIVE player"}
       aria-hidden={inactive}
       inert={inactive}
+      data-playback-state={loading ? "loading" : isReconnecting ? "buffering" : isPlaying ? "playing" : "paused"}
     >
       <header className="pulse-live__header">
         <span className="pulse-live__brand">TRUEVOICE <strong>PULSE</strong></span>
@@ -40,7 +41,10 @@ function PlayerView({
           <p className="pulse-live__eyebrow">THE SOUNDTRACK TO YOUR DAY</p>
           <h2>{title}</h2>
           <p className="pulse-live__artist">{artist}</p>
-          <p className="pulse-live__status" role="status">{loading ? "Finding the current track…" : status}</p>
+          <p className="pulse-live__status" role="status">
+            <span className="pulse-live__desktop-status">{loading ? "Finding the current track…" : status}</span>
+            <span className="pulse-live__mobile-status">{loading ? "Finding the current track…" : isReconnecting ? "Buffering live radio…" : isPlaying ? "Playing live" : "Paused · ready to listen"}</span>
+          </p>
           {error && <p className="pulse-live__error" role="status">{error}</p>}
         </div>
         <button

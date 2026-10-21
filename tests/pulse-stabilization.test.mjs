@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { createMemoryRouter } from 'react-router-dom';
-import handler, { validateCatalogQuery } from '../api/youtube.js';
+import { createYouTubeHandler, validateCatalogQuery } from '../api/youtube.js';
+// Transport contract tests intentionally start with an acquired empty lease.
+const handler = (req, res) => createYouTubeHandler({ storeFactory: () => ({
+  authorized: async () => true, claim: async () => ({ acquired: true }),
+  finish: async () => true, fail: async () => true,
+}) })(req, res);
 import { consumeHandoffQuery, resolveShowHandoff } from '../src/lib/queryHandoff.js';
 
 const { parse } = createRequire(import.meta.url)('@babel/parser');

@@ -31,6 +31,7 @@ import PullToRefresh from "./components/PullToRefresh";
 import ChimeIn from "./components/ChimeIn";
 import ScrollFeed from "./components/ScrollFeed";
 import "./features/pulse/PulseTheme.css";
+import "./features/pulse/PulseMobile.css";
 
 import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
 import { preferredStreamUrl } from "./lib/streamUrl";
@@ -595,7 +596,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
 
               <div className="tv-header-actions">
                 <div
-                  className="tv-social-row"
+                  className="tv-social-row tv-header-social-links"
                   aria-label="TrueVoice social links"
                   style={{ pointerEvents: "auto", position: "relative", zIndex: 50 }}
                 >
@@ -604,6 +605,20 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
                   <SocialIconLink href={SOCIAL.instagram} label="Instagram"> <InstagramIcon /> </SocialIconLink>
                   <SocialIconLink href={SOCIAL.facebook}  label="Facebook">  <FacebookIcon />  </SocialIconLink>
                 </div>
+
+                <details className="tv-header-social-menu">
+                  <summary aria-label="Follow TrueVoice Digital">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+                      <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
+                    </svg>
+                  </summary>
+                  <div className="tv-header-social-panel" aria-label="Follow TrueVoice Digital">
+                    <SocialIconLink href={SOCIAL.youtube} label="YouTube"><YoutubeIcon /></SocialIconLink>
+                    <SocialIconLink href={SOCIAL.x} label="X"><XIcon /></SocialIconLink>
+                    <SocialIconLink href={SOCIAL.instagram} label="Instagram"><InstagramIcon /></SocialIconLink>
+                    <SocialIconLink href={SOCIAL.facebook} label="Facebook"><FacebookIcon /></SocialIconLink>
+                  </div>
+                </details>
 
                 <button
                   type="button"

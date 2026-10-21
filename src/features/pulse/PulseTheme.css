@@ -64,11 +64,11 @@ body:has(.tv-app--pulse) { background: #0a1120; }
 .tv-brand-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
 .tv-brand-wordmark { color: #fff; font-size: clamp(24px, 2.5vw, 32px); font-weight: 800; line-height: 1; letter-spacing: -.045em; white-space: nowrap; }
 .tv-brand-wordmark > span { color: #00aaff; }
-.tv-brand-tagline { color: #b8c5d4; font-size: 8px; font-weight: 500; line-height: 1.4; letter-spacing: .19em; text-transform: uppercase; white-space: nowrap; }
+.tv-brand-tagline { color: #b8c5d4; font-size: 10px; font-weight: 500; line-height: 1.5; letter-spacing: .1em; text-transform: uppercase; white-space: normal; overflow-wrap: anywhere; }
 @media (max-width: 380px) {
   .tv-brand-wave { width: 34px; height: 38px; }
   .tv-brand-wordmark { font-size: 24px; }
-  .tv-brand-tagline { font-size: 6.5px; letter-spacing: .13em; }
+  .tv-brand-tagline { font-size: 10px; letter-spacing: .06em; }
 }
 .tv-app--pulse .tv-header-give {
   background: var(--pulse-teal);

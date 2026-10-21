@@ -447,6 +447,22 @@ test("full, floating, and Explore strip expose one active playback control", asy
   assert.ok(!/<audio|<iframe/.test(html));
 });
 
+test("live presentation reflects supplied playback states without adding an engine or progress", async () => {
+  const Live = (await compiled("./src/features/pulse/PulseLive.jsx")).default;
+  for (const [state, props, message] of [
+    ["loading", { loading: true }, "Finding the current track"],
+    ["buffering", { isReconnecting: true }, "Buffering live radio"],
+    ["playing", { isPlaying: true }, "Playing live"],
+    ["paused", {}, "Paused · ready to listen"],
+  ]) {
+    const html = renderToStaticMarkup(createElement(Live, { title: "Live track", artist: "Artist", isFloating: false, ...props }));
+    assert.ok(html.includes(`data-playback-state="${state}"`));
+    assert.ok(html.includes(message));
+    assert.ok(html.includes(`aria-label="${props.isPlaying ? "Pause" : "Play"} PULSE LIVE"`));
+    assert.ok(!/<audio|<progress|role="progressbar"|type="range"/.test(html));
+  }
+});
+
 test("Scroll excludes verses and invalid cards before limiting, with stable source diversity", () => {
   const items = [
     { id: 'verse', item_type: 'verse', source_show: 'Verse' },
@@ -663,10 +679,11 @@ test("mobile chat tracks visible dock height, route changes and observer cleanup
       source.slice(node.start,node.end).includes("--chime-dock-height")) effect = node.arguments[0];
   });
   assert.ok(effect);
-  const values = new Map();
+  const values = new Map(), clearance = new Map();
   let dock = {visible:true, height:110, getAttribute:() => dock.visible ? "false" : "true", getBoundingClientRect:() => ({height:dock.height})};
   let current = dock;
-  const app = {querySelector:() => current};
+  const main = {style:{setProperty:(key,value) => clearance.set(key,value), removeProperty:key => clearance.delete(key)}};
+  const app = {querySelector:selector => selector === "main.tv-main--pulse" ? main : current};
   const tab = {closest:() => app, style:{setProperty:(key,value) => values.set(key,value), removeProperty:key => values.delete(key)}};
   const observers = [];
   class Observer {
@@ -678,11 +695,13 @@ test("mobile chat tracks visible dock height, route changes and observer cleanup
   const win = {addEventListener:(_,fn) => {resizeHandler=fn;}, removeEventListener:(_,fn) => {assert.equal(fn,resizeHandler); resizeHandler=null;}};
   const cleanup = Function("tabRef","ResizeObserver","MutationObserver","window", `return (${source.slice(effect.start,effect.end)})();`)({current:tab},Observer,Observer,win);
   assert.equal(values.get("--chime-dock-height"),"110px");
-  for (const width of [375,393,430]) {
+  assert.equal(clearance.get("--pulse-dock-height"),"110px");
+  for (const width of [375,390,430]) {
     for (const safeBottom of [0,34]) {
       for (const visible of [true,false]) {
         dock.visible=visible; observers[1].callback();
         const height = Number.parseFloat(values.get("--chime-dock-height"));
+        assert.equal(Number.parseFloat(clearance.get("--pulse-dock-height")), height);
         const bottom = Math.max(12+safeBottom,12+height);
         assert.ok(bottom >= (visible ? dock.height : safeBottom)+12);
         assert.ok(width-12-120 >= 0, "compact pill fits within viewport");
@@ -691,12 +710,15 @@ test("mobile chat tracks visible dock height, route changes and observer cleanup
   }
   dock.visible=true; dock.height=145; observers[0].callback();
   assert.equal(values.get("--chime-dock-height"),"145px");
+  assert.equal(clearance.get("--pulse-dock-height"),"145px");
   current=null; observers[2].callback();
   assert.equal(values.get("--chime-dock-height"),"0px");
+  assert.equal(clearance.get("--pulse-dock-height"),"0px");
   cleanup();
   assert.ok(observers.every(observer => !observer.connected));
   assert.equal(resizeHandler,null);
   assert.equal(values.size,0);
+  assert.equal(clearance.size,0);
 });
 
 test("actual EXPLORE card Play handlers open the exact curated and channel videos", async () => {

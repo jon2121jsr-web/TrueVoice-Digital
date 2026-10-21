@@ -131,8 +131,8 @@
   bottom: 14px;
   transform: translateX(-50%);
   display: inline-flex;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 0;
+  padding: 0;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -140,16 +140,28 @@
 }
 
 .hero-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.18);
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
   cursor: pointer;
   padding: 0;
 }
 
-.hero-dot.is-active {
+.hero-dot::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.hero-dot.is-active::before {
   background: rgba(255, 0, 255, 0.85);
   border-color: rgba(255, 0, 255, 0.95);
   box-shadow: 0 0 0 4px rgba(255, 0, 255, 0.14);
@@ -189,19 +201,22 @@
 .hero-section--artwork .hero-slider {
   height: auto;
   aspect-ratio: 1958 / 803;
-  padding-bottom: 44px;
+  padding-bottom: 60px;
   box-sizing: content-box;
 }
-.hero-section--artwork .hero-slide { inset: 0 0 44px; }
+.hero-section--artwork .hero-slide { inset: 0 0 60px; }
 .hero-section--artwork .hero-media,
 .hero-section--artwork .hero-artwork-link { width: 100%; height: 100%; }
 .hero-artwork-link { display: block; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .hero-section--artwork .hero-slide-img { object-fit: contain; object-position: center; transform: none; }
 .hero-section--artwork .hero-dots { bottom: 8px; }
-.hero-section--artwork .hero-arrow { top: auto; bottom: 5px; transform: none; width: 34px; height: 34px; }
+.hero-section--artwork .hero-arrow { top: auto; bottom: 8px; transform: none; width: 44px; height: 44px; opacity: 1; }
+.hero-section--artwork .hero-arrow--prev { left: 8px; }
+.hero-section--artwork .hero-arrow--next { right: 8px; }
 .hero-section--artwork .hero-arrow:hover { transform: none; }
 .hero-artwork-link:focus-visible { outline: 3px solid #00d9eb; outline-offset: -4px; }
 .hero-section--artwork .hero-dot:focus-visible { outline: 2px solid #00d9eb; outline-offset: 4px; }
+.hero-section--artwork .hero-arrow:focus-visible { outline: 2px solid #00d9eb; outline-offset: 2px; }
 
 /* Show arrows on hover over the slider */
 .hero-slider:hover .hero-arrow {
@@ -325,7 +340,7 @@
   }
 
   .hero-arrow {
-    display: none; /* too cramped on small phones — swipe only */
+    display: flex;
   }
 }
 

@@ -16,11 +16,11 @@ export default function PulseIntro() {
       </h1>
 
 
-      <div className="pulse-intro__modes">
+      <nav className="pulse-intro__modes" aria-label="PULSE modes">
         <NavLink to="/" end>PULSE LIVE</NavLink>
         <NavLink to="/explore">PULSE EXPLORE <span aria-hidden="true">↗</span></NavLink>
         <span>MY PULSE <small>Coming soon</small></span>
-      </div>
+      </nav>
 
       <p className="pulse-intro__signature">
         Hear something. Feel something. Find something.

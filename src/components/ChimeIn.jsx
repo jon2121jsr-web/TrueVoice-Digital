@@ -57,6 +57,7 @@ export default function ChimeIn() {
     const tab = tabRef.current;
     const app = tab?.closest(".tv-app--pulse");
     if (!app) return;
+    const main = app.querySelector("main.tv-main--pulse");
     let dock;
     const update = () => {
       const next = app.querySelector(".pulse-live--floating");
@@ -71,6 +72,7 @@ export default function ChimeIn() {
       }
       const height = dock?.getAttribute("aria-hidden") === "false" ? dock.getBoundingClientRect().height : 0;
       tab.style.setProperty("--chime-dock-height", `${height}px`);
+      main?.style.setProperty("--pulse-dock-height", `${height}px`);
     };
     const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
     const visibility = new MutationObserver(update);
@@ -84,6 +86,7 @@ export default function ChimeIn() {
       layout.disconnect();
       window.removeEventListener("resize", update);
       tab.style.removeProperty("--chime-dock-height");
+      main?.style.removeProperty("--pulse-dock-height");
     };
   }, []);
 

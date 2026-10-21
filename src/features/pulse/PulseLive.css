@@ -59,7 +59,7 @@
 .pulse-live--floating .pulse-live__artist { font-size: 12px; margin: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pulse-live--floating .pulse-live__status { font-size: 10px; }
 .pulse-live--floating .pulse-live__error { margin: 3px 0; }
-.pulse-live--floating .pulse-live__play { grid-column: auto; min-height: 44px; padding: 10px 16px; }
+.pulse-live--floating .pulse-live__play { grid-column: auto; min-width: 44px; min-height: 44px; padding: 10px 16px; }
 .pulse-live--strip .pulse-live__header { display: none; }
 .pulse-live--strip .pulse-live__body { padding: 16px; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 16px; }
 .pulse-live--strip .pulse-live__art { border-radius: 10px; }
@@ -67,7 +67,7 @@
 .pulse-live--strip .pulse-live__track h2 { font-size: 16px; letter-spacing: 0; }
 .pulse-live--strip .pulse-live__artist { font-size: 13px; margin: 4px 0; }
 .pulse-live--strip .pulse-live__status { font-size: 11px; }
-.pulse-live--strip .pulse-live__play { grid-column: auto; min-height: 44px; padding: 10px 16px; }
+.pulse-live--strip .pulse-live__play { grid-column: auto; min-width: 44px; min-height: 44px; padding: 10px 16px; }
 .pulse-radio-strip .tv-verse-card[hidden] { display: none; }
 .pulse-player-dock .tv-player-surface .pulse-live--floating.pulse-live--inactive {
   opacity: 0;
@@ -80,10 +80,16 @@
 .pulse-live:not(.pulse-live--floating).pulse-live--inactive { pointer-events: none; }
 .tv-main.tv-main--pulse {
   padding-top: 16px;
-  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+  padding-bottom: calc(max(140px, var(--pulse-dock-height, 0px) + 72px) + env(safe-area-inset-bottom, 0px));
 }
 .tv-main--pulse .tv-hero { gap: 18px; margin-bottom: 22px; }
 .tv-main--pulse .tv-verse-card { border: 1px solid #34425430; border-radius: 24px; }
+@media (max-width: 640px) {
+  .tv-main.tv-main--pulse {
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .pulse-player-dock .tv-player-surface .pulse-live--floating,
   .pulse-player-dock .tv-player-surface .pulse-live--floating.pulse-live--inactive,
@@ -96,9 +102,13 @@
   .pulse-live__art { width: min(100%, 280px); justify-self: center; }
   .pulse-live__track h2 { font-size: 28px; }
   .pulse-live--floating .pulse-live__body { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; }
+  .pulse-live--floating .pulse-live__art { width: 44px; }
   .pulse-live--floating .pulse-live__play { padding: 10px; }
   .pulse-live--floating .pulse-live__play span { display: none; }
   .pulse-live--strip .pulse-live__body { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding: 12px; }
+  .pulse-live--strip .pulse-live__art { width: 44px; }
+  .pulse-live--strip .pulse-live__track h2 { font-size: 16px; }
+  .pulse-live--strip .pulse-live__track { overflow-wrap: anywhere; }
   .pulse-live--strip .pulse-live__play { padding: 10px; }
   .pulse-live--strip .pulse-live__play span { display: none; }
 }

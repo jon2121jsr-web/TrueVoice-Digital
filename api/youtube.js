@@ -1,8 +1,7 @@
 import process from 'node:process';
 import { restrictedDeployment, excludedPreviewCredentials } from '../lib/previewPolicy.mjs';
+import { createCatalogStore, createCatalogService, knownChannels } from './_lib/youtubeCatalogCache.js';
 
-const MAX_RESPONSE_BYTES = 1024 * 1024;
-const TIMEOUT_MS = 8000;
 const OPERATIONS = {
   channels: { part: 'contentDetails', keys: ['endpoint', 'part', 'id'] },
   playlistItems: { part: 'snippet', keys: ['endpoint', 'part', 'playlistId', 'maxResults'] },
@@ -26,56 +25,52 @@ export function validateCatalogQuery(query) {
   return { ...query };
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET, OPTIONS');
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-  const query = validateCatalogQuery(req.query);
-  if (!query) return res.status(400).json({ error: 'Unsupported catalog request' });
-  const preview = restrictedDeployment(process.env);
-  if (preview && excludedPreviewCredentials.some(name => process.env[name])) {
-    return res.status(503).json({ error: 'Preview isolation configuration is incomplete' });
-  }
-  const apiKey = preview ? process.env.YOUTUBE_API_KEY : process.env.VITE_YOUTUBE_API_KEY || process.env.YOUTUBE_API_KEY;
-  if (!apiKey || (preview && !/^AIza[0-9A-Za-z_-]{35}$/.test(apiKey))) return res.status(503).json({ error: 'Catalog unavailable' });
-  const { endpoint, ...params } = query;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  let reader;
-  try {
-    const upstream = await fetch(`https://www.googleapis.com/youtube/v3/${endpoint}?${new URLSearchParams({ ...params, key: apiKey })}`, {
-      headers: { Referer: 'https://www.truevoice.digital/' }, signal: controller.signal, redirect: 'error',
-    });
-    if (!upstream.ok) {
-      controller.abort();
-      return res.status(upstream.status).json({ error: 'YouTube catalog request failed' });
+// Dependencies are injectable for offline tests; default construction is lazy and guarded.
+export function createYouTubeHandler({ storeFactory = createCatalogStore, fetcher, env = process.env, monotonicNow = () => performance.now() } = {}) {
+  let store, service;
+  return async function handler(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Expose-Headers', 'X-Catalog-Cache, Retry-After');
+    res.setHeader('Cache-Control', 'no-store');
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    if (req.method !== 'GET') {
+      res.setHeader('Allow', 'GET, OPTIONS');
+      return res.status(405).json({ error: 'Method not allowed' });
     }
-    if (Number(upstream.headers.get('content-length')) > MAX_RESPONSE_BYTES) throw new Error('Response limit');
-    reader = upstream.body.getReader();
-    const chunks = [];
-    let total = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value.byteLength;
-      if (total > MAX_RESPONSE_BYTES) throw new Error('Response limit');
-      chunks.push(value);
+    const query = validateCatalogQuery(req.query);
+    if (!query) return res.status(400).json({ error: 'Unsupported catalog request' });
+    const preview = restrictedDeployment(env);
+    if (preview) {
+      const error = excludedPreviewCredentials.some(name => env[name])
+        ? 'Preview isolation configuration is incomplete' : 'Catalog cache unavailable in Preview';
+      // No production database client, reads, writes or Google work in restricted deployments.
+      return res.status(503).json({ error });
     }
-    const bytes = new Uint8Array(total);
-    let offset = 0;
-    chunks.forEach(chunk => { bytes.set(chunk, offset); offset += chunk.byteLength; });
-    const data = JSON.parse(new TextDecoder().decode(bytes));
-    return res.status(200).json(data);
-  } catch {
-    const timedOut = controller.signal.aborted;
-    controller.abort();
-    return res.status(timedOut ? 504 : 502).json({ error: timedOut ? 'Catalog request timed out' : 'Catalog unavailable' });
-  } finally {
-    clearTimeout(timer);
-    reader?.releaseLock();
-  }
+    const apiKey = env.VITE_YOUTUBE_API_KEY || env.YOUTUBE_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'Catalog unavailable' });
+    try {
+      store ||= storeFactory(env);
+      service ||= createCatalogService({ store, fetcher, env, monotonicNow });
+      if (!await store.authorized(query, knownChannels(env))) return res.status(403).json({ error: 'Unsupported catalog resource' });
+      const result = await service.load(query, apiKey);
+      // Recheck after service cleanup/other microtasks, immediately before send.
+      if (result.validUntil !== undefined && monotonicNow() >= result.validUntil) {
+        res.setHeader('Retry-After', '5');
+        return res.status(503).json({ error: 'Catalog temporarily unavailable' });
+      }
+      if (result.retry) res.setHeader('Retry-After', String(result.retry));
+      if (result.data) {
+        res.setHeader('X-Catalog-Cache', result.state);
+        // CDN is a front cache only; database remains authoritative across instances/deploys.
+        if (result.state !== 'stale') res.setHeader('Vercel-CDN-Cache-Control', 's-maxage=60');
+      }
+      return res.status(result.status).json(result.data || { error: result.error });
+    } catch {
+      // Never fall back to per-visitor Google calls when the migration/store is unavailable.
+      res.setHeader('Retry-After', '60');
+      return res.status(503).json({ error: 'Catalog cache unavailable' });
+    }
+  };
 }
+export default createYouTubeHandler();

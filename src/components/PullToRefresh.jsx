@@ -61,7 +61,7 @@ export default function PullToRefresh() {
       ref={indicator}
       style={{
         position: "fixed",
-        top: 8,
+        top: "calc(8px + env(safe-area-inset-top, 0px))",
         left: "50%",
         transform: "translateX(-50%)",
         opacity: 0,

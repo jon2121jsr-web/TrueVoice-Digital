@@ -17,12 +17,3 @@
   .tv-main--pulse .pulse-listening .tv-hero { grid-template-columns: minmax(0, 1fr); }
   .pulse-listening .tv-verse-card { height: auto; }
 }
-@media (max-width: 520px) {
-  .pulse-listening { padding: 14px; border-radius: 22px; margin-bottom: 20px; }
-  .pulse-listening .pulse-live:not(.pulse-live--floating) .pulse-live__body { grid-template-columns: minmax(76px, .45fr) minmax(0, 1fr); gap: 14px; padding: 4px 14px 16px; }
-  .pulse-listening .pulse-live:not(.pulse-live--floating) .pulse-live__art { width: 100%; max-width: 140px; }
-  .pulse-listening .pulse-live:not(.pulse-live--floating) .pulse-live__track h2 { font-size: 22px; }
-  .pulse-listening .pulse-live:not(.pulse-live--floating) .pulse-live__header,
-  .pulse-listening .pulse-live:not(.pulse-live--floating) .pulse-live__footer { padding: 14px; }
-  .pulse-listening .pulse-live__eyebrow { font-size: 9px; margin-bottom: 8px; }
-}

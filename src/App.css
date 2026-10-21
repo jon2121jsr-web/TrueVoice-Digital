@@ -384,7 +384,7 @@ button {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
   scroll-behavior: smooth;
-  touch-action: pan-x;
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
 .tv-podcast-scroller::-webkit-scrollbar        { height: 5px; }
@@ -871,7 +871,7 @@ html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
   scroll-behavior: smooth;
-  touch-action: pan-x;
+  touch-action: pan-x pan-y pinch-zoom;
   scroll-snap-type: x mandatory;
   scroll-padding-left: 10px;
   scroll-padding-right: 10px;
