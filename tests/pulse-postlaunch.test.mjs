@@ -111,8 +111,11 @@ test('radio diagnostics are absent in production and passive, opt-in and cleaned
     const cleanup = dev.observeRadioDiagnostics(audio, () => ({ wantsPlayback: true }));
     listeners.get('waiting')();
     assert.equal(logs.at(-1)[2].bufferedAhead, 3);
+    assert.deepEqual(logs.at(-1)[2].bufferedRanges, [[0, 7]]);
     assert.equal(logs.at(-1)[2].source, 'https://streaming.live365.com/a61535');
     assert.equal(JSON.stringify(logs).includes('private'), false);
+    for (let i = 0; i < 250; i++) dev.radioDiagnostic('bounded-test', audio);
+    assert.equal(logs.length, 200, 'development logging has a hard per-page budget');
     cleanup(); assert.equal(listeners.size, 0);
     window.location.search = ''; logs.length = 0;
     dev.observeRadioDiagnostics(audio)();

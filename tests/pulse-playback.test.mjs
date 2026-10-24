@@ -92,7 +92,7 @@ test("actual Media Session handlers use coordinated commands and clean up on lay
     });
     actions.get("play")();
     actions.get("pause")();
-    assert.deepEqual(calls, [["play", { reconnect: true }], ["pause"]]);
+    assert.deepEqual(calls, [["play", undefined], ["pause"]]);
     cleanup();
     assert.equal(actions.get("play"), null);
     assert.equal(actions.get("pause"), null);
@@ -159,6 +159,188 @@ class Harness {
   render(props) { this.cursor = 0; globalThis.__pulseHarness = this; const view = this.component(props); this.pending.splice(0).forEach((fn) => fn()); return view; }
   unmount() { this.slots.forEach((slot) => slot?.cleanup?.()); }
 }
+
+// A clock and media element with independent play promises, native events and
+// playback position. No real network, browser audio, or wall-clock sleeps.
+async function recoveryFixture(run) {
+  const saved = { window: globalThis.window, document: globalThis.document,
+    setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout,
+    performance: globalThis.performance };
+  let now = 0, id = 0, loads = 0, plays = 0, writes = 0, source = '';
+  const tasks = new Map(), events = new Map(), windowEvents = new Map(), documentEvents = new Map();
+  const listen = map => ({
+    addEventListener(k, fn) { if (!map.has(k)) map.set(k, new Set()); map.get(k).add(fn); },
+    removeEventListener(k, fn) { map.get(k)?.delete(fn); },
+  });
+  const emit = (map, k) => [...(map.get(k) || [])].forEach(fn => fn());
+  const schedule = (fn, ms, repeat = false) => { tasks.set(++id, { fn, at: now + ms, ms, repeat }); return id; };
+  globalThis.performance = { now: () => now };
+  globalThis.setTimeout = (fn, ms) => schedule(fn, ms);
+  globalThis.clearTimeout = i => tasks.delete(i);
+  globalThis.window = { location: { search: '' }, ...listen(windowEvents),
+    setInterval: (fn, ms) => schedule(fn, ms, true), clearInterval: i => tasks.delete(i),
+    clearTimeout: globalThis.clearTimeout };
+  globalThis.document = { hidden: false, visibilityState: 'visible', ...listen(documentEvents) };
+  const audio = {
+    get src() { return source; }, set src(v) { writes++; source = v; },
+    get currentSrc() { return source; }, paused: true, currentTime: 0, readyState: 4, networkState: 2,
+    buffered: { length: 1, start: () => 0, end: () => audio.currentTime + 10 },
+    ...listen(events), playResult: () => Promise.resolve(),
+    load() { loads++; this.currentTime = 0; this.paused = true; },
+    play() { plays++; this.paused = false; emit(events, 'play'); return this.playResult(); },
+    pause() { this.paused = true; emit(events, 'pause'); },
+  };
+  const h = new Harness(), media = createMediaCoordinator();
+  const props = { audioRef: { current: audio }, streamUrl: 'https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3', media };
+  const flush = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
+  const f = { audio, media, events, tasks, props,
+    emit: k => emit(events, k), online: () => emit(windowEvents, 'online'),
+    view: () => h.render(props), counts: () => ({ loads, plays, writes }),
+    unmount: () => h.unmount(),
+    async advance(ms, progress = false) {
+      const end = now + ms;
+      while (true) {
+        const next = [...tasks].filter(([, t]) => t.at <= end).sort((a, b) => a[1].at - b[1].at)[0];
+        if (!next) break;
+        const [key, task] = next;
+        if (progress && !audio.paused) audio.currentTime += (task.at - now) / 1000;
+        now = task.at;
+        if (task.repeat) task.at += task.ms; else tasks.delete(key);
+        task.fn(); await flush();
+      }
+      if (progress && !audio.paused) audio.currentTime += (end - now) / 1000;
+      now = end; await flush();
+    },
+    async start() { media.playRadio(); await flush(); await this.advance(1000, true); },
+  };
+  try { h.render(props); await flush(); await run(f); }
+  finally { h.unmount(); Object.assign(globalThis, saved); delete globalThis.__pulseHarness; }
+}
+
+test('recovery: persistent unpaused no-progress recovers even without native stall events', () => recoveryFixture(async f => {
+  await f.start(); const before = f.counts().loads;
+  await f.advance(13000);
+  assert.equal(f.audio.paused, false);
+  assert.equal(f.counts().loads, before + 1);
+}));
+
+test('recovery: waiting alone eventually recovers, but never immediately', () => recoveryFixture(async f => {
+  await f.start(); const before = f.counts().loads;
+  f.emit('waiting'); await f.advance(3000); assert.equal(f.counts().loads, before);
+  await f.advance(10000); assert.equal(f.counts().loads, before + 1);
+}));
+
+test('recovery: brief waiting/stalled followed by progress never reloads', () => recoveryFixture(async f => {
+  await f.start(); const before = f.counts();
+  f.emit('waiting'); f.emit('stalled'); await f.advance(3000);
+  f.emit('playing'); await f.advance(30000, true);
+  assert.deepEqual(f.counts(), before); assert.equal(f.view().props.isReconnecting, false);
+}));
+
+test('recovery: online is not playback proof and cannot bypass stalled recovery', () => recoveryFixture(async f => {
+  await f.start(); const before = f.counts().loads;
+  f.emit('waiting'); await f.advance(4000); f.online();
+  assert.equal(f.view().props.isReconnecting, true);
+  assert.equal(f.counts().loads, before);
+  await f.advance(9000); assert.equal(f.counts().loads, before + 1);
+}));
+
+test('recovery: duplicate normal Play preserves healthy and pending playback', () => recoveryFixture(async f => {
+  await f.start(); const before = f.counts();
+  f.media.playRadio(); f.media.playRadio(); assert.deepEqual(f.counts(), before);
+  f.media.pauseRadio(); let resolve;
+  f.audio.playResult = () => new Promise(r => { resolve = r; });
+  f.media.playRadio(); const starting = f.counts();
+  f.media.playRadio(); assert.deepEqual(f.counts(), starting); resolve();
+}));
+
+for (const cancellation of ['Pause', 'video', 'unmount']) {
+  test(`recovery: ${cancellation} cancels pending and late recovery`, () => recoveryFixture(async f => {
+    await f.start(); let reject;
+    f.audio.playResult = () => new Promise((_, r) => { reject = r; });
+    f.emit('waiting'); await f.advance(13000);
+    assert.equal(typeof reject, 'function', 'a recovery play must be pending');
+    if (cancellation === 'Pause') f.media.pauseRadio();
+    if (cancellation === 'video') f.media.startVideo(() => {});
+    if (cancellation === 'unmount') { f.props.audioRef.current = null; f.unmount(); }
+    const before = f.counts(); reject(new Error('late transport failure'));
+    f.online(); await f.advance(120000);
+    assert.deepEqual(f.counts(), before); assert.equal(f.audio.paused, true);
+  }));
+}
+
+test('recovery: failures use backoff, a finite budget and no identical fallback switch', () => recoveryFixture(async f => {
+  await f.start(); const before = f.counts();
+  f.audio.playResult = () => Promise.reject(new DOMException('transport', 'NetworkError'));
+  f.emit('waiting'); await f.advance(13000);
+  assert.equal(f.counts().loads, before.loads + 1);
+  await f.advance(2000); assert.equal(f.counts().loads, before.loads + 1);
+  await f.advance(120000);
+  assert.equal(f.counts().loads, before.loads + 3);
+  assert.equal(f.counts().writes, before.writes);
+  assert.match(f.view().props.error, /retry/i);
+  assert.equal(f.view().props.isReconnecting, false);
+}));
+
+test('recovery: real progress resets the retry budget and buffering state', () => recoveryFixture(async f => {
+  await f.start(); const before = f.counts().loads;
+  f.emit('waiting'); await f.advance(13000);
+  assert.equal(f.counts().loads, before + 1);
+  f.emit('playing'); assert.equal(f.view().props.isReconnecting, true, 'playing alone cannot prove time advanced');
+  await f.advance(2000, true); assert.equal(f.view().props.isReconnecting, false);
+  f.audio.playResult = () => Promise.reject(new DOMException('transport', 'NetworkError'));
+  f.emit('waiting'); await f.advance(120000);
+  assert.equal(f.counts().loads, before + 4);
+}));
+
+for (const name of ['NotAllowedError', 'AbortError']) {
+  test(`recovery: ${name} stops automatic retries until a fresh Play`, () => recoveryFixture(async f => {
+    f.audio.playResult = () => Promise.reject(new DOMException('private failure text', name));
+    f.media.playRadio({ reconnect: true }); await f.advance(120000);
+    assert.equal(f.counts().plays, 1); assert.equal(f.view().props.isReconnecting, false);
+    assert.match(f.view().props.error, name === 'NotAllowedError' ? /tap.*play/i : /interrupted/i);
+    f.audio.playResult = () => Promise.resolve(); await f.start();
+    assert.equal(f.view().props.error, null);
+  }));
+}
+
+test('recovery: unresolved play promises are bounded, not overlapping attempts', () => recoveryFixture(async f => {
+  await f.start(); const before = f.counts().loads;
+  const reject = []; f.audio.playResult = () => new Promise((_, r) => reject.push(r));
+  await f.advance(120000); assert.equal(f.counts().loads, before + 3);
+  const stopped = f.counts(); reject.forEach(r => r(new Error('late')));
+  await f.advance(120000); assert.deepEqual(f.counts(), stopped);
+}));
+
+for (const cancellation of ['Pause', 'video', 'unmount']) {
+  test(`recovery: ${cancellation} during grace prevents the first recovery`, () => recoveryFixture(async f => {
+    await f.start(); f.emit('waiting'); await f.advance(4000);
+    if (cancellation === 'Pause') f.media.pauseRadio();
+    if (cancellation === 'video') f.media.startVideo(() => {});
+    if (cancellation === 'unmount') f.unmount();
+    const before = f.counts(); f.online(); await f.advance(120000);
+    assert.deepEqual(f.counts(), before); assert.equal(f.audio.paused, true);
+  }));
+}
+
+test('recovery: initial Play uses prewarm; explicit reconnect retains buffering until progress', () => recoveryFixture(async f => {
+  f.media.playRadio(); assert.equal(f.counts().loads, 0);
+  assert.equal(f.view().props.isReconnecting, true);
+  await f.advance(1000, true); assert.equal(f.view().props.isReconnecting, false);
+  const before = f.counts().loads;
+  f.emit('waiting'); f.media.playRadio({ reconnect: true });
+  assert.equal(f.counts().loads, before + 1);
+  f.emit('playing'); assert.equal(f.view().props.isReconnecting, true);
+  await f.advance(1000, true); assert.equal(f.view().props.isReconnecting, false);
+}));
+
+test('recovery: fresh user Play resumes a native pause despite retained intent', () => recoveryFixture(async f => {
+  await f.start(); f.audio.pause(); const before = f.counts();
+  f.media.playRadio();
+  assert.equal(f.counts().plays, before.plays + 1);
+  assert.equal(f.counts().loads, before.loads + 1);
+  await f.advance(1000, true); assert.equal(f.view().props.isReconnecting, false);
+}));
 
 test('LIVE controller polls single-flight and publishes title/art together without restarting audio', async () => {
   const oldWindow = globalThis.window, oldNow = Date.now;
@@ -381,7 +563,7 @@ test("same controller retains state through compact/full changes and cancels vid
     assert.equal(home.props.isPlaying, true);
     audio.paused = true;
     audioEvents.get("stalled")();
-    assert.equal(timers.size, 1);
+    assert.equal(timers.size, 0); // The progress watchdog owns recovery; events add no timers.
     let stops = 0;
     const stop = () => stops++;
     media.startVideo(stop);

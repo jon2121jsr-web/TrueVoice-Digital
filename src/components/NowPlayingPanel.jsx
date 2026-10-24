@@ -5,7 +5,7 @@ import { trackStreamPlay } from '../lib/analytics.js';
 import { createMetadataTimeline, metadataDelaySeconds, METADATA_POLL_MS } from "../lib/metadataTimeline";
 import { azuracastMetadataDelaySeconds, live365MetadataDelaySeconds, streamMetadataTiming } from "../lib/streamMetadataTiming.js";
 import PulseLive from "../features/pulse/PulseLive.jsx";
-import { observeRadioDiagnostics, radioDiagnostic } from "../features/pulse/radioDiagnostics.js";
+import { observeRadioDiagnostics, radioDiagnostic, radioBufferState } from "../features/pulse/radioDiagnostics.js";
 import "./NowPlayingPanel.css";
 
 function useIsOwner() {
@@ -25,7 +25,9 @@ export function NowPlayingPanel({
   media,
 }) {
   const [loading,        setLoading]        = useState(true);
-  const [error,          setError]          = useState(null);
+  const [playbackError,  setError]          = useState(null);
+  const [metadataError, setMetadataError] = useState(null);
+  const error = playbackError || metadataError;
   const [isPlaying,      setIsPlaying]      = useState(false);
   const [listeners,      setListeners]      = useState(null);
   const [displaySong,    setDisplaySong]    = useState(null);
@@ -45,7 +47,8 @@ export function NowPlayingPanel({
   useEffect(() => { displaySongRef.current = displaySong; }, [displaySong]);
   const isPlayingRef   = useRef(false);
   const wantsPlaybackRef = useRef(false); // user intent, shared by UI and Media Session
-  const recoveryTimerRef = useRef(null);
+  const controllerRef = useRef(null);
+  const watchdogRef = useRef(null);
   const playbackEpochRef = useRef(0);
   const streamUrlRef   = useRef(streamUrl);
   useEffect(() => { streamUrlRef.current = streamUrl; }, [streamUrl]);
@@ -106,11 +109,11 @@ export function NowPlayingPanel({
         const nextSong = timeline.observe(result.now_playing);
         if (nextSong) setDisplaySong(nextSong);
 
-        setError(null);
+        setMetadataError(null);
         setLoading(false);
       } catch (err) {
         if (!alive) return;
-        setError(err?.message || "Failed to load now playing.");
+        setMetadataError(err?.message || "Failed to load now playing.");
         setLoading(false);
       } finally {
         inFlight = false;
@@ -133,6 +136,7 @@ export function NowPlayingPanel({
   /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {
     const id = window.setInterval(() => {
+      watchdogRef.current?.();
       syncSourceTimingRef.current?.();
       const nextSong = metadataRef.current?.tick();
       if (nextSong) setDisplaySong(nextSong);
@@ -162,195 +166,203 @@ export function NowPlayingPanel({
     });
   }, [isPlaying, error, loading, title, artist, album, art, listeners]);
 
-  /* ── Audio element events ──────────────────────────────────────────────── */
-  useEffect(() => {
+  // One watchdog shares the existing one-second metadata clock. No per-event
+  // timers: waiting/stalled/online cannot stack reloads or reset the grace period.
+  useLayoutEffect(() => {
     const el = audioRef?.current;
     if (!el) return;
-
-    // Single-flight recovery timer — error/stalled/online can all fire within
-    // milliseconds of the same hiccup. Only one reload attempt is ever in
-    // flight at a time, so they can't stack and repeatedly .load() the
-    // element (each .load() drops the buffer and can itself trigger another
-    // "stalled", which was causing the reconnect storm behind the pausing).
-    const clearRecoveryTimer = () => {
-      if (recoveryTimerRef.current) {
-        clearTimeout(recoveryTimerRef.current);
-        recoveryTimerRef.current = null;
-      }
+    const STALL_MS = 12_000;
+    const BACKOFF_MS = [5_000, 10_000];
+    const MAX_RECOVERIES = 3;
+    let mounted = true, started = false, buffering = false;
+    let attempts = 0, lastProgress = performance.now(), lastTime = el.currentTime;
+    let nextAttemptAt = null, pending = null, serial = 0;
+    const sameSource = (a, b) => {
+      try { return new URL(a, 'https://truevoice.digital').href === new URL(b, 'https://truevoice.digital').href; }
+      catch { return a === b; }
     };
-    const scheduleRecovery = (delayMs) => {
-      if (!wantsPlaybackRef.current || recoveryTimerRef.current) return;
-      recoveryTimerRef.current = setTimeout(() => {
-        recoveryTimerRef.current = null;
-        if (!wantsPlaybackRef.current || !el.paused) return;
-        const epoch = playbackEpochRef.current;
-        const onFallback = el.src.includes(AZURACAST_FALLBACK);
-        radioDiagnostic('recovery-reload', el);
-        if (!onFallback) el.src = streamUrlRef.current;
-        el.load();
-        el.play().catch(() => {
-          if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
-          el.src = AZURACAST_FALLBACK;
-          el.load();
-          el.play().catch(() => {
-            if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
-            setError("Stream unavailable. Tap to retry.");
-            setIsPlaying(false);
-            isPlayingRef.current = false;
-          });
-        });
-      }, delayMs);
-    };
-
-    const onPlay = () => {
-      // A pending play promise must not resurrect radio after a video handoff.
-      if (!wantsPlaybackRef.current) { el.pause(); return; }
-      setIsPlaying(true);
-      isPlayingRef.current = true;
-    };
-    const onPause = () => {
-      setIsPlaying(false);
+    const eligible = () => mounted && wantsPlaybackRef.current && !media?.isVideoActive();
+    const diagnostic = (event, details = {}) => radioDiagnostic(event, el, {
+      epoch: playbackEpochRef.current, attempt: attempts, buffering,
+      noProgressMs: Math.round(performance.now() - lastProgress), ...details,
+    });
+    const cancel = () => {
+      wantsPlaybackRef.current = false;
+      playbackEpochRef.current += 1;
+      pending = null;
+      nextAttemptAt = null;
+      attempts = 0;
+      buffering = false;
+      el.pause();
       isPlayingRef.current = false;
+      setIsPlaying(false);
+      setIsReconnecting(false);
     };
-    const onEnded = () => { setIsPlaying(false); isPlayingRef.current = false; };
-
-    // Any error/stall funnels into the same debounced recovery — no more
-    // separate immediate + delayed attempts racing each other.
-    const onError = () => {
-      if (!isPlayingRef.current && !wantsPlaybackRef.current) return;
-      scheduleRecovery(3000);
+    const stop = message => {
+      diagnostic('recovery-stop');
+      cancel();
+      setError(message);
     };
-    const onStalled = () => {
-      if (!wantsPlaybackRef.current) return;
-      scheduleRecovery(3000);
-    };
-
-    // Reconnecting indicator while buffering
-    const onWaiting = () => { setIsReconnecting(true); };
-    const onPlaying = () => { setIsReconnecting(false); clearRecoveryTimer(); };
-
-    // Phone call / audio focus recovery + interruption detection
-    const onVisibilityChange = () => {
-      if (document.hidden && el.paused) {
-        // Backgrounded while paused (phone call, screen lock, app switch) —
-        // stand down so nothing auto-resumes playback into the interruption.
-        // User must tap Play to resume.
-        wantsPlaybackRef.current = false;
-        clearRecoveryTimer();
+    const failedAttempt = () => {
+      pending = null;
+      if (attempts >= MAX_RECOVERIES) {
+        stop('Stream unavailable. Tap to retry.');
         return;
       }
-      if (
-        document.visibilityState === "visible" &&
-        wantsPlaybackRef.current &&
-        el.paused
-      ) {
-        el.play().catch(() => {});
-      }
+      nextAttemptAt = performance.now() + (attempts === 0 ? 0 : BACKOFF_MS[attempts - 1]);
+      diagnostic('recovery-backoff', { delayMs: nextAttemptAt - performance.now() });
     };
-
-    // Network drop/restore recovery (WiFi<->cellular handoff, dead zones).
-    // `online` often fires when a silent stall never produced an "error" event.
-    const onOnline = () => {
-      // Connection restored — if playback survived the blip, clear the indicator.
-      // Must run BEFORE the paused guard, else a never-paused element stays
-      // stuck on "Reconnecting…" forever.
-      setIsReconnecting(false);
-      if (!wantsPlaybackRef.current || !el.paused) return; // only if user wants playback
-      clearRecoveryTimer(); // supersede any pending debounced attempt — retry now
-      const epoch = playbackEpochRef.current;
-      setIsReconnecting(true);
-      radioDiagnostic('online-reload', el);
-      el.src = streamUrlRef.current; // primary first
-      el.load();
-      el.play().catch(() => {
-        if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
-        el.src = AZURACAST_FALLBACK; // then fallback
-        el.load();
-        el.play().catch(() => {});
-      });
-    };
-    const onOffline = () => { if (wantsPlaybackRef.current) setIsReconnecting(true); };
-
-    el.addEventListener("play",    onPlay);
-    el.addEventListener("pause",   onPause);
-    el.addEventListener("ended",   onEnded);
-    el.addEventListener("error",   onError);
-    el.addEventListener("stalled", onStalled);
-    el.addEventListener("waiting", onWaiting);
-    el.addEventListener("playing", onPlaying);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("online",  onOnline);
-    window.addEventListener("offline", onOffline);
-
-    return () => {
-      clearRecoveryTimer();
-      el.removeEventListener("play",    onPlay);
-      el.removeEventListener("pause",   onPause);
-      el.removeEventListener("ended",   onEnded);
-      el.removeEventListener("error",   onError);
-      el.removeEventListener("stalled", onStalled);
-      el.removeEventListener("waiting", onWaiting);
-      el.removeEventListener("playing", onPlaying);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("online",  onOnline);
-      window.removeEventListener("offline", onOffline);
-    };
-  }, [audioRef]);
-
-  /* ── Shared controller commands: no second state or audio element ─────── */
-  const pauseRadio = useCallback(() => {
-    radioDiagnostic('command-pause', audioRef?.current);
-    wantsPlaybackRef.current = false;
-    playbackEpochRef.current += 1;
-    window.clearTimeout(recoveryTimerRef.current);
-    recoveryTimerRef.current = null;
-    audioRef?.current?.pause();
-    isPlayingRef.current = false;
-    setIsPlaying(false);
-    setIsReconnecting(false);
-  }, [audioRef]);
-
-  const playRadio = useCallback(({ reconnect = false } = {}) => {
-    const el = audioRef?.current;
-    if (!el) return;
-    try {
-        radioDiagnostic('command-play', el, { reconnect });
-        media?.stopVideo();
-        window.clearTimeout(recoveryTimerRef.current);
-        recoveryTimerRef.current = null;
-        setError(null);
-        wantsPlaybackRef.current = true; // user wants playback
-        const epoch = ++playbackEpochRef.current;
-        // Always reload the live stream src before playing to snap to
-        // the live edge — prevents the stale-buffer glitch after pause.
-        const currentSrc = el.src;
-        if (reconnect || !currentSrc || (!currentSrc.includes("live365") && !currentSrc.includes("truevoice"))) {
-          el.src = streamUrlRef.current;
+    const invokePlay = (reason, allowFallback = false) => {
+      const token = { id: ++serial, epoch: playbackEpochRef.current, at: performance.now() };
+      pending = token;
+      const current = () => eligible() && pending === token && token.epoch === playbackEpochRef.current;
+      const rejected = failure => {
+        if (!current()) return;
+        // Names only: exception text can contain signed URLs or other secrets.
+        const knownNames = ['NotAllowedError', 'AbortError', 'NotSupportedError', 'NetworkError', 'InvalidStateError', 'SecurityError', 'Error'];
+        const name = knownNames.includes(failure?.name) ? failure.name : 'OtherError';
+        const category = name === 'NotAllowedError' ? 'policy' : name === 'AbortError' ? 'aborted' : 'transport';
+        diagnostic('play-rejected', { reason, rejectionName: name, category });
+        if (category === 'policy') { stop('Tap Play to allow audio.'); return; }
+        if (category === 'aborted') { stop('Playback interrupted. Tap Play to retry.'); return; }
+        if (allowFallback && !sameSource(el.src, AZURACAST_FALLBACK)) {
+          diagnostic('fallback-load');
+          el.src = AZURACAST_FALLBACK;
+          el.load();
+          lastTime = el.currentTime;
+          invokePlay('fallback');
+          return;
         }
-        el.load();
-        const p = el.play();
-        trackStreamPlay(displaySongRef.current?.title ?? 'TrueVoice Radio');
-        if (p?.catch) p.catch(() => {
-          if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
-          if (reconnect) {
-            el.src = AZURACAST_FALLBACK;
-            el.load();
-            el.play().catch(() => {
-              if (!wantsPlaybackRef.current || epoch !== playbackEpochRef.current) return;
-              setError("Tap again to start audio.");
-              setIsPlaying(false);
-            });
-            return;
-          }
-          setError("Tap again to start audio.");
-          setIsPlaying(false);
-        });
+        buffering = true;
+        setIsReconnecting(true);
+        failedAttempt();
+      };
+      try {
+        const promise = el.play();
+        promise?.catch(rejected);
+      } catch (failure) { rejected(failure); }
+    };
+    const tick = () => {
+      if (!eligible()) return;
+      const now = performance.now();
+      const time = el.currentTime;
+      const { bufferedAhead } = radioBufferState(el);
+      const progressed = !el.paused && !el.seeking && Number.isFinite(time) &&
+        Number.isFinite(lastTime) && time > lastTime + 0.05 && (el.readyState ?? 2) >= 2;
+      lastTime = time;
+      if (progressed) {
+        const recovered = buffering || attempts > 0;
+        lastProgress = now;
+        buffering = false;
+        attempts = 0;
+        nextAttemptAt = null;
+        pending = null; // Retire promises that settle after proven playback.
+        setIsReconnecting(false);
+        setError(null);
         setIsPlaying(true);
-    } catch {
-      setError("Tap again to start audio.");
-      setIsPlaying(false);
-    }
+        isPlayingRef.current = true;
+        if (recovered) diagnostic('recovery-progress');
+        return;
+      }
+      // Readiness/buffer depletion explains starvation; an unchanged position
+      // with available data can instead indicate a stuck decoding pipeline.
+      // Both require the full no-progress grace period before any reload.
+      const starved = el.readyState < 3 || bufferedAhead < 0.1;
+      if (starved && now - lastProgress >= 2_000) {
+        buffering = true;
+        setIsReconnecting(true);
+      }
+      if (pending) {
+        if (now - pending.at < STALL_MS) return;
+        // load() on the next attempt aborts the retired native play. Its late
+        // rejection cannot touch the replacement attempt or resurrect playback.
+        diagnostic('play-timeout');
+        failedAttempt();
+        if (!eligible()) return;
+      }
+      if (now - lastProgress < STALL_MS || (nextAttemptAt !== null && now < nextAttemptAt)) return;
+      if (attempts >= MAX_RECOVERIES) { stop('Stream unavailable. Tap to retry.'); return; }
+      buffering = true;
+      setIsReconnecting(true);
+      attempts += 1;
+      nextAttemptAt = null;
+      diagnostic('recovery-load', { stallKind: starved ? 'starved' : 'no-progress' });
+      // Preserve the selected provider. Reconnecting the same URL is one
+      // attempt, never an immediate primary/fallback pair for identical URLs.
+      el.load();
+      lastTime = el.currentTime;
+      invokePlay('recovery');
+    };
+    const play = ({ reconnect = false } = {}) => {
+      if (!mounted || (!reconnect && wantsPlaybackRef.current &&
+        (!el.paused || pending || nextAttemptAt !== null))) return;
+      media?.stopVideo();
+      const resume = started;
+      playbackEpochRef.current += 1;
+      wantsPlaybackRef.current = true;
+      pending = null;
+      attempts = 0;
+      nextAttemptAt = null;
+      buffering = true;
+      lastProgress = performance.now();
+      setError(null);
+      setIsReconnecting(true);
+      diagnostic('command-play', { reconnect });
+      if (!el.src || (reconnect && !sameSource(el.src, streamUrlRef.current))) el.src = streamUrlRef.current;
+      // Initial Play uses the prewarmed resource; deliberate resume/reconnect
+      // snaps to the live edge. Repeated ordinary Play does neither.
+      if (resume || reconnect) el.load();
+      lastTime = el.currentTime;
+      started = true;
+      isPlayingRef.current = true;
+      setIsPlaying(true);
+      invokePlay('command', reconnect);
+      trackStreamPlay(displaySongRef.current?.title ?? 'TrueVoice Radio');
+    };
+    const pause = () => { diagnostic('command-pause'); cancel(); };
+    const onPlay = () => {
+      if (!eligible()) { el.pause(); return; }
+      isPlayingRef.current = true;
+      setIsPlaying(true);
+    };
+    const onPause = () => { setIsPlaying(false); isPlayingRef.current = false; };
+    const onBuffering = () => {
+      if (!eligible()) return;
+      buffering = true;
+      setIsReconnecting(true);
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden && el.paused) { pause(); return; }
+      // Timers may have been throttled while hidden. Establish a fresh sample
+      // before judging a stall; do not reload merely because time elapsed.
+      lastProgress = performance.now();
+      lastTime = el.currentTime;
+    };
+    const onOnline = () => { diagnostic('online'); tick(); };
+    const listeners = { play: onPlay, pause: onPause, ended: onBuffering,
+      waiting: onBuffering, stalled: onBuffering, error: onBuffering };
+    Object.entries(listeners).forEach(([event, fn]) => el.addEventListener(event, fn));
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onBuffering);
+    const controls = { play, pause };
+    controllerRef.current = controls;
+    watchdogRef.current = tick;
+    return () => {
+      mounted = false;
+      cancel();
+      if (controllerRef.current === controls) controllerRef.current = null;
+      if (watchdogRef.current === tick) watchdogRef.current = null;
+      Object.entries(listeners).forEach(([event, fn]) => el.removeEventListener(event, fn));
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onBuffering);
+    };
   }, [audioRef, media, AZURACAST_FALLBACK]);
+
+  const pauseRadio = useCallback(() => controllerRef.current?.pause(), []);
+  const playRadio = useCallback(options => controllerRef.current?.play(options), []);
+
 
   useLayoutEffect(() => {
     const el = audioRef?.current;

@@ -143,7 +143,7 @@ function wireMediaSessionControls(audioEl, media) {
 
   try {
     navigator.mediaSession.setActionHandler("play", () => {
-      media.playRadio({ reconnect: true });
+      media.playRadio();
     });
 
     navigator.mediaSession.setActionHandler("pause", () => {
