@@ -1,4 +1,5 @@
 // src/services/api.js
+import { IS_NATIVE_APP, resolveApiUrl } from '../lib/apiBase';
 
 // ------- AZURACAST NOW-PLAYING -------
 
@@ -9,7 +10,9 @@ const STATION_SLUG =
   import.meta.env.VITE_AZURACAST_STATION_SLUG || "truevoice_digital";
 
 export async function fetchNowPlaying() {
-  const url = `${BASE_URL}/api/nowplaying/${STATION_SLUG}`;
+  const url = IS_NATIVE_APP
+    ? resolveApiUrl('/api/nowplaying')
+    : `${BASE_URL}/api/nowplaying/${STATION_SLUG}`;
 
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {

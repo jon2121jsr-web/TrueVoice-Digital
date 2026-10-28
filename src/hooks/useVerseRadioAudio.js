@@ -12,15 +12,12 @@
 // a fresh one per card) is what makes an unmuted resume reliable on
 // mobile -- browsers gate a *new* media element's unmuted autoplay much
 // more strictly than resuming one they've already seen a real tap on.
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { IS_NATIVE_RADIO, nativeRadio } from "../lib/nativeRadio";
+import { MediaCoordinationContext } from "../features/pulse/MediaCoordinationContext";
 import { preferredStreamUrl } from "../lib/streamUrl";
 
-const LIVE365_STREAM_URL = "https://streaming.live365.com/a61535";
-const LIVE_STREAM_URL = preferredStreamUrl(
-  import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL
-);
-const AZURACAST_FALLBACK_URL =
-  "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
+const LIVE_STREAM_URL = preferredStreamUrl();
 
 let sharedAudio = null;
 let sharedMuted = true;
@@ -47,18 +44,13 @@ function startPlayback(audio) {
     audio.src = LIVE_STREAM_URL;
   }
   audio.play().catch(() => {
-    audio.src = AZURACAST_FALLBACK_URL;
-    audio.play().catch(() => {
-      // Autoplay blocked entirely (e.g. an unmuted resume with no fresh
-      // gesture behind it) -- the mute button is still a real click, and
-      // toggling it calls play() again below, which will succeed then.
-    });
+    // No direct-origin fallback; wait for the next deliberate user action.
   });
 }
 
 // `active` mirrors the video cards' isActive: only the on-screen verse
 // card should be making sound. Mute is shared feed-wide, like video mute.
-export function useVerseRadioAudio(active) {
+function useBrowserVerseRadioAudio(active) {
   const [muted, setMuted] = useState(sharedMuted);
 
   useEffect(() => {
@@ -98,3 +90,28 @@ export function useVerseRadioAudio(active) {
 
   return { muted, toggleMute };
 }
+
+// Native verse controls share the same AVPlayer. Visibility is not a Play gesture.
+function useNativeVerseRadioAudio(active) {
+  const media = useContext(MediaCoordinationContext);
+  const [muted, setMuted] = useState(true);
+  useEffect(() => nativeRadio.subscribe(state => {
+    setMuted(state.owner !== 'verse' || !state.wantsPlayback);
+  }), []);
+  useEffect(() => {
+    if (!active) nativeRadio.pause('verse').catch(() => {});
+    return () => { nativeRadio.pause('verse').catch(() => {}); };
+  }, [active]);
+  const toggleMute = () => {
+    if (!active) return;
+    const state = nativeRadio.getSnapshot();
+    if (state.owner === 'verse' && state.wantsPlayback) nativeRadio.pause('verse').catch(() => {});
+    else {
+      media?.stopVideo();
+      nativeRadio.play('verse').catch(() => {});
+    }
+  };
+  return { muted, toggleMute };
+}
+
+export const useVerseRadioAudio = IS_NATIVE_RADIO ? useNativeVerseRadioAudio : useBrowserVerseRadioAudio;

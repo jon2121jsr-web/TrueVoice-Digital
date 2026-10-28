@@ -15,6 +15,9 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
+		1694CF5649229528F8D9398C /* TrueVoiceRadioPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E17993A59311D52B04AD1E1B /* TrueVoiceRadioPlugin.swift */; };
+		5556840F74D23A86C0CBCEA0 /* RadioBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA3152609CF9FA54FB778341 /* RadioBridgeViewController.swift */; };
+		350F788815FA2DB763EE5F89 /* RadioPlaybackPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347C21399595F566ECE1B810 /* RadioPlaybackPolicy.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +33,9 @@
 		AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
+		E17993A59311D52B04AD1E1B /* TrueVoiceRadioPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrueVoiceRadioPlugin.swift; path = "TrueVoiceRadioPlugin.swift"; sourceTree = "<group>"; };
+		DA3152609CF9FA54FB778341 /* RadioBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RadioBridgeViewController.swift; path = "RadioBridgeViewController.swift"; sourceTree = "<group>"; };
+		347C21399595F566ECE1B810 /* RadioPlaybackPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RadioPlaybackPolicy.swift; path = "../../NativeAudioPolicy/Sources/NativeAudioPolicy/RadioPlaybackPolicy.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +81,9 @@
 			children = (
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
+				347C21399595F566ECE1B810 /* RadioPlaybackPolicy.swift */,
+				DA3152609CF9FA54FB778341 /* RadioBridgeViewController.swift */,
+				E17993A59311D52B04AD1E1B /* TrueVoiceRadioPlugin.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -210,6 +219,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				350F788815FA2DB763EE5F89 /* RadioPlaybackPolicy.swift in Sources */,
+				5556840F74D23A86C0CBCEA0 /* RadioBridgeViewController.swift in Sources */,
+				1694CF5649229528F8D9398C /* TrueVoiceRadioPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

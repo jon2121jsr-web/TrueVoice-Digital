@@ -15,8 +15,9 @@
  */
 
 import { Capacitor } from '@capacitor/core';
+import { resolveApiUrl } from './apiBase';
 
-const ENDPOINT = import.meta.env.VITE_PUSH_REGISTER_ENDPOINT || '/api/push/register';
+const ENDPOINT = resolveApiUrl(import.meta.env.VITE_PUSH_REGISTER_ENDPOINT || '/api/push/register');
 
 let initialized = false;
 

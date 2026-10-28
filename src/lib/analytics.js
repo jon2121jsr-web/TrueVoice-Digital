@@ -1,4 +1,5 @@
 import { IS_PREVIEW } from './previewSafety';
+import { resolveApiUrl } from './apiBase';
 /**
  * TrueVoice Analytics Tracker
  * Lightweight custom event tracker — no third-party dependencies.
@@ -8,7 +9,7 @@ import { IS_PREVIEW } from './previewSafety';
  * Captures: page views, stream plays, video plays, donation clicks.
  */
 
-const ENDPOINT = import.meta.env.VITE_ANALYTICS_ENDPOINT || '/api/analytics';
+const ENDPOINT = resolveApiUrl(import.meta.env.VITE_ANALYTICS_ENDPOINT || '/api/analytics');
 const SITE_ID  = (import.meta.env.VITE_ANALYTICS_SITE_ID || 'truevoice').trim();
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

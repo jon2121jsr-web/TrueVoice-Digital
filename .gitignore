@@ -28,3 +28,10 @@ dist-ssr
 
 # Supabase CLI local cache (pooler URL, project ref, version pins) -- regenerates automatically, never commit
 supabase/.temp/
+
+# Dedicated native CI branch only
+.env
+.env.*
+.native-validation/
+ios/NativeAudioPolicy/.build/
+ios/NativeAudioPolicy/.swiftpm/

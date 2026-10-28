@@ -194,6 +194,10 @@ async function recoveryFixture(run) {
   const props = { audioRef: { current: audio }, streamUrl: 'https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3', media };
   const flush = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
   const f = { audio, media, events, tasks, props,
+    liveWindow(lag = 10) {
+      audio.duration = Infinity;
+      audio.seekable = { length: 1, start: () => 0, end: () => now / 1000 + lag };
+    },
     emit: k => emit(events, k), online: () => emit(windowEvents, 'online'),
     view: () => h.render(props), counts: () => ({ loads, plays, writes }),
     unmount: () => h.unmount(),
@@ -235,6 +239,61 @@ test('recovery: brief waiting/stalled followed by progress never reloads', () =>
   f.emit('waiting'); f.emit('stalled'); await f.advance(3000);
   f.emit('playing'); await f.advance(30000, true);
   assert.deepEqual(f.counts(), before); assert.equal(f.view().props.isReconnecting, false);
+}));
+
+test('continuity: healthy moving live window preserves ordinary provider latency and idempotent Play', () => recoveryFixture(async f => {
+  f.liveWindow(55); await f.start(); const before = f.counts();
+  await f.advance(60000, true); f.media.playRadio();
+  assert.deepEqual(f.counts(), before);
+}));
+
+test('continuity: short buffered resume with confirmed persistent added live lag reloads once and recovers', () => recoveryFixture(async f => {
+  f.liveWindow(); await f.start(); await f.advance(5000, true);
+  const before = f.counts();
+  f.emit('waiting'); await f.advance(4000);
+  assert.equal(f.counts().loads, before.loads);
+  await f.advance(4000, true);
+  assert.equal(f.counts().loads, before.loads + 1);
+  assert.equal(f.counts().writes, before.writes, 'same source only');
+  await f.advance(2000, true);
+  assert.equal(f.view().props.isReconnecting, false);
+  await f.advance(5000, true); f.emit('waiting'); await f.advance(4000);
+  await f.advance(60000, true);
+  assert.equal(f.counts().loads, before.loads + 1, 'no stale-rejoin loop even if lag remains');
+}));
+
+test('continuity: sub-threshold short stall with live window does not interrupt resumed audio', () => recoveryFixture(async f => {
+  f.liveWindow(); await f.start(); await f.advance(5000, true); const before = f.counts();
+  f.emit('stalled'); await f.advance(2000); await f.advance(20000, true);
+  assert.deepEqual(f.counts(), before);
+}));
+
+for (const cancel of ['Pause', 'video']) {
+  test(`continuity: ${cancel} during stale confirmation prevents live rejoin`, () => recoveryFixture(async f => {
+    f.liveWindow(); await f.start(); await f.advance(5000, true);
+    f.emit('waiting'); await f.advance(4000); await f.advance(1000, true);
+    if (cancel === 'Pause') f.media.pauseRadio(); else f.media.startVideo(() => {});
+    const before = f.counts(); await f.advance(60000, true);
+    assert.deepEqual(f.counts(), before); assert.equal(f.audio.paused, true);
+  }));
+}
+
+test('continuity: finite media and absent seekable data never invent a live position', () => recoveryFixture(async f => {
+  f.liveWindow(); f.audio.duration = 300;
+  await f.start(); await f.advance(5000, true); const before = f.counts();
+  f.emit('waiting'); await f.advance(4000); await f.advance(20000, true);
+  assert.deepEqual(f.counts(), before);
+  f.audio.duration = Infinity; f.audio.seekable = { length: 0 };
+  f.emit('waiting'); await f.advance(4000); await f.advance(20000, true);
+  assert.deepEqual(f.counts(), before);
+}));
+
+test('continuity: stale rejoin respects autoplay denial and cannot retry automatically', () => recoveryFixture(async f => {
+  f.liveWindow(); await f.start(); await f.advance(5000, true);
+  f.audio.playResult = () => Promise.reject(new DOMException('blocked', 'NotAllowedError'));
+  f.emit('waiting'); await f.advance(4000); await f.advance(4000, true);
+  const before = f.counts(); await f.advance(60000);
+  assert.deepEqual(f.counts(), before); assert.match(f.view().props.error, /allow audio/);
 }));
 
 test('recovery: online is not playback proof and cannot bypass stalled recovery', () => recoveryFixture(async f => {
@@ -419,11 +478,10 @@ test('song polling, listener changes and buffering events never reset a playing 
   }
 });
 
-test('actual primary rejection selects fallback timing from currentSrc and preserves pending metadata', async () => {
+test('explicit reconnect rejection retains Live365 and its pending metadata timing', async () => {
   const oldWindow = globalThis.window, oldDocument = globalThis.document, oldNow = Date.now;
   const intervals = new Map(), listeners = new Map();
   const primary = 'https://streaming.live365.com/a61535';
-  const fallback = 'https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3';
   let assigned = primary, selected = primary, now = 180_000, rejectPrimary = false;
   let loads = 0, plays = 0, writes = 0;
   const emit = event => [...(listeners.get(event) || [])].forEach(fn => fn());
@@ -454,12 +512,14 @@ test('actual primary rejection selects fallback timing from currentSrc and prese
     now = 202_000; h.response = response('B', 200);
     intervals.get(5000)(); await Promise.resolve(); await Promise.resolve();
     assert.equal(h.render(props).props.title, 'A');
-    // An assigned fallback is not yet the selected/playing resource.
-    assigned = fallback; now = 220_000; intervals.get(1000)();
+    // A rejected reconnect must retain the Live365 metadata delay.
+    now = 220_000; intervals.get(1000)();
     assert.equal(h.render(props).props.title, 'A');
     rejectPrimary = true; media.playRadio({ reconnect: true });
     await Promise.resolve(); await Promise.resolve();
-    assert.equal(audio.currentSrc, fallback);
+    assert.equal(audio.currentSrc, primary);
+    assert.equal(h.render(props).props.title, 'A');
+    now = 255_000; intervals.get(1000)();
     assert.equal(h.render(props).props.title, 'B');
     assert.equal(h.render(props).props.art, 'B.jpg');
     assert.equal(h.fetches, 2); // No poll restart or extra source-change request.
@@ -587,13 +647,13 @@ test("same controller retains state through compact/full changes and cancels vid
     media.playRadio({ reconnect: true });
     lateReject(new Error("primary unavailable"));
     await Promise.resolve();
-    assert.equal(plays, 4);
-    assert.equal(audio.src, "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3");
+    assert.equal(plays, 3);
+    assert.equal(audio.src, props.streamUrl);
     props.audioRef.current = null; // React detaches the ref before route cleanup.
     h.unmount();
     lateReject(new Error("rejected after route exit"));
     await Promise.resolve();
-    assert.equal(plays, 4);
+    assert.equal(plays, 3);
     assert.equal(audio.paused, true);
     assert.equal(audioEvents.size, 0);
   } finally {

@@ -15,3 +15,10 @@ export const IS_NATIVE_APP = Capacitor.isNativePlatform();
 // "" for the website build (relative paths resolve against its own
 // origin); the live site's absolute origin when running as a native app.
 export const API_BASE = IS_NATIVE_APP ? LIVE_SITE_ORIGIN : "";
+
+// Only local API paths need rebasing. Keep website-relative requests and
+// explicit configured endpoints unchanged, including their query parameters.
+export function resolveApiUrl(endpoint, native = IS_NATIVE_APP) {
+  if (!native || !/^\/?api\//.test(endpoint)) return endpoint;
+  return LIVE_SITE_ORIGIN + '/' + endpoint.replace(/^\//, '');
+}

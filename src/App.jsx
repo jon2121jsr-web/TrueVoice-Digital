@@ -34,6 +34,7 @@ import "./features/pulse/PulseTheme.css";
 import "./features/pulse/PulseMobile.css";
 
 import { useYouTubeFeed } from "./hooks/useYouTubeFeed";
+import { IS_NATIVE_RADIO, nativeRadio } from "./lib/nativeRadio";
 import { preferredStreamUrl } from "./lib/streamUrl";
 import { useVisitorBeacon } from "./hooks/useVisitorBeacon";
 import { initPushNotifications } from "./lib/pushNotifications.js";
@@ -79,12 +80,7 @@ const SHOW_SLUG_TO_SECTION = {
 };
 
 // ─── Stream URLs ──────────────────────────────────────────────────────────────
-const LIVE365_STREAM_URL =
-  "https://streaming.live365.com/a61535";
-
-const LIVE_STREAM_URL = preferredStreamUrl(
-  import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL
-);
+const LIVE_STREAM_URL = preferredStreamUrl();
 
 // ─── Social links ─────────────────────────────────────────────────────────────
 const SOCIAL = {
@@ -260,13 +256,20 @@ function App() {
   const isExplore = !!matchPath("/explore", location.pathname);
   const hasPulseLayout = !["/admin", "/privacy", "/scroll", "/scroll/:id"]
     .some((path) => matchPath(path, location.pathname));
-  const media = useMemo(() => createMediaCoordinator(), []);
+  const media = useMemo(() => createMediaCoordinator(nativeRadio), []);
   const videoIframeRef = useRef(null);
   const previousPathRef = useRef(location.pathname);
   useLayoutEffect(() => {
     if (previousPathRef.current !== location.pathname && hasPulseLayout) window.scrollTo(0, 0);
     previousPathRef.current = location.pathname;
   }, [location.pathname, hasPulseLayout]);
+
+  useEffect(() => {
+    if (!IS_NATIVE_RADIO) return;
+    const visibility = () => { if (document.hidden) media.pauseVideo(); };
+    document.addEventListener('visibilitychange', visibility);
+    return () => document.removeEventListener('visibilitychange', visibility);
+  }, [media]);
 
   // Native app only (no-ops entirely on the web build -- see
   // src/lib/pushNotifications.js). Deliberately [] -- this registers the
@@ -425,7 +428,7 @@ function App() {
 
   // Update MediaSession metadata whenever song changes
   useEffect(() => {
-    if (!hasPulseLayout || media.isVideoActive()) return;
+    if (IS_NATIVE_RADIO || !hasPulseLayout || media.isVideoActive()) return;
     setMediaSessionMetadata({
       title:  nowPlaying.title  || STATION_NAME,
       artist: nowPlaying.artist || "Streaming",
@@ -469,12 +472,16 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
     const queue = collection ? createVideoQueue(collection, chosen) : null;
     if (collection && !queue) return;
     stopEmbeddedVideo(videoIframeRef.current);
-    media.startVideo(closeVideo);
-    const session = queue ? { ...queue, sessionId: ++videoSessionRef.current } : null;
-    videoQueueRef.current = session;
-    setVideoQueue(session);
-    setActiveVideo(chosen);
-    setVideoOpen(true);
+    const ready = media.startVideo(closeVideo);
+    const show = () => {
+      const session = queue ? { ...queue, sessionId: ++videoSessionRef.current } : null;
+      videoQueueRef.current = session;
+      setVideoQueue(session);
+      setActiveVideo(chosen);
+      setVideoOpen(true);
+    };
+    if (ready?.then) ready.then(current => { if (current) show(); }).catch(() => {});
+    else show();
   }, [media, closeVideo]);
   const advanceVideo = useCallback((step, expectedId) => {
     const next = queueDestination(videoQueueRef.current, step, expectedId);
@@ -483,10 +490,14 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
     // Invalidate stale ended callbacks before replacing the iframe.
     videoQueueRef.current = next;
     stopEmbeddedVideo(videoIframeRef.current);
-    media.startVideo(closeVideo);
-    setVideoQueue(next);
-    setActiveVideo(next.videos[next.index]);
-    if (isExplore) navigate(exploreVideoLocation(location, next.videos[next.index].youtubeId || next.videos[next.index].videoId), { replace: true, state: location.state });
+    const ready = media.startVideo(closeVideo);
+    const show = () => {
+      setVideoQueue(next);
+      setActiveVideo(next.videos[next.index]);
+      if (isExplore) navigate(exploreVideoLocation(location, next.videos[next.index].youtubeId || next.videos[next.index].videoId), { replace: true, state: location.state });
+    };
+    if (ready?.then) ready.then(current => { if (current) show(); }).catch(() => {});
+    else show();
   }, [media, closeVideo, isExplore, navigate, location]);
   const openVideoForSection = (sectionKey) => openVideo((feedBySection[sectionKey] || [])[0]);
 
@@ -633,7 +644,7 @@ const capturingFeed         = useYouTubeFeed({ channelId:  CAPTURING_CHRISTIANIT
           </header>
 
 
-          <audio ref={playerRef} preload="metadata" playsInline />
+          {!IS_NATIVE_RADIO && <audio ref={playerRef} preload="metadata" playsInline />}
 
           <main className="tv-main tv-main--pulse">
 

@@ -20,18 +20,13 @@ const config: CapacitorConfig = {
   // committed, so production native builds always load the bundled
   // `dist/` and never reach out to a dev machine.
 
-  // `server.hostname` + `iosScheme: 'https'` make the WebView's real
-  // origin "https://truevoice.digital" instead of the default
-  // "capacitor://localhost" (Capacitor still serves the bundled dist/
-  // files locally -- nothing is fetched over the network). This is
-  // required for the YouTube embeds: YouTube's IFrame Player checks
-  // the page's actual origin, and we were previously just claiming a
-  // fake "https://truevoice.digital" origin parameter that didn't
-  // match where the WebView really was, which is why embeds kept
-  // failing with YouTube's own "configuration error" screen.
+  // Supported local WKWebView origin: capacitor://localhost. This serves
+  // bundled files, not the production website. HTTP/HTTPS cannot be custom
+  // iOS schemes: https://capacitorjs.com/docs/v7/config#schema
+  // Hosted APIs use apiBase.js; YouTube uses the existing hosted yt-embed bridge.
   server: {
-    hostname: 'truevoice.digital',
-    iosScheme: 'https',
+    hostname: 'localhost',
+    iosScheme: 'capacitor',
     androidScheme: 'https',
   },
 

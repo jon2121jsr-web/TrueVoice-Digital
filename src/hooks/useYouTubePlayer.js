@@ -51,24 +51,32 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
 
   const playActive = useCallback(() => {
     if (!activeRef.current || !readyRef.current || !iframeRef.current) return;
-    media?.startVideo(stopPlayer, playActive);
-    allowedRef.current = true;
-    clearTimers();
-    lastStateRef.current = null;
-    post(sharedMuted ? "mute" : "unmute");
-    post("play");
-    setStuck(false);
-    const valid = () => activeRef.current && allowedRef.current && readyRef.current;
-    timersRef.current = [
-      setTimeout(() => {
-        if (valid() && lastStateRef.current !== 1) post("play");
-      }, 700),
-      setTimeout(() => {
-        if (!valid() || lastStateRef.current === 1) return;
-        if (!sharedMuted) autoplayBlocked = true;
-        setStuck(true);
-      }, !sharedMuted && autoplayBlocked ? 150 : 1600),
-    ];
+    const frame = iframeRef.current;
+    const ready = media?.startVideo(stopPlayer, playActive);
+    const start = () => {
+      if (!activeRef.current || !readyRef.current || iframeRef.current !== frame) return;
+      allowedRef.current = true;
+      clearTimers();
+      lastStateRef.current = null;
+      post(sharedMuted ? "mute" : "unmute");
+      post("play");
+      setStuck(false);
+      const valid = () => activeRef.current && allowedRef.current && readyRef.current;
+      timersRef.current = [
+        setTimeout(() => {
+          if (valid() && lastStateRef.current !== 1) post("play");
+        }, 700),
+        setTimeout(() => {
+          if (!valid() || lastStateRef.current === 1) return;
+          if (!sharedMuted) autoplayBlocked = true;
+          setStuck(true);
+        }, !sharedMuted && autoplayBlocked ? 150 : 1600),
+      ];
+    };
+    if (ready?.then) {
+      allowedRef.current = false;
+      ready.then(current => { if (current) start(); }).catch(() => { setStuck(true); });
+    } else start();
   }, [media, stopPlayer, clearTimers, post]);
 
   useEffect(() => {
@@ -137,8 +145,13 @@ export function useYouTubePlayer({ containerRef, videoId, clipStart, clipEnd, is
     if (isActive && videoId) {
       if (readyRef.current) playActive();
       else {
-        media?.startVideo(stopPlayer, playActive);
-        allowedRef.current = true;
+        const ready = media?.startVideo(stopPlayer, playActive);
+        if (ready?.then) ready.then(current => {
+          if (!current || !activeRef.current) return;
+          allowedRef.current = true;
+          if (readyRef.current) playActive();
+        }).catch(() => { setStuck(true); });
+        else allowedRef.current = true;
       }
     } else {
       stopPlayer();

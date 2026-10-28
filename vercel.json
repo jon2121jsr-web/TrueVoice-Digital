@@ -1,9 +1,4 @@
 {
-  "git": {
-    "deploymentEnabled": {
-      "fix/pulse-postlaunch-1a": false
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -30,5 +25,9 @@
       "path": "/api/ingest-feed",
       "schedule": "0 13 * * *"
     }
-  ]
+  ],
+  "buildCommand": "npm run build && node tools/verify-stream-timing-build.mjs",
+  "git": {
+    "deploymentEnabled": false
+  }
 }
