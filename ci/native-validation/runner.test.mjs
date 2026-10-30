@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { run } from './validate.mjs';
+import { run, assertValidationBranch } from './validate.mjs';
 test('real child output is captured and nonzero status is preserved', () => {
  const evidence = fs.mkdtempSync(path.join(os.tmpdir(), 'truevoice-runner-'));
  try {
@@ -23,5 +23,12 @@ test('CLI refuses unknown steps and compile on non-macOS', () => {
   const result = spawnSync(process.execPath, [fileURLToPath(cli), 'compile'], {encoding:'utf8'});
   assert.notEqual(result.status,0); assert.match(result.stderr,/macOS is required/);
   assert.doesNotMatch(result.stdout,/PASS/);
+ }
+});
+
+test('branch guard accepts only the corrected validation branch', () => {
+ assert.doesNotThrow(() => assertValidationBranch('ci/ios-native-validation-1b03f'));
+ for (const value of [undefined, '', 'ci/ios-native-validation-1b03b', 'main', 'truevoice-ios-workflow']) {
+  assert.throws(() => assertValidationBranch(value), /Only the dedicated validation branch is allowed/);
  }
 });

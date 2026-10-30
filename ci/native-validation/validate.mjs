@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const branch = 'ci/ios-native-validation-1b03b';
+const branch = 'ci/ios-native-validation-1b03f';
 const output = path.join(root, '.native-validation/ci');
 const sourceManifest = path.join(root, 'ci/native-validation/source-manifest.json');
 const hash = buffer => createHash('sha256').update(buffer).digest('hex');
@@ -59,9 +59,12 @@ export function verifySource(directory = root, manifestFile = sourceManifest, tr
   assert.equal((policy.match(/func test/g) ?? []).length, 7, 'Expected seven reviewed Swift tests');
   return { entries: expected.size, manifestSha256: hash(fs.readFileSync(manifestFile)) };
 }
+export function assertValidationBranch(value) {
+  assert.equal(value, branch, 'Only the dedicated validation branch is allowed');
+}
 function guardEnvironment() {
   assert.equal(os.platform(), 'darwin', 'macOS is required; no compilation was performed');
-  assert.equal(process.env.CM_BRANCH, branch, 'Only the dedicated validation branch is allowed');
+  assertValidationBranch(process.env.CM_BRANCH);
   for (const name of [
     'SUPABASE_SERVICE_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'FIREBASE_SERVICE_ACCOUNT_JSON',
     'YOUTUBE_API_KEY', 'VITE_YOUTUBE_API_KEY', 'VERCEL_TOKEN', 'APP_STORE_CONNECT_PRIVATE_KEY',

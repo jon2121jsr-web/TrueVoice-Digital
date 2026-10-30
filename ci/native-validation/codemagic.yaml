@@ -6,7 +6,7 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 60
     when:
-      condition: env.CM_BRANCH == "ci/ios-native-validation-1b03b"
+      condition: env.CM_BRANCH == "ci/ios-native-validation-1b03f"
     environment:
       xcode: "26.2"
       node: "24.14.0"

@@ -71,7 +71,7 @@ for (const [name, data] of candidates) {
   fs.writeFileSync(dest, data);
 }
 const manifestPath = 'ci/native-validation/source-manifest.json';
-const manifest = { branch: 'ci/ios-native-validation-1b03b', baselineHead: git(['rev-parse', 'HEAD']).trim(), stageBEntriesVerified: stageB.entries.length, excluded, overlays: ['codemagic.yaml', 'vercel.json', '.gitattributes', '.gitignore'], lineEndings: 'UTF-8 text normalized to LF for Git; binary bytes preserved', entries };
+const manifest = { branch: 'ci/ios-native-validation-1b03f', baselineHead: git(['rev-parse', 'HEAD']).trim(), stageBEntriesVerified: stageB.entries.length, excluded, overlays: ['codemagic.yaml', 'vercel.json', '.gitattributes', '.gitignore'], lineEndings: 'UTF-8 text normalized to LF for Git; binary bytes preserved', entries };
 fs.writeFileSync(path.join(out, manifestPath), JSON.stringify(manifest, null, 2) + '\n');
 fs.writeFileSync(path.join(audit, 'transfer-paths.nul'), [...entries.map(e => e.path), manifestPath].join('\0') + '\0');
 fs.writeFileSync(path.join(audit, 'git-status.txt'), git(['status', '--short', '--untracked-files=all']));

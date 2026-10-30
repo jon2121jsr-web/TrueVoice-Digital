@@ -1,6 +1,6 @@
 # Fix 1B.03F — auditable native validation
 
-Prepared locally from 0120813edf11dee955aa35d5a717b0329055e1c3 on isolated branch ci/ios-native-validation-1b03f. No push or Codemagic execution is authorized by this preparation. The workflow deliberately remains restricted to CM_BRANCH=ci/ios-native-validation-1b03b, the dedicated validation destination; running the local preparation branch would fail the guard.
+Prepared locally from 0120813edf11dee955aa35d5a717b0329055e1c3 on isolated branch ci/ios-native-validation-1b03f. No push or Codemagic execution is authorized by this preparation. Fix 1B.03H updates the workflow and runtime guard to CM_BRANCH=ci/ios-native-validation-1b03f. The previous 1B.03F commit restricted execution to ci/ios-native-validation-1b03b.
 
 ## Findings
 
@@ -61,3 +61,7 @@ Expected downloadable artifacts remain sanitized logs and JSON under .native-val
 Windows cannot execute the macOS toolchain. No claim is made that Swift tests, Pods, Capacitor sync or simulator compilation passed locally. Native compilation remains unverified pending an independently approved Codemagic run.
 
 The workflow has one manual-only workflow, no triggering/events, integration, credential group, signing material, publishing, archive/export/IPA or TestFlight action. Vercel Git deployment remains disabled. No dependencies or signing credentials were changed. External schedules/webhooks were not inspected or modified.
+
+## Fix 1B.03H - branch guard correction
+
+Prepared locally from ac9dc373b4bcecabd89c173ac0b42fd6e1350b07 on ci/ios-native-validation-1b03f. Both workflow conditions, the runtime branch guard, the preparation script's generated manifest branch, and current source-manifest branch metadata now use ci/ios-native-validation-1b03f. Historical documents retain their original branch references. Regression coverage accepts the corrected branch and rejects the former branch, missing/empty values, main and the production workflow name. All tool commands, native audio sources, dependency files and unsigned/manual-only policy remain unchanged. YAML/security, manifest and staged-byte checks were performed locally; no macOS compilation or Codemagic execution was performed. No push is included.

@@ -12,7 +12,7 @@ test('candidate YAML has only manual, branch-restricted unsigned validation, wit
   const document = yaml.load(fs.readFileSync('ci/native-validation/codemagic.yaml', 'utf8'));
   assert.deepEqual(Object.keys(document.workflows), ['ios-native-validation']);
   const w = document.workflows['ios-native-validation'];
-  assert.equal(w.when.condition, 'env.CM_BRANCH == "ci/ios-native-validation-1b03b"');
+  assert.equal(w.when.condition, 'env.CM_BRANCH == "ci/ios-native-validation-1b03f"');
   for (const key of ['triggering', 'publishing', 'integrations']) assert.equal(w[key], undefined);
   assert.equal(w.environment.groups, undefined);
   assert.equal(w.environment.ios_signing, undefined);
