@@ -18,17 +18,17 @@ workflows:
         NODE_OPTIONS: "--max-old-space-size=512"
     scripts:
       - name: Verify branch, source manifest and unsigned environment
-        script: node ci/native-validation/validate.mjs preflight
+        script: node ci/native-validation/run.mjs preflight
       - name: Install exact locked Node dependencies
-        script: node ci/native-validation/validate.mjs dependencies
+        script: node ci/native-validation/run.mjs dependencies
       - name: Run seven Swift policy tests
-        script: node ci/native-validation/validate.mjs swift-tests
-      - name: Build and inspect local Vite artifacts
-        script: node ci/native-validation/validate.mjs web-build
+        script: node ci/native-validation/run.mjs swift-tests
+      - name: Run npm build and inspect emitted timing
+        script: node ci/native-validation/run.mjs web-build
       - name: Sync Capacitor and resolve CocoaPods
-        script: node ci/native-validation/validate.mjs sync
+        script: node ci/native-validation/run.mjs sync
       - name: Compile unsigned Debug iOS Simulator application
-        script: node ci/native-validation/validate.mjs compile
+        script: node ci/native-validation/run.mjs compile
     artifacts:
       # Sanitized text/JSON only; no .app, IPA, archive, keys or raw workspace.
       - .native-validation/ci/logs/*.log

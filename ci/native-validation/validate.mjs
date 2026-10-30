@@ -19,15 +19,23 @@ export function sanitize(text) {
     .replace(/\b(?:sk_(?:live|test)_[A-Za-z0-9]+|AIza[A-Za-z0-9_-]{30,}|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)\b/g, '[TOKEN REDACTED]')
     .replace(/(authorization\s*[:=]\s*)(?:bearer\s+)?[^\r\n]+/gi, '$1[REDACTED]');
 }
-function run(name, command, args, { cwd = root } = {}) {
-  const result = spawnSync(command, args, { cwd, encoding: 'utf8', timeout: 1_500_000, maxBuffer: 50 * 1024 * 1024 });
-  fs.writeFileSync(path.join(output, 'logs', name + '.log'), sanitize((result.stdout ?? '') + (result.stderr ?? '')));
-  assert.equal(result.status, 0, `${name} failed; inspect sanitized ${name}.log`);
+export function run(name, command, args, { cwd = root, evidence = output, env = process.env } = {}) {
+  fs.mkdirSync(path.join(evidence, 'logs'), { recursive: true });
+  fs.mkdirSync(path.join(evidence, 'reports'), { recursive: true });
+  console.log(sanitize(JSON.stringify({ command, args, cwd })));
+  const result = spawnSync(command, args, { cwd, env, encoding: 'utf8', timeout: 1_500_000, maxBuffer: 50 * 1024 * 1024 });
+  const log = sanitize((result.stdout ?? '') + (result.stderr ?? '') + (result.error ? '\n' + result.error.message : ''));
+  fs.writeFileSync(path.join(evidence, 'logs', name + '.log'), log);
+  process.stdout.write(log);
+  const exitCode = result.status ?? (result.signal === 'SIGTERM' ? 124 : 1);
+  fs.writeFileSync(path.join(evidence, 'reports', name + '-command.json'), JSON.stringify({ command, args, cwd, exitCode, signal: result.signal, executed: !result.error, error: result.error?.code }, null, 2));
+  if (result.error || exitCode !== 0) throw Object.assign(new Error(name + ' failed; inspect ' + name + '.log'), { exitCode: exitCode || 1 });
   return result.stdout;
 }
 export function verifySource(directory = root, manifestFile = sourceManifest, trackedPaths) {
   const manifest = JSON.parse(fs.readFileSync(manifestFile));
   const expected = new Set(manifest.entries.map(e => e.path));
+  assert.equal(expected.size, manifest.entries.length, 'Duplicate manifest entries');
   for (const e of manifest.entries) {
     assert.ok(!path.isAbsolute(e.path) && !e.path.split(/[\\/]/).includes('..'), 'Unsafe manifest path');
     assert.doesNotMatch(e.path, /(^|\/)\.env(?:\.|$)|\.(?:p8|p12|mobileprovision|pem|key)$/i, 'Credential file in CI source');
@@ -60,7 +68,7 @@ function guardEnvironment() {
     'CM_CERTIFICATE_PATH', 'CM_PROVISIONING_PROFILE_PATH',
   ]) assert.ok(!process.env[name], `Remove unrelated credential from validation environment: ${name}`);
 }
-function verifyNativeFiles() {
+export function verifyNativeFiles() {
   const manifest = JSON.parse(fs.readFileSync(sourceManifest));
   for (const e of manifest.entries.filter(e => e.path.endsWith('.swift'))) {
     assert.equal(hash(fs.readFileSync(path.join(root, e.path))), e.sha256, 'Sync changed reviewed Swift source');
@@ -71,10 +79,11 @@ function verifyNativeFiles() {
   assert.ok(plugin.includes('registerPluginInstance(TrueVoiceRadioPlugin())'));
   const project = fs.readFileSync(path.join(root, 'ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
   for (const name of ['TrueVoiceRadioPlugin.swift', 'RadioBridgeViewController.swift', 'RadioPlaybackPolicy.swift']) {
-    assert.ok(project.split('/* Begin PBXSourcesBuildPhase section */')[1]?.includes(name + ' in Sources'), 'Missing Xcode source membership');
+    assert.ok(project.split('/* Begin PBXSourcesBuildPhase section */')[1]?.split('/* End PBXSourcesBuildPhase section */')[0].includes(name + ' in Sources'), 'Missing Xcode source membership');
   }
 }
-function main(step) {
+export function main(step) {
+  assert.ok(['preflight', 'dependencies', 'swift-tests', 'web-build', 'sync', 'compile'].includes(step), 'Unknown validation step');
   guardEnvironment();
   process.chdir(root);
   fs.mkdirSync(path.join(output, 'logs'), { recursive: true });
@@ -82,6 +91,7 @@ function main(step) {
   if (step === 'preflight') {
     const tracked = run('git-files', 'git', ['ls-files', '-z']).split('\0').filter(Boolean);
     const source = verifySource(root, sourceManifest, tracked);
+    verifyNativeFiles();
     const xcode = run('xcode-version', 'xcodebuild', ['-version']);
     assert.match(xcode, /Xcode 26\.2\b/, 'Unexpected Xcode image');
     const sdk = run('sdk-version', 'xcrun', ['--sdk', 'iphonesimulator', '--show-sdk-version']).trim();
@@ -92,16 +102,27 @@ function main(step) {
   } else if (step === 'dependencies') {
     run('npm-ci', 'npm', ['ci', '--no-audit', '--no-fund']);
   } else if (step === 'swift-tests') {
-    const log = run('swift-tests', 'swift', ['test', '--package-path', 'ios/NativeAudioPolicy']);
+    const log = run('swift-tests', 'swift', ['test', '--package-path', 'ios/NativeAudioPolicy', '--verbose']);
     // XCTest writes its summary to stderr on some Swift versions.
     const saved = fs.readFileSync(path.join(output, 'logs/swift-tests.log'), 'utf8');
     assert.match(log + saved, /Executed 7 tests, with 0 failures/, 'Seven XCTest cases must actually execute');
     fs.writeFileSync(path.join(output, 'reports', 'swift-tests.json'), JSON.stringify({ executed: 7, failures: 0 }));
   } else if (step === 'web-build') {
-    run('web-build', process.execPath, ['tools/build-native-baseline.mjs']);
+    run('web-build', 'npm', ['run', 'build'], { env: { ...process.env,
+      VERCEL: '1', VERCEL_ENV: 'production', VERCEL_TARGET_ENV: 'production',
+      VITE_STREAM_DELAY_SEC: '15', VITE_AZURACAST_METADATA_DELAY_SEC: '2', VITE_LIVE365_METADATA_DELAY_SEC: '55',
+    } });
+    run('web-timing', process.execPath, ['tools/verify-stream-timing-build.mjs']);
+    const html = fs.readFileSync('dist/index.html', 'utf8');
+    const asset = html.match(/src="(\/assets\/index-[^"]+\.js)"/)?.[1];
+    assert.ok(asset, 'Missing main bundle');
+    const bundle = fs.readFileSync('dist' + asset, 'utf8');
+    assert.ok(bundle.includes('https://streaming.live365.com/a61535'), 'Missing approved Live365 endpoint');
+    assert.doesNotMatch(bundle, /https:\/\/stream\.truevoice\.digital\/(?:listen|hls)\//, 'Direct-origin listener URL emitted');
   } else if (step === 'sync') {
     // cap sync ios already invokes CocoaPods; never use pod update.
-    run('capacitor-sync', process.execPath, ['node_modules/@capacitor/cli/bin/capacitor', 'sync', 'ios']);
+    run('capacitor-sync', 'npx', ['--no-install', 'cap', 'sync', 'ios']);
+    run('pod-install', 'pod', ['install'], { cwd: path.join(root, 'ios/App') });
     assert.ok(fs.existsSync('ios/App/Podfile.lock'), 'CocoaPods resolution did not produce Podfile.lock');
     assert.ok(fs.existsSync('ios/App/App.xcworkspace/contents.xcworkspacedata'), 'Missing generated workspace');
     verifyNativeFiles();
@@ -116,12 +137,25 @@ function main(step) {
     fs.writeFileSync(path.join(output, 'reports', 'pods.json'), JSON.stringify({ podfileLockSha256: hash(lock), versions, resolved: true }));
   } else if (step === 'compile') {
     verifyNativeFiles();
+    for (const name of ['DerivedData', 'SimulatorBuild.xcresult']) {
+      assert.ok(!fs.existsSync(path.join(output, name)), 'Use a fresh checkout: build evidence already exists');
+    }
+    const devices = JSON.parse(run('simulators', 'xcrun', ['simctl', 'list', 'devices', 'available', '--json']));
+    const simulator = Object.entries(devices.devices).filter(([runtime]) => runtime.includes('.iOS-'))
+      .flatMap(([, list]) => list).find(device => device.isAvailable && device.name.startsWith('iPhone'));
+    assert.ok(simulator?.udid, 'No available iPhone simulator');
+    run('xcode-destinations', 'xcodebuild', ['-workspace', 'ios/App/App.xcworkspace', '-scheme', 'App', '-showdestinations']);
     run('xcode-build', 'xcodebuild', [
       '-workspace', 'ios/App/App.xcworkspace', '-scheme', 'App', '-configuration', 'Debug',
-      '-sdk', 'iphonesimulator', '-destination', 'generic/platform=iOS Simulator',
+      '-sdk', 'iphonesimulator', '-destination', 'platform=iOS Simulator,id=' + simulator.udid,
       '-derivedDataPath', path.join(output, 'DerivedData'), '-resultBundlePath', path.join(output, 'SimulatorBuild.xcresult'),
       'CODE_SIGNING_ALLOWED=NO', 'CODE_SIGNING_REQUIRED=NO', 'CODE_SIGN_IDENTITY=', 'DEVELOPMENT_TEAM=', 'build',
     ]);
+    const compilerEvidence = fs.readFileSync(path.join(output, 'logs/xcode-build.log'), 'utf8');
+    assert.match(compilerEvidence, /\*\* BUILD SUCCEEDED \*\*/, 'Missing Xcode success evidence');
+    for (const name of ['TrueVoiceRadioPlugin.swift', 'RadioBridgeViewController.swift', 'RadioPlaybackPolicy.swift']) {
+      assert.ok(compilerEvidence.includes(name), 'Missing compiler source evidence: ' + name);
+    }
     const app = path.join(output, 'DerivedData/Build/Products/Debug-iphonesimulator/App.app');
     assert.ok(fs.existsSync(app), 'Missing simulator application');
     assert.ok(!fs.existsSync(path.join(app, '_CodeSignature')), 'Unexpected app signature');
@@ -129,11 +163,11 @@ function main(step) {
     assert.equal(id, 'digital.truevoice.app');
     const modes = JSON.parse(run('background-modes', 'plutil', ['-extract', 'UIBackgroundModes', 'json', '-o', '-', path.join(app, 'Info.plist')]));
     assert.ok(modes.includes('audio'));
-    fs.writeFileSync(path.join(output, 'reports', 'compilation.json'), JSON.stringify({ status: 'PASS', sdk: 'iphonesimulator', configuration: 'Debug', signed: false, bundleId: id, backgroundModes: modes, runtimeTested: false, fixtureConfiguration: true, distributed: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'reports', 'compilation.json'), JSON.stringify({ status: 'PASS', simulator, compilerInvoked: true, sdk: 'iphonesimulator', configuration: 'Debug', signed: false, bundleId: id, backgroundModes: modes, runtimeTested: false, fixtureConfiguration: true, distributed: false }, null, 2));
   } else throw Error('Unknown validation step');
   console.log(`${step}: PASS (no distribution)`);
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try { main(process.argv[2]); }
-  catch (error) { console.error(sanitize(error.message)); process.exitCode = 1; }
+  catch (error) { console.error(sanitize(error.message)); process.exitCode = error.exitCode ?? 1; }
 }

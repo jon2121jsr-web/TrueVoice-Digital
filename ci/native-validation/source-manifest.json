@@ -406,7 +406,7 @@
     },
     {
       "path": "ci/native-validation/codemagic.yaml",
-      "sha256": "c2af46d76d0d9b4666deeb65980b9a1339ad636a629603bf414c880c0c3a9315"
+      "sha256": "6cf0f02e88654a252c76f2492db3d3c39ba26bc9dd9c43650cbbfe44adae446b"
     },
     {
       "path": "ci/native-validation/prepare-source.mjs",
@@ -414,7 +414,7 @@
     },
     {
       "path": "ci/native-validation/validate.mjs",
-      "sha256": "2160382e5370756912775d007f65fdcdc50fbdb7a8a4fb6c1e07ea566ef56ac5"
+      "sha256": "a45816d0008aa96963a86312f57b425c033de29e1b63c01f80b073222ea97422"
     },
     {
       "path": "ci/native-validation/verify-transfer.mjs",
@@ -422,7 +422,7 @@
     },
     {
       "path": "codemagic.yaml",
-      "sha256": "c2af46d76d0d9b4666deeb65980b9a1339ad636a629603bf414c880c0c3a9315"
+      "sha256": "6cf0f02e88654a252c76f2492db3d3c39ba26bc9dd9c43650cbbfe44adae446b"
     },
     {
       "path": "docs/PULSE-autoplay-runtime-diagnostics.md",
@@ -1435,6 +1435,20 @@
     {
       "path": "vite.config.js",
       "sha256": "194723f583be9d37904174372f069a47af04afcd5816fd6a112d9e3ce52842b6"
+    },
+    {
+      "path": "ci/native-validation/run.mjs",
+      "sha256": "30acf1bce400655742ea021ee5bca5a185cf886fc1f47d89edfddce1f4386460"
+    },
+    {
+      "path": "ci/native-validation/runner.test.mjs",
+      "sha256": "3b1eded4b5398b111f6052f4b8ae8f887f401ec7171e6019afbf155305dea74b"
+    },
+    {
+      "path": "docs/PULSE-fix-1B.03F-validation-corrections.md",
+      "sha256": "ca49c5f3f99c61f040c6b3766f6734995ac0a8d71fcfaab92fa09a60fbc2dddd"
     }
-  ]
+  ],
+  "revision": "Fix 1B.03F validation corrections",
+  "parentCommit": "0120813edf11dee955aa35d5a717b0329055e1c3"
 }
