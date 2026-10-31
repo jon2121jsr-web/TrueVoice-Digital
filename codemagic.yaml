@@ -33,3 +33,30 @@ workflows:
       # Sanitized text/JSON only; no .app, IPA, archive, keys or raw workspace.
       - .native-validation/ci/logs/*.log
       - .native-validation/ci/reports/*.json
+
+  ios-release-archive-validation:
+    name: ios-release-archive-validation
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    when:
+      condition: env.CM_BRANCH == "release/ios-testflight-1b04"
+    environment:
+      xcode: "26.2"
+      node: "24.14.0"
+      cocoapods: "1.16.2"
+    scripts:
+      - name: Verify release source, approved public inputs and unsigned environment
+        script: node ci/ios-release/validate.mjs preflight
+      - name: Install locked npm dependencies
+        script: node ci/ios-release/validate.mjs dependencies
+      - name: Execute seven Swift policy tests
+        script: node ci/ios-release/validate.mjs swift-tests
+      - name: Build real web assets with approved runtime inputs
+        script: node ci/ios-release/validate.mjs web-build
+      - name: Sync Capacitor and resolve CocoaPods
+        script: node ci/ios-release/validate.mjs sync
+      - name: Validate unsigned Release device archive - not distributable
+        script: node ci/ios-release/validate.mjs archive
+    artifacts:
+      - .native-validation/release/logs/*.log
+      - .native-validation/release/reports/*.json

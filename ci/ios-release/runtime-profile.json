@@ -1,0 +1,13 @@
+{
+  "appId": "digital.truevoice.app",
+  "listener": "https://streaming.live365.com/a61535",
+  "metadata": "https://www.truevoice.digital/api/nowplaying",
+  "publicPairSha256": "a1bad6faabacc9b093db8d0cd09779cfca2d521af1afa826929b2dd0e9a35779",
+  "provenance": "Existing local public Supabase pair used by the approved Stage A native baseline; no values or environment file copied. Verify target ownership before any device run.",
+  "delivery": "Required process inputs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY; no provider groups attached.",
+  "timing": {
+    "live365": 55,
+    "azuracast": 2,
+    "unknown": 15
+  }
+}
