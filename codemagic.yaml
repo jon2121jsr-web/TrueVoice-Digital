@@ -44,6 +44,8 @@ workflows:
       xcode: "26.2"
       node: "24.14.0"
       cocoapods: "1.16.2"
+      groups:
+        - pulse_ios_public_runtime
     scripts:
       - name: Verify release source, approved public inputs and unsigned environment
         script: node ci/ios-release/validate.mjs preflight

@@ -30,12 +30,20 @@ test('new workflow is manual and unsigned; original validation workflow remains 
   assert.equal(w.when.condition, 'env.CM_BRANCH == "release/ios-testflight-1b04"');
   const inspect = value => {
     for (const [key, child] of Object.entries(value ?? {})) {
-      assert.doesNotMatch(key, /^(triggering|events|publishing|integrations|groups|ios_signing|certificates|provisioning_profiles)$/);
+      if (key === 'groups') {
+        assert.strictEqual(value, w.environment, 'Group imports are allowed only on the release environment');
+        assert.deepEqual(child, ['pulse_ios_public_runtime']);
+      } else {
+        assert.doesNotMatch(key, /^(triggering|events|publishing|integrations|ios_signing|certificates|provisioning_profiles)$/);
+      }
       if (child && typeof child === 'object') inspect(child);
     }
   };
   inspect(root);
   assert.equal(w.environment.xcode, '26.2');
+  assert.equal(w.environment.node, '24.14.0');
+  assert.equal(w.environment.cocoapods, '1.16.2');
+  assert.deepEqual(w.environment.groups, ['pulse_ios_public_runtime']);
   assert.equal(w.environment.vars, undefined);
   assert.deepEqual(w.scripts.map(s => s.script.split(' ').at(-1)), ['preflight', 'dependencies', 'swift-tests', 'web-build', 'sync', 'archive']);
   assert.ok(w.artifacts.every(p => /\/(logs|reports)\/\*\.(log|json)$/.test(p)));

@@ -1,7 +1,7 @@
 {
   "baseline": "1c3ebb18eee5151c47d844ea97100651624c98e6",
   "branch": "release/ios-testflight-1b04",
-  "phase": "Fix 1B.04B local web/PWA diagnosis and post-cleanup verification; no commit or remote action",
+  "phase": "Fix 1B.04G local public runtime group integration; no commit or provider action",
   "entries": [
     {
       "path": ".gitattributes",
@@ -405,7 +405,7 @@
     },
     {
       "path": "ci/ios-release/release.test.mjs",
-      "sha256": "4208348d0f10f0e40efe4a7e14ab28bb5d94d3de5c7895ad92286758abd91864"
+      "sha256": "d762dd598ee7077021b9163f0736295d61456fb85b2295cd02e3c6a2ed71bf65"
     },
     {
       "path": "ci/ios-release/runtime-profile.json",
@@ -445,7 +445,7 @@
     },
     {
       "path": "codemagic.yaml",
-      "sha256": "d5bea75e3c3d14f0aa351e96839644d6d93614d689a6a80b7f93ea6fe6fa6def"
+      "sha256": "7c784fc0495cc7a25aaf6657f31c1f26fa15a4f74b2a47fbe9a3cc932cd37ac7"
     },
     {
       "path": "docs/PULSE-Phase4B-final-validation.md",
@@ -530,6 +530,10 @@
     {
       "path": "docs/PULSE-fix-1B.04B-web-build-remediation.md",
       "sha256": "006e54138008168a65f17b13aab34d0f692daabead4b05a4ef6f66c6b466f777"
+    },
+    {
+      "path": "docs/PULSE-fix-1B.04G-public-runtime-integration.md",
+      "sha256": "2d95d6f47081cb309ed3abf02024525ff1acc7b29f14f421f7619b85b16e3238"
     },
     {
       "path": "docs/PULSE-post-launch-1A-staging.md",
