@@ -23,7 +23,7 @@ test('missing, placeholder, unexpected or private runtime inputs fail closed', (
 });
 test('new workflow is manual and unsigned; original validation workflow remains isolated', () => {
   const root = yaml.load(fs.readFileSync('codemagic.yaml', 'utf8'));
-  assert.deepEqual(Object.keys(root.workflows), ['ios-native-validation', 'ios-release-archive-validation']);
+  assert.deepEqual(Object.keys(root.workflows), ['ios-native-validation', 'ios-release-archive-validation', 'ios-signed-archive-export-validation']);
   const original = yaml.load(fs.readFileSync('ci/native-validation/codemagic.yaml', 'utf8'));
   assert.deepEqual(root.workflows['ios-native-validation'], original.workflows['ios-native-validation']);
   const w = root.workflows['ios-release-archive-validation'];
@@ -39,7 +39,7 @@ test('new workflow is manual and unsigned; original validation workflow remains 
       if (child && typeof child === 'object') inspect(child);
     }
   };
-  inspect(root);
+  inspect({ workflows: { 'ios-native-validation': root.workflows['ios-native-validation'], 'ios-release-archive-validation': w } });
   assert.equal(w.environment.xcode, '26.2');
   assert.equal(w.environment.node, '24.14.0');
   assert.equal(w.environment.cocoapods, '1.16.2');

@@ -1,5 +1,5 @@
 # Candidate root codemagic.yaml for the dedicated CI branch only.
-# No events, publishing, signing, integrations, or credential groups.
+# No automatic events or publishing. Signing is scoped to the separate signed workflow.
 workflows:
   ios-native-validation:
     name: ios-native-validation
@@ -62,3 +62,39 @@ workflows:
     artifacts:
       - .native-validation/release/logs/*.log
       - .native-validation/release/reports/*.json
+
+  ios-signed-archive-export-validation:
+    name: ios-signed-archive-export-validation
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    when:
+      condition: env.CM_BRANCH == "release/ios-testflight-1b04"
+    environment:
+      xcode: "26.2"
+      node: "24.14.0"
+      cocoapods: "1.16.2"
+      groups:
+        - pulse_ios_public_runtime
+      ios_signing:
+        provisioning_profiles:
+          - profile: truevoice_appstore_profile
+            environment_variable: PULSE_SIGNING_PROFILE_PATH
+        certificates:
+          - "Codemagic CI."
+    scripts:
+      - name: Verify source, public runtime and existing signing asset metadata
+        script: node ci/ios-signed/run.mjs preflight
+      - name: Install locked npm dependencies
+        script: node ci/ios-signed/run.mjs dependencies
+      - name: Execute seven Swift policy tests
+        script: node ci/ios-signed/run.mjs swift-tests
+      - name: Build web assets with approved public runtime
+        script: node ci/ios-signed/run.mjs web-build
+      - name: Sync Capacitor and resolve CocoaPods
+        script: node ci/ios-signed/run.mjs sync
+      - name: Signed Release archive and App Store Connect export only
+        script: node ci/ios-signed/run.mjs archive-export
+    artifacts:
+      # Never collect private tool output, keychain, profiles or certificate files.
+      - .native-validation/signed/export/*.ipa
+      - .native-validation/signed/reports/*.json

@@ -1,7 +1,7 @@
 {
   "baseline": "1c3ebb18eee5151c47d844ea97100651624c98e6",
   "branch": "release/ios-testflight-1b04",
-  "phase": "Fix 1B.04G local public runtime group integration; no commit or provider action",
+  "phase": "Fix 1B.05B local signed archive/export proposal; no commit or provider action",
   "entries": [
     {
       "path": ".gitattributes",
@@ -405,7 +405,7 @@
     },
     {
       "path": "ci/ios-release/release.test.mjs",
-      "sha256": "d762dd598ee7077021b9163f0736295d61456fb85b2295cd02e3c6a2ed71bf65"
+      "sha256": "9730e2687fec5de8a8d80bb35d34d03676d2a6a2851cf5e2b723eb18f23621fe"
     },
     {
       "path": "ci/ios-release/runtime-profile.json",
@@ -414,6 +414,34 @@
     {
       "path": "ci/ios-release/validate.mjs",
       "sha256": "a164691156e7c50d493c7f359fba8a4f93c929b4cd891402ae9436b9422c1024"
+    },
+    {
+      "path": "ci/ios-signed/inspect-signature.swift",
+      "sha256": "ac2e71b4ec5657bdea1ea18ae7358400dc6966655edcb927fd8c0e70e505f9a9"
+    },
+    {
+      "path": "ci/ios-signed/plist-metadata.py",
+      "sha256": "59a5a938724b747248290543a5f753af7a380058a1ac600bd72de4996cbd666d"
+    },
+    {
+      "path": "ci/ios-signed/policy.json",
+      "sha256": "a00a73055fe2baa20cdf6fa386965b6b558e6cda47c4ba75fe4122fd0e020ba3"
+    },
+    {
+      "path": "ci/ios-signed/policy.mjs",
+      "sha256": "6191780b9e0cc7cfd45d2c07e7812de5e9303712a645efb9ff3f8c2251c3423c"
+    },
+    {
+      "path": "ci/ios-signed/run.mjs",
+      "sha256": "a2402b62d8258e65e599a45ed46327baf9a5e06ba9c27047eb59ccef10e24584"
+    },
+    {
+      "path": "ci/ios-signed/signed.test.mjs",
+      "sha256": "89b0c2090e3c243b86d4dd17f573d13d6231b6d3b7ca7c58263962fe3ce19a16"
+    },
+    {
+      "path": "ci/ios-signed/validate.mjs",
+      "sha256": "442e59c8c541e24ffe2bcbd8a6c7638854ee1e72523052d8c4a20ee2e16d461b"
     },
     {
       "path": "ci/native-validation/codemagic.yaml",
@@ -445,7 +473,7 @@
     },
     {
       "path": "codemagic.yaml",
-      "sha256": "7c784fc0495cc7a25aaf6657f31c1f26fa15a4f74b2a47fbe9a3cc932cd37ac7"
+      "sha256": "f0ae15ec4c36778ae771c177e70a23a97acae5702910eb672b9e30291ba16c92"
     },
     {
       "path": "docs/PULSE-Phase4B-final-validation.md",
@@ -534,6 +562,10 @@
     {
       "path": "docs/PULSE-fix-1B.04G-public-runtime-integration.md",
       "sha256": "2d95d6f47081cb309ed3abf02024525ff1acc7b29f14f421f7619b85b16e3238"
+    },
+    {
+      "path": "docs/PULSE-fix-1B.05B-signed-archive-export-proposal.md",
+      "sha256": "2a0ba6242271e92d966a1c448b4abbc52dda09a8770bc042f93e1c0442e4277b"
     },
     {
       "path": "docs/PULSE-post-launch-1A-staging.md",

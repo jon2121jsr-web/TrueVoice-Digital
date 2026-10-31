@@ -1,0 +1,12 @@
+{
+  "baseline": "6b4b5c39e53bc16bdb1df55c5c9c6962c912cc1e",
+  "branch": "release/ios-testflight-1b04",
+  "workflow": "ios-signed-archive-export-validation",
+  "team": "BX8URAAMLD",
+  "bundleId": "digital.truevoice.app",
+  "certificateReference": "Codemagic CI.",
+  "profileReference": "truevoice_appstore_profile",
+  "profilePathVariable": "PULSE_SIGNING_PROFILE_PATH",
+  "exportMethod": "app-store-connect",
+  "destination": "export"
+}
