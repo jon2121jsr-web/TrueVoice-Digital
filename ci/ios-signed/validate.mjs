@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { verifyReleaseSource } from '../ios-release/validate.mjs';
 import { verifyNativeFiles } from '../native-validation/validate.mjs';
 import { policy, assertSelection, validateSignedEnvironment, childEnvironment, validateProfile, selectIdentity, validateSignedApp, exportOptions, assertSigningOnlyChanges } from './policy.mjs';
+import { createDiagnostics } from './diagnostics.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const output = path.join(root, '.native-validation/signed');
@@ -16,16 +17,13 @@ const reports = path.join(output, 'reports');
 const privateDir = path.join(output, 'private');
 const metadataTool = path.join(root, 'ci/ios-signed/plist-metadata.py');
 const projectPath = 'ios/App/App.xcodeproj/project.pbxproj';
-const statuses = [];
+const diagnostics = createDiagnostics({ directory: reports, step: process.argv[2] });
 const sha = b => createHash('sha256').update(b).digest('hex');
 
 function capture(name, command, args, { cwd = root, input } = {}) {
   assert.match(name, /^[a-z0-9-]+$/);
-  const result = spawnSync(command, args, { cwd, input, env: childEnvironment(process.env), timeout: 1_500_000, maxBuffer: 64 * 1024 * 1024, windowsHide: true });
+  const result = diagnostics.process(name, () => spawnSync(command, args, { cwd, input, env: childEnvironment(process.env), timeout: 1_500_000, maxBuffer: 64 * 1024 * 1024, windowsHide: true }));
   const exitCode = result.status ?? 1;
-  statuses.push({ step: name, exitCode, signal: result.signal, completed: !result.error && exitCode === 0 });
-  fs.mkdirSync(reports, { recursive: true });
-  fs.writeFileSync(path.join(reports, process.argv[2] + '-steps.json'), JSON.stringify(statuses, null, 2));
   console.log(name + ': ' + (result.error || exitCode !== 0 ? 'FAILED' : 'completed') + ' (exit ' + exitCode + ')');
   if (result.error || exitCode !== 0) throw Object.assign(new Error('Step failed'), { exitCode });
   // Deliberately do not persist stdout/stderr, args, environment or error text.
@@ -108,6 +106,27 @@ export function validateZipEntries(entries) {
   assert.equal(new Set(entries.filter(p => /^Payload\/[^/]+\.app\//.test(p)).map(p => p.split('/')[1])).size, 1);
 }
 
+export function verifyConfiguredProject(before, postConfigurationJson, assets, diagnostic, nativeIntegrity = verifyNativeFiles) {
+  const after = diagnostic.stage('POST_CONFIG_JSON', () => JSON.parse(postConfigurationJson));
+  const signingSettingChanges = diagnostic.stage('PROJECT_MUTATIONS', () => assertSigningOnlyChanges(before, after, changes => diagnostic.mutations(changes)));
+  const target = diagnostic.stage('APP_TARGET', () => {
+    const targets = Object.values(after.objects).filter(o => o.isa === 'PBXNativeTarget' && o.name === 'App');
+    assert.equal(targets.length, 1);
+    return targets[0];
+  });
+  const release = diagnostic.stage('RELEASE_CONFIG', () => {
+    const configs = after.objects[target.buildConfigurationList].buildConfigurations.map(id => after.objects[id]);
+    const release = configs.filter(c => c.name === 'Release');
+    assert.equal(release.length, 1);
+    return release[0];
+  });
+  diagnostic.stage('TEAM', () => assert.equal(release.buildSettings.DEVELOPMENT_TEAM, policy.team));
+  diagnostic.stage('SIGNING_STYLE', () => assert.equal(release.buildSettings.CODE_SIGN_STYLE, 'Manual'));
+  diagnostic.stage('PROFILE_SPECIFIER', () => assert.ok([assets.profile.uuid, assets.profile.name].includes(release.buildSettings.PROVISIONING_PROFILE_SPECIFIER)));
+  diagnostic.stage('NATIVE_INTEGRITY', nativeIntegrity);
+  return signingSettingChanges;
+}
+
 function archiveExport() {
   verifyNativeFiles();
   const assets = selectAssets();
@@ -115,24 +134,15 @@ function archiveExport() {
   fs.mkdirSync(privateDir, { recursive: true, mode: 0o700 });
   const before = JSON.parse(capture('project-before', 'plutil', ['-convert', 'json', '-o', '-', projectPath]).stdout.toString());
   capture('apply-existing-profile', 'xcode-project', ['use-profiles', '--silent', '--project', 'ios/App/App.xcodeproj', '--profile', assets.file, '--archive-method', 'app-store', '--export-options-plist', path.join(privateDir, 'helper-export-options.plist')]);
-  const after = JSON.parse(capture('project-after', 'plutil', ['-convert', 'json', '-o', '-', projectPath]).stdout.toString());
-  const signingSettingChanges = assertSigningOnlyChanges(before, after);
-  const targets = Object.values(after.objects).filter(o => o.isa === 'PBXNativeTarget' && o.name === 'App');
-  assert.equal(targets.length, 1);
-  const configs = after.objects[targets[0].buildConfigurationList].buildConfigurations.map(id => after.objects[id]);
-  const release = configs.filter(c => c.name === 'Release');
-  assert.equal(release.length, 1);
-  assert.equal(release[0].buildSettings.DEVELOPMENT_TEAM, policy.team);
-  assert.equal(release[0].buildSettings.CODE_SIGN_STYLE, 'Manual');
-  assert.ok([assets.profile.uuid, assets.profile.name].includes(release[0].buildSettings.PROVISIONING_PROFILE_SPECIFIER));
-  verifyNativeFiles();
+  const postConfigurationJson = capture('project-after', 'plutil', ['-convert', 'json', '-o', '-', projectPath]).stdout.toString();
+  const signingSettingChanges = verifyConfiguredProject(before, postConfigurationJson, assets, diagnostics);
 
-  const options = exportOptions(assets.profile, assets.identity), optionsPath = path.join(privateDir, 'ExportOptions.plist');
-  const encoded = capture('encode-export-options', 'python3', [metadataTool, 'encode'], { input: JSON.stringify(options) }).stdout;
-  fs.writeFileSync(optionsPath, encoded, { mode: 0o600 });
+  const options = diagnostics.stage('EXPORT_OPTIONS', () => exportOptions(assets.profile, assets.identity)), optionsPath = path.join(privateDir, 'ExportOptions.plist');
+  const encoded = diagnostics.stage('EXPORT_OPTIONS', () => capture('encode-export-options', 'python3', [metadataTool, 'encode'], { input: JSON.stringify(options) }).stdout);
+  diagnostics.stage('EXPORT_OPTIONS_WRITE', () => fs.writeFileSync(optionsPath, encoded, { mode: 0o600 }));
   const archive = path.join(output, 'App-signed.xcarchive'), exported = path.join(output, 'export');
-  assert.ok(!fs.existsSync(archive) && !fs.existsSync(exported), 'Stale artifacts prohibited');
-  const build = capture('signed-release-archive', 'xcodebuild', ['-workspace', 'ios/App/App.xcworkspace', '-scheme', 'App', '-configuration', 'Release', '-sdk', 'iphoneos', '-destination', 'generic/platform=iOS', '-archivePath', archive, '-derivedDataPath', path.join(privateDir, 'DerivedData'), '-resultBundlePath', path.join(privateDir, 'Archive.xcresult'), 'DEVELOPMENT_TEAM=' + policy.team, 'CODE_SIGN_STYLE=Manual', 'CODE_SIGNING_ALLOWED=YES', 'archive']);
+  diagnostics.stage('FRESH_ARTIFACTS', () => assert.ok(!fs.existsSync(archive) && !fs.existsSync(exported), 'Stale artifacts prohibited'));
+  const build = diagnostics.stage('ARCHIVE_LAUNCH', () => capture('signed-release-archive', 'xcodebuild', ['-workspace', 'ios/App/App.xcworkspace', '-scheme', 'App', '-configuration', 'Release', '-sdk', 'iphoneos', '-destination', 'generic/platform=iOS', '-archivePath', archive, '-derivedDataPath', path.join(privateDir, 'DerivedData'), '-resultBundlePath', path.join(privateDir, 'Archive.xcresult'), 'DEVELOPMENT_TEAM=' + policy.team, 'CODE_SIGN_STYLE=Manual', 'CODE_SIGNING_ALLOWED=YES', 'archive']));
   const buildOutput = build.stdout.toString() + build.stderr.toString();
   assert.match(buildOutput, /\*\* ARCHIVE SUCCEEDED \*\*/);
   for (const file of ['TrueVoiceRadioPlugin.swift', 'RadioBridgeViewController.swift', 'RadioPlaybackPolicy.swift']) assert.ok(buildOutput.includes(file));
@@ -196,4 +206,8 @@ export function main(step) {
     fs.writeFileSync(path.join(reports, 'pods.json'), JSON.stringify({ lockSha256: fileHash('ios/App/Podfile.lock') }, null, 2));
   } else archiveExport();
   console.log('Signed validation step complete; no App Store upload or publishing.');
+}
+
+export function runDiagnosticStep(step) {
+  return diagnostics.execute(() => main(step));
 }

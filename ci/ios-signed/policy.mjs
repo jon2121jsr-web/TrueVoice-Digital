@@ -96,22 +96,26 @@ export function exportOptions(profile, identity) {
   };
 }
 
-export function assertSigningOnlyChanges(before, after) {
+export function assertSigningOnlyChanges(before, after, onRejected = () => {}) {
   const paths = [];
   const visit = (a, b, prefix = []) => {
     if (JSON.stringify(a) === JSON.stringify(b)) return;
     if (a && b && typeof a === 'object' && typeof b === 'object' && !Array.isArray(a) && !Array.isArray(b)) {
       for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) visit(a[key], b[key], [...prefix, key]);
-    } else paths.push(prefix);
+    } else paths.push({ path: prefix, changeType: a === undefined ? 'added' : b === undefined ? 'removed' : 'modified' });
   };
   visit(before, after);
-  for (const parts of paths) {
+  const rejected = [];
+  for (const change of paths) {
+    const parts = change.path;
     const setting = parts.at(-1).replace(/\[sdk=iphoneos\*\]$/, '');
     const buildSetting = parts.length === 4 && parts[0] === 'objects' && parts[2] === 'buildSettings'
       && ['CODE_SIGN_STYLE', 'DEVELOPMENT_TEAM', 'CODE_SIGN_IDENTITY', 'PROVISIONING_PROFILE', 'PROVISIONING_PROFILE_SPECIFIER'].includes(setting);
     const targetAttribute = parts.length === 6 && parts[0] === 'objects' && parts[2] === 'attributes'
       && parts[3] === 'TargetAttributes' && ['ProvisioningStyle', 'DevelopmentTeam'].includes(setting);
-    assert.ok(buildSetting || targetAttribute, 'Unexpected project mutation');
+    if (!(buildSetting || targetAttribute)) rejected.push(change);
   }
+  if (rejected.length) onRejected(rejected);
+  assert.ok(rejected.length === 0, 'Unexpected project mutation');
   return paths.length;
 }

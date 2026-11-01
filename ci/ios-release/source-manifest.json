@@ -1,7 +1,7 @@
 {
   "baseline": "1c3ebb18eee5151c47d844ea97100651624c98e6",
   "branch": "release/ios-testflight-1b04",
-  "phase": "Fix 1B.05B local signed archive/export proposal; no commit or provider action",
+  "phase": "Fix 1B.05E local safe signed-runner diagnostics proposal; no commit or provider action",
   "entries": [
     {
       "path": ".gitattributes",
@@ -416,6 +416,14 @@
       "sha256": "a164691156e7c50d493c7f359fba8a4f93c929b4cd891402ae9436b9422c1024"
     },
     {
+      "path": "ci/ios-signed/diagnostics.mjs",
+      "sha256": "a48c8090bcf52580bc75463c8907192d9bb01b22b8541ac0515c04a0f8d76e35"
+    },
+    {
+      "path": "ci/ios-signed/diagnostics.test.mjs",
+      "sha256": "0b69e12cdc318320f39d0e0ba4a459f34ab2a1ca02a9094bac11fd5ad495c351"
+    },
+    {
       "path": "ci/ios-signed/inspect-signature.swift",
       "sha256": "ac2e71b4ec5657bdea1ea18ae7358400dc6966655edcb927fd8c0e70e505f9a9"
     },
@@ -429,11 +437,11 @@
     },
     {
       "path": "ci/ios-signed/policy.mjs",
-      "sha256": "6191780b9e0cc7cfd45d2c07e7812de5e9303712a645efb9ff3f8c2251c3423c"
+      "sha256": "1efac3836509f30a7e74921ddca288176f51583c2e7d300298ee7e6b09f01379"
     },
     {
       "path": "ci/ios-signed/run.mjs",
-      "sha256": "a2402b62d8258e65e599a45ed46327baf9a5e06ba9c27047eb59ccef10e24584"
+      "sha256": "1137443a28b6f0e5c67fcc13e2c78088a3a42468553e2b1cfb08b864c2b1e3a3"
     },
     {
       "path": "ci/ios-signed/signed.test.mjs",
@@ -441,7 +449,7 @@
     },
     {
       "path": "ci/ios-signed/validate.mjs",
-      "sha256": "442e59c8c541e24ffe2bcbd8a6c7638854ee1e72523052d8c4a20ee2e16d461b"
+      "sha256": "6944729dab97792b92afb0b99cb3bc6117c826d343ff1d5f1864ed47f0214319"
     },
     {
       "path": "ci/native-validation/codemagic.yaml",
@@ -566,6 +574,10 @@
     {
       "path": "docs/PULSE-fix-1B.05B-signed-archive-export-proposal.md",
       "sha256": "2a0ba6242271e92d966a1c448b4abbc52dda09a8770bc042f93e1c0442e4277b"
+    },
+    {
+      "path": "docs/PULSE-fix-1B.05E-safe-signed-runner-diagnostics.md",
+      "sha256": "f9584bbfc59afed1f9744a593062eb749f2dadeb94c1080ec02698a23b2bdfcc"
     },
     {
       "path": "docs/PULSE-post-launch-1A-staging.md",
