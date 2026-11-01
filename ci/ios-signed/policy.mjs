@@ -113,7 +113,15 @@ export function assertSigningOnlyChanges(before, after, onRejected = () => {}) {
       && ['CODE_SIGN_STYLE', 'DEVELOPMENT_TEAM', 'CODE_SIGN_IDENTITY', 'PROVISIONING_PROFILE', 'PROVISIONING_PROFILE_SPECIFIER'].includes(setting);
     const targetAttribute = parts.length === 6 && parts[0] === 'objects' && parts[2] === 'attributes'
       && parts[3] === 'TargetAttributes' && ['ProvisioningStyle', 'DevelopmentTeam'].includes(setting);
-    if (!(buildSetting || targetAttribute)) rejected.push(change);
+    const projectId = '504EC2FC1FED79650016851F';
+    const original = before.objects?.[projectId], replacement = after.objects?.[projectId];
+    const emptyPackageReferenceOmission = parts.length === 3 && parts[0] === 'objects'
+      && parts[1] === projectId && parts[2] === 'packageReferences' && change.changeType === 'removed'
+      && before.rootObject === projectId && after.rootObject === projectId
+      && original?.isa === 'PBXProject' && replacement?.isa === 'PBXProject'
+      && Object.hasOwn(original, 'packageReferences') && Array.isArray(original.packageReferences)
+      && original.packageReferences.length === 0 && !Object.hasOwn(replacement, 'packageReferences');
+    if (!(buildSetting || targetAttribute || emptyPackageReferenceOmission)) rejected.push(change);
   }
   if (rejected.length) onRejected(rejected);
   assert.ok(rejected.length === 0, 'Unexpected project mutation');

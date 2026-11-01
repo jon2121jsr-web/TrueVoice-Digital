@@ -1,7 +1,7 @@
 {
   "baseline": "1c3ebb18eee5151c47d844ea97100651624c98e6",
   "branch": "release/ios-testflight-1b04",
-  "phase": "Fix 1B.05E local safe signed-runner diagnostics proposal; no commit or provider action",
+  "phase": "Fix 1B.05G local exact-path Xcodeproj serialization correction proposal; no commit or provider action",
   "entries": [
     {
       "path": ".gitattributes",
@@ -437,11 +437,15 @@
     },
     {
       "path": "ci/ios-signed/policy.mjs",
-      "sha256": "1efac3836509f30a7e74921ddca288176f51583c2e7d300298ee7e6b09f01379"
+      "sha256": "bf0519dfd4162dffff898cfe5901b57374e687b9fba73f0c3c9954520ccd0455"
     },
     {
       "path": "ci/ios-signed/run.mjs",
       "sha256": "1137443a28b6f0e5c67fcc13e2c78088a3a42468553e2b1cfb08b864c2b1e3a3"
+    },
+    {
+      "path": "ci/ios-signed/serialization.test.mjs",
+      "sha256": "34d6420f7cffb5f2fc795f131692248d81c7337158caae23a852775d696edcb3"
     },
     {
       "path": "ci/ios-signed/signed.test.mjs",
@@ -578,6 +582,10 @@
     {
       "path": "docs/PULSE-fix-1B.05E-safe-signed-runner-diagnostics.md",
       "sha256": "f9584bbfc59afed1f9744a593062eb749f2dadeb94c1080ec02698a23b2bdfcc"
+    },
+    {
+      "path": "docs/PULSE-fix-1B.05G-xcodeproj-serialization-correction.md",
+      "sha256": "a8d3fcfc39217f98eed67faa0ba31c0fe106b92a92e84bf86d0dd6cdc2d18e92"
     },
     {
       "path": "docs/PULSE-post-launch-1A-staging.md",
