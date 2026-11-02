@@ -98,3 +98,27 @@ workflows:
       # Never collect private tool output, keychain, profiles or certificate files.
       - .native-validation/signed/export/*.ipa
       - .native-validation/signed/reports/*.json
+
+  ios-build23-upload-only:
+    name: Upload existing TrueVoice Digital 1.0 (23)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    when:
+      condition: env.CM_BRANCH == "release/ios-testflight-1b04" and env.CM_TRIGGER_SOURCE == "api"
+    integrations:
+      app_store_connect: Codemagic CI
+    environment:
+      xcode: "26.2"
+      node: "24.14.0"
+      groups:
+        # Secret PULSE_BUILD23_IPA_URL: short-lived, direct HTTPS IPA URL.
+        # Provision this group before the one manual run; no personal API token.
+        - pulse_ios_upload_once
+    scripts:
+      - name: Verify existing IPA and upload once without review or distribution
+        script: |
+          #!/bin/bash
+          set +x
+          set -euo pipefail
+          umask 077
+          node ci/ios-upload/upload-existing.mjs
