@@ -122,23 +122,31 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 }
 
 export async function main() {
-  let stage = 'manual-run and credentials preflight';
-  let attempted = false;
+  let stage = 'preflight: initialization';
   let directory;
   try {
+    stage = 'preflight: macOS platform';
     assert.equal(process.platform, 'darwin');
+    stage = 'preflight: release branch';
     assert.equal(process.env.CM_BRANCH, 'release/ios-testflight-1b04');
+    stage = 'preflight: manual API trigger';
     assert.equal(process.env.CM_TRIGGER_SOURCE, 'api'); // UI manual starts use api.
     const credentials = {
       id: process.env.APP_STORE_CONNECT_KEY_IDENTIFIER,
       issuer: process.env.APP_STORE_CONNECT_ISSUER_ID,
       key: process.env.APP_STORE_CONNECT_PRIVATE_KEY,
     };
+    stage = 'preflight: Apple key identifier';
     assert.match(credentials.id ?? '', /^[A-Za-z0-9]+$/);
+    stage = 'preflight: Apple issuer identifier';
     assert.match(credentials.issuer ?? '', /^[0-9a-f-]{36}$/i);
+    stage = 'preflight: Apple private-key format';
     assert.ok(credentials.key?.includes('-----BEGIN PRIVATE KEY-----'));
+    stage = 'preflight: IPA download URL';
     const url = secureUrl(process.env.PULSE_BUILD23_IPA_URL);
+    stage = 'preflight: forbidden personal API tokens';
     assert.ok(!process.env.CM_API_TOKEN && !process.env.CODEMAGIC_API_TOKEN);
+    stage = 'preflight: private temporary directory';
     directory = fs.mkdtempSync(path.join(os.tmpdir(), 'truevoice-upload23-'));
     fs.chmodSync(directory, 0o700);
     const ipa = path.join(directory, 'App.ipa');
@@ -169,7 +177,6 @@ export async function main() {
     await assertNotUploaded(credentials);
     assert.equal(await fileHash(ipa), EXPECTED.sha256);
     stage = 'Apple upload';
-    attempted = true;
     // Exactly one upload invocation. No CLI publishing wrapper, review, groups,
     // retries, signing, export, or arbitrary inherited publishing parameters.
     const result = spawnSync('xcrun', [
@@ -183,8 +190,6 @@ export async function main() {
   } catch {
     // Never print raw errors, response bodies, URLs, keys, or uploader output.
     console.error(`STOP: ${stage} failed.`);
-    if (attempted) console.error('Upload was attempted; check Apple before any rerun. No automatic retry.');
-    else console.error('No upload was attempted.');
     process.exitCode = 1;
   } finally {
     if (directory) {
