@@ -31,6 +31,50 @@ export function classifyPrivateKey(value) {
   return 'OTHER_UNRECOGNIZED';
 }
 
+export function resolvePrivateKey(value) {
+  try {
+    assert.equal(typeof value, 'string');
+    let pem = value;
+    if (value.startsWith('@file:')) {
+      let filename = value.slice(6);
+      assert.ok(filename && !/[\x00-\x1f\x7f]/.test(filename));
+      // Match Codemagic's path expansion without invoking a shell.
+      filename = filename.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)/g,
+        (_, braced, plain) => {
+          const expanded = process.env[braced || plain];
+          assert.ok(expanded);
+          return expanded;
+        });
+      if (filename.startsWith('~/')) filename = path.join(os.homedir(), filename.slice(2));
+      assert.ok(!filename.startsWith('~') && !/[\x00-\x1f\x7f$]/.test(filename));
+      // Open once, reject symlinks/special files, and bound the read on that descriptor.
+      const descriptor = fs.openSync(filename,
+        fs.constants.O_RDONLY | fs.constants.O_NONBLOCK | (fs.constants.O_NOFOLLOW || 0));
+      try {
+        const stat = fs.fstatSync(descriptor);
+        assert.ok(stat.isFile() && stat.size > 0 && stat.size <= 16384);
+        const bytes = Buffer.alloc(16385);
+        let size = 0;
+        while (size < bytes.length) {
+          const count = fs.readSync(descriptor, bytes, size, bytes.length - size, null);
+          if (!count) break;
+          size += count;
+        }
+        assert.ok(size > 0 && size <= 16384);
+        pem = bytes.subarray(0, size).toString('utf8');
+      } finally { fs.closeSync(descriptor); }
+    }
+    assert.ok(pem.includes('-----BEGIN PRIVATE KEY-----'));
+    const key = createPrivateKey(pem);
+    assert.equal(key.asymmetricKeyType, 'ec');
+    assert.equal(key.asymmetricKeyDetails.namedCurve, 'prime256v1');
+    return pem;
+  } catch {
+    // Never allow filesystem or crypto exception details to expose credentials.
+    throw new Error('Invalid Apple private key');
+  }
+}
+
 export function verifyIdentity(info) {
   assert.equal(info.CFBundleIdentifier, EXPECTED.bundle);
   assert.equal(info.CFBundleShortVersionString, EXPECTED.version);
@@ -157,6 +201,7 @@ export async function main() {
     assert.match(credentials.issuer ?? '', /^[0-9a-f-]{36}$/i);
     stage = 'preflight: Apple private-key format';
     console.log(classifyPrivateKey(credentials.key));
+    credentials.key = resolvePrivateKey(credentials.key);
     assert.ok(credentials.key?.includes('-----BEGIN PRIVATE KEY-----'));
     stage = 'preflight: IPA download URL';
     const url = secureUrl(process.env.PULSE_BUILD23_IPA_URL);
