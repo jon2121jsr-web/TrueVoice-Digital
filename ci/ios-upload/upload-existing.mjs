@@ -16,6 +16,21 @@ export const EXPECTED = Object.freeze({
 const ASC = 'https://api.appstoreconnect.apple.com';
 const MAX_IPA_BYTES = 256 * 1024 * 1024;
 
+// Diagnostic only: never resolve references or change the credential value.
+export function classifyPrivateKey(value) {
+  if (!value) return 'MISSING_OR_EMPTY';
+  if (value.includes('-----BEGIN PRIVATE KEY-----')) return 'PEM_TEXT';
+  if (value.startsWith('@file:')) return 'FILE_REFERENCE';
+  if (value.startsWith('@env:')) return 'ENV_REFERENCE';
+  const encoded = value.replace(/\s/g, '');
+  if (encoded.length % 4 === 0 &&
+      /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded) &&
+      Buffer.from(encoded, 'base64').toString('utf8').includes('-----BEGIN PRIVATE KEY-----')) {
+    return 'BASE64_ENCODED_PEM';
+  }
+  return 'OTHER_UNRECOGNIZED';
+}
+
 export function verifyIdentity(info) {
   assert.equal(info.CFBundleIdentifier, EXPECTED.bundle);
   assert.equal(info.CFBundleShortVersionString, EXPECTED.version);
@@ -141,6 +156,7 @@ export async function main() {
     stage = 'preflight: Apple issuer identifier';
     assert.match(credentials.issuer ?? '', /^[0-9a-f-]{36}$/i);
     stage = 'preflight: Apple private-key format';
+    console.log(classifyPrivateKey(credentials.key));
     assert.ok(credentials.key?.includes('-----BEGIN PRIVATE KEY-----'));
     stage = 'preflight: IPA download URL';
     const url = secureUrl(process.env.PULSE_BUILD23_IPA_URL);
