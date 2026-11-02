@@ -17,7 +17,7 @@ const entitlements = {
   'get-task-allow': false, 'beta-reports-active': true,
 };
 const profile = () => ({ uuid: 'offline-uuid', name: 'offline-profile', teams: [policy.team], prefixes: [policy.team], platforms: ['iOS'], created: '2020-01-01', expires: '2099-01-01', hasDevices: false, allDevices: false, entitlements: { ...entitlements, 'keychain-access-groups': [policy.team + '.*'] }, certificateSha1: [sha1] });
-const app = () => ({ info: { CFBundleIdentifier: policy.bundleId, CFBundleShortVersionString: '1.0', CFBundleVersion: '1', UIBackgroundModes: ['audio'] }, signature: { team: policy.team, identifier: policy.bundleId, leafSha1: sha1 }, entitlements: { ...entitlements, 'keychain-access-groups': [policy.team + '.' + policy.bundleId] }, profile: profile(), identity, embeddedHash: 'same', selectedHash: 'same' });
+const app = () => ({ info: { CFBundleIdentifier: policy.bundleId, CFBundleShortVersionString: '1.0', CFBundleVersion: '23', UIBackgroundModes: ['audio'] }, signature: { team: policy.team, identifier: policy.bundleId, leafSha1: sha1 }, entitlements: { ...entitlements, 'keychain-access-groups': [policy.team + '.' + policy.bundleId] }, profile: profile(), identity, embeddedHash: 'same', selectedHash: 'same' });
 
 test('signed selection rejects other branches and workflows', () => {
   assert.doesNotThrow(() => assertSelection(policy.branch, policy.workflow));
@@ -106,4 +106,48 @@ test('workflow signing scope is exclusive and both unsigned definitions/runners 
   const runner = fs.readFileSync('ci/ios-signed/validate.mjs', 'utf8');
   assert.doesNotMatch(runner, /-allowProvisioningUpdates|fetch-signing-files|create-certificate|submit_to_testflight|['"](?:altool|pilot|deliver|build-ipa)['"]/);
   assert.ok(runner.includes("process.env.CM_TRIGGER_SOURCE, 'api'"));
+});
+
+test('signed artifact version policy accepts only marketing 1.0 and build 23', () => {
+  assert.doesNotThrow(() => validateSignedApp(app()));
+  for (const build of ['1', '22', '24']) {
+    const a = app(); a.info.CFBundleVersion = build;
+    assert.throws(() => validateSignedApp(a), /Unreviewed build-number change/);
+  }
+  const missingBuild = app(); delete missingBuild.info.CFBundleVersion;
+  assert.throws(() => validateSignedApp(missingBuild), /Unreviewed build-number change/);
+  for (const version of ['0.9', '1.0.0', '1.1', '2.0', '', undefined]) {
+    const a = app(); a.info.CFBundleShortVersionString = version;
+    assert.throws(() => validateSignedApp(a), /Unreviewed version change/);
+  }
+  const missingVersion = app(); delete missingVersion.info.CFBundleShortVersionString;
+  assert.throws(() => validateSignedApp(missingVersion), /Unreviewed version change/);
+});
+
+test('App Debug and Release settings resolve plist versions accepted by signed policy', () => {
+  const project = fs.readFileSync('ios/App/App.xcodeproj/project.pbxproj', 'utf8');
+  const plist = fs.readFileSync('ios/App/App/Info.plist', 'utf8');
+  for (const [key, variable] of [['CFBundleShortVersionString', 'MARKETING_VERSION'], ['CFBundleVersion', 'CURRENT_PROJECT_VERSION'], ['CFBundleIdentifier', 'PRODUCT_BUNDLE_IDENTIFIER']]) {
+    const afterKey = plist.split('<key>' + key + '</key>');
+    assert.equal(afterKey.length, 2);
+    assert.equal(afterKey[1].trimStart().split('</string>')[0], '<string>$(' + variable + ')');
+  }
+  for (const [id, name] of [['504EC3171FED79650016851F', 'Debug'], ['504EC3181FED79650016851F', 'Release']]) {
+    const start = project.indexOf(id + ' /* ' + name + ' */ = {');
+    assert.ok(start >= 0, 'Missing App ' + name + ' configuration');
+    const block = project.slice(start, project.indexOf('name = ' + name + ';', start));
+    const setting = key => {
+      const parts = block.split(key + ' = ');
+      assert.equal(parts.length, 2, 'Expected one ' + key + ' in App ' + name);
+      return parts[1].split(';')[0];
+    };
+    assert.equal(setting('CURRENT_PROJECT_VERSION'), '23');
+    assert.equal(setting('MARKETING_VERSION'), '1.0');
+    assert.equal(setting('PRODUCT_BUNDLE_IDENTIFIER'), policy.bundleId);
+    const a = app();
+    a.info.CFBundleVersion = setting('CURRENT_PROJECT_VERSION');
+    a.info.CFBundleShortVersionString = setting('MARKETING_VERSION');
+    a.info.CFBundleIdentifier = setting('PRODUCT_BUNDLE_IDENTIFIER');
+    assert.doesNotThrow(() => validateSignedApp(a));
+  }
 });

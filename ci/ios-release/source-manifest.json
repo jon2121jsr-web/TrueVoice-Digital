@@ -437,7 +437,7 @@
     },
     {
       "path": "ci/ios-signed/policy.mjs",
-      "sha256": "bf0519dfd4162dffff898cfe5901b57374e687b9fba73f0c3c9954520ccd0455"
+      "sha256": "67823bece8f829871a72d1236e85b2bb6af283c163a953c5225f7f8827a3fa0b"
     },
     {
       "path": "ci/ios-signed/run.mjs",
@@ -449,7 +449,7 @@
     },
     {
       "path": "ci/ios-signed/signed.test.mjs",
-      "sha256": "89b0c2090e3c243b86d4dd17f573d13d6231b6d3b7ca7c58263962fe3ce19a16"
+      "sha256": "8b9b2d92ce7b702bc3a9be5bd7560a222d91e6141d0025c7427e45b9806878f5"
     },
     {
       "path": "ci/ios-signed/validate.mjs",
@@ -641,7 +641,7 @@
     },
     {
       "path": "ios/App/App.xcodeproj/project.pbxproj",
-      "sha256": "5598f355d72b02808204dcea577f1ec011d55daf12978fd222356b52973c6e65"
+      "sha256": "2fbb919876f1112b853b99be99a9aa59b6bb536706b17deb5e1931d89f76691d"
     },
     {
       "path": "ios/App/App.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
