@@ -421,7 +421,7 @@
     },
     {
       "path": "ci/ios-signed/diagnostics.test.mjs",
-      "sha256": "0b69e12cdc318320f39d0e0ba4a459f34ab2a1ca02a9094bac11fd5ad495c351"
+      "sha256": "cfd8a6fcc96cb46655233cbed608916b2c9a61ae1b947a1df805688ffd90b9de"
     },
     {
       "path": "ci/ios-signed/inspect-signature.swift",
@@ -453,7 +453,7 @@
     },
     {
       "path": "ci/ios-signed/validate.mjs",
-      "sha256": "9b82dd38401801a5c3aa17b3bb5ad0adf6ae89aa0d05cc9f5f4a6014d2a932c9"
+      "sha256": "1d9db0cba7bb00d2eac2cba1099be466796d7e0b95625ff1466379b00bfd34b0"
     },
     {
       "path": "ci/ios-upload/upload-existing.mjs",

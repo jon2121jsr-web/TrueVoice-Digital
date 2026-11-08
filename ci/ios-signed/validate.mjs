@@ -105,7 +105,7 @@ export function validateZipEntries(entries) {
   assert.equal(new Set(entries.filter(p => /^Payload\/[^/]+\.app\//.test(p)).map(p => p.split('/')[1])).size, 1);
 }
 
-export function verifyConfiguredProject(before, postConfigurationJson, assets, diagnostic, nativeIntegrity = verifyNativeFiles) {
+export function verifyConfiguredProject(before, postConfigurationJson, assets, diagnostic, nativeIntegrity = verifyReleaseNativeFiles) {
   const after = diagnostic.stage('POST_CONFIG_JSON', () => JSON.parse(postConfigurationJson));
   const signingSettingChanges = diagnostic.stage('PROJECT_MUTATIONS', () => assertSigningOnlyChanges(before, after, changes => diagnostic.mutations(changes)));
   const target = diagnostic.stage('APP_TARGET', () => {
@@ -127,7 +127,7 @@ export function verifyConfiguredProject(before, postConfigurationJson, assets, d
 }
 
 function archiveExport() {
-  verifyNativeFiles();
+  verifyReleaseNativeFiles();
   const assets = selectAssets();
   assert.ok(!fs.existsSync(privateDir), 'Use a fresh approved worker');
   fs.mkdirSync(privateDir, { recursive: true, mode: 0o700 });

@@ -40,11 +40,10 @@ function configuredFailure(code, mutate) {
 
 test('configured project succeeds with all diagnostic stages and no process launch', () => {
   fixture(({ diagnostic, read }) => {
-    let checked = false;
     const before = project(), after = structuredClone(before);
     before.objects[config].buildSettings.CODE_SIGN_STYLE = 'Automatic';
-    assert.equal(diagnostic.execute(() => assert.equal(verifyConfiguredProject(before, JSON.stringify(after), assets, diagnostic, () => { checked = true; }), 1)), 0);
-    assert.equal(checked, true); assert.equal(read().failure, undefined);
+    assert.equal(diagnostic.execute(() => assert.equal(verifyConfiguredProject(before, JSON.stringify(after), assets, diagnostic), 1)), 0);
+    assert.equal(read().failure, undefined);
     assert.deepEqual(read().events.filter(e => e.status === 'completed').map(e => e.code), ['POST_CONFIG_JSON', 'PROJECT_MUTATIONS', 'APP_TARGET', 'RELEASE_CONFIG', 'TEAM', 'SIGNING_STYLE', 'PROFILE_SPECIFIER', 'NATIVE_INTEGRITY', 'RUNNER']);
   });
 });
