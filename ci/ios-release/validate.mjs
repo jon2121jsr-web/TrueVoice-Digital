@@ -12,6 +12,12 @@ export const releaseBranch = 'release/ios-testflight-1b04';
 export const baseline = '1c3ebb18eee5151c47d844ea97100651624c98e6';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const evidence = path.join(root, '.native-validation/release');
+const releaseManifest = path.join(root, 'ci/ios-release/source-manifest.json');
+
+export function verifyReleaseNativeFiles() {
+  verifyNativeFiles(releaseManifest);
+}
+
 const hash = b => createHash('sha256').update(b).digest('hex');
 const git = args => execFileSync('git', ['--no-optional-locks', ...args], { cwd: root, encoding: 'utf8' }).trim();
 const execute = (name, command, args, options = {}) => run(name, command, args, { cwd: root, evidence, ...options });
@@ -60,7 +66,7 @@ export function verifyReleaseSource({ localPreparation = false } = {}) {
   assert.deepEqual(inventory.filter(p => p !== manifestPath).sort(), [...listed].sort(), 'Release source inventory differs');
   if (!localPreparation) assert.equal(git(['status', '--porcelain=v1', '--untracked-files=all']), '', 'Future worker requires a committed clean checkout');
   assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'))).git.deploymentEnabled, false);
-  verifyNativeFiles(); // Original validated Swift hashes and registration remain authoritative.
+  verifyReleaseNativeFiles();
   assert.ok(!fs.readdirSync(root).some(p => /^\.env(?:\.|$)/.test(p)), 'Release worktree must not load environment files');
   return { baseline, commit: git(['rev-parse', 'HEAD']), manifestSha256: hash(fs.readFileSync(path.join(root, manifestPath))), entries: listed.size };
 }
@@ -90,7 +96,7 @@ function main(step) {
   } else if (step === 'sync') {
     execute('capacitor-sync', 'npx', ['--no-install', 'cap', 'sync', 'ios']);
     execute('pod-install', 'pod', ['install'], { cwd: path.join(root, 'ios/App') });
-    verifyNativeFiles();
+    verifyReleaseNativeFiles();
     const config = JSON.parse(fs.readFileSync('ios/App/App/capacitor.config.json'));
     assert.equal(config.appId, 'digital.truevoice.app');
     assert.equal(config.server.iosScheme, 'capacitor');
@@ -101,7 +107,7 @@ function main(step) {
     const lock = fs.readFileSync('ios/App/Podfile.lock');
     fs.writeFileSync(path.join(evidence, 'reports/pods.json'), JSON.stringify({ lockSha256: hash(lock) }, null, 2));
   } else {
-    verifyNativeFiles();
+    verifyReleaseNativeFiles();
     const archive = path.join(evidence, 'App-unsigned.xcarchive');
     assert.ok(!fs.existsSync(archive), 'Use a fresh worker; archive already exists');
     execute('release-archive', 'xcodebuild', ['-workspace', 'ios/App/App.xcworkspace', '-scheme', 'App', '-configuration', 'Release', '-destination', 'generic/platform=iOS', '-archivePath', archive, 'CODE_SIGNING_ALLOWED=NO', 'CODE_SIGNING_REQUIRED=NO', 'CODE_SIGN_IDENTITY=', 'DEVELOPMENT_TEAM=', 'archive']);

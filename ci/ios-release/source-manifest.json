@@ -1,7 +1,7 @@
 {
   "baseline": "1c3ebb18eee5151c47d844ea97100651624c98e6",
   "branch": "release/ios-testflight-1b04",
-  "phase": "Fix 1B.05G local exact-path Xcodeproj serialization correction proposal; no commit or provider action",
+  "phase": "TestFlight Build 24",
   "entries": [
     {
       "path": ".gitattributes",
@@ -405,7 +405,7 @@
     },
     {
       "path": "ci/ios-release/release.test.mjs",
-      "sha256": "9730e2687fec5de8a8d80bb35d34d03676d2a6a2851cf5e2b723eb18f23621fe"
+      "sha256": "2c5784cfcf051ed019b8f3d23f6864626b2994c08f38567b13881e390acf4168"
     },
     {
       "path": "ci/ios-release/runtime-profile.json",
@@ -413,7 +413,7 @@
     },
     {
       "path": "ci/ios-release/validate.mjs",
-      "sha256": "a164691156e7c50d493c7f359fba8a4f93c929b4cd891402ae9436b9422c1024"
+      "sha256": "2ce201c50c643c63d7d725eac12bba8559fcd3aff80ff3fe8914560397bc7049"
     },
     {
       "path": "ci/ios-signed/diagnostics.mjs",
@@ -433,15 +433,15 @@
     },
     {
       "path": "ci/ios-signed/policy.json",
-      "sha256": "a00a73055fe2baa20cdf6fa386965b6b558e6cda47c4ba75fe4122fd0e020ba3"
+      "sha256": "102c79dc46ccc089385aa1c0553ab3c72b83e41790d70276a55f277723a0bf08"
     },
     {
       "path": "ci/ios-signed/policy.mjs",
-      "sha256": "67823bece8f829871a72d1236e85b2bb6af283c163a953c5225f7f8827a3fa0b"
+      "sha256": "3462e0d3061894669e5ec60bb4a15600723b644f33f2d7d2881820f0b732d4ca"
     },
     {
       "path": "ci/ios-signed/run.mjs",
-      "sha256": "1137443a28b6f0e5c67fcc13e2c78088a3a42468553e2b1cfb08b864c2b1e3a3"
+      "sha256": "9cc38878dc7f272faafc1c20e196f7546587faeeb649fa7e675c3c3974f4b71b"
     },
     {
       "path": "ci/ios-signed/serialization.test.mjs",
@@ -449,11 +449,15 @@
     },
     {
       "path": "ci/ios-signed/signed.test.mjs",
-      "sha256": "8b9b2d92ce7b702bc3a9be5bd7560a222d91e6141d0025c7427e45b9806878f5"
+      "sha256": "d2c430f0d4c04893d0fc1f0cf146b74ce0a9dc59bae3e5559494c17d32111559"
     },
     {
       "path": "ci/ios-signed/validate.mjs",
-      "sha256": "6944729dab97792b92afb0b99cb3bc6117c826d343ff1d5f1864ed47f0214319"
+      "sha256": "9b82dd38401801a5c3aa17b3bb5ad0adf6ae89aa0d05cc9f5f4a6014d2a932c9"
+    },
+    {
+      "path": "ci/ios-upload/upload-existing.mjs",
+      "sha256": "583b23054417b093bbd37a626a9b5f426bf5b6e1937f362375eeccdfd3d2fa97"
     },
     {
       "path": "ci/native-validation/codemagic.yaml",
@@ -477,7 +481,7 @@
     },
     {
       "path": "ci/native-validation/validate.mjs",
-      "sha256": "6ec81b3aa659ae183f5c0e936053141154c559c5817d75a09101620e26452b25"
+      "sha256": "c955df5f0f7395616f0533837cf9b35cd3bff52e9f28998b68e257daccfbcbac"
     },
     {
       "path": "ci/native-validation/verify-transfer.mjs",
@@ -485,7 +489,7 @@
     },
     {
       "path": "codemagic.yaml",
-      "sha256": "f0ae15ec4c36778ae771c177e70a23a97acae5702910eb672b9e30291ba16c92"
+      "sha256": "4efe8c631fce0ed29913b4d0e4d145e56222862cb18c775d1ee803d02c72e701"
     },
     {
       "path": "docs/PULSE-Phase4B-final-validation.md",
@@ -641,7 +645,7 @@
     },
     {
       "path": "ios/App/App.xcodeproj/project.pbxproj",
-      "sha256": "2fbb919876f1112b853b99be99a9aa59b6bb536706b17deb5e1931d89f76691d"
+      "sha256": "69c80a4af4a2c566480dcc483ea15c280bb12c455ac24b6b429a55ebec36b610"
     },
     {
       "path": "ios/App/App.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
@@ -697,7 +701,7 @@
     },
     {
       "path": "ios/App/App/TrueVoiceRadioPlugin.swift",
-      "sha256": "1ae0f3d6941ed77eeea32490f452a72e53918defc2426e3b78f4c2719376efbb"
+      "sha256": "c5c0def9985022ce4834eb1d0734b4c29383df6e556ede3b7c0fd116b26b9a41"
     },
     {
       "path": "ios/App/Podfile",
@@ -1433,7 +1437,7 @@
     },
     {
       "path": "tests/native-audio.test.mjs",
-      "sha256": "7fa6430cf06175debc5682f44565c08b2362d73a15c1ecb3962ca0e13f105fbf"
+      "sha256": "e308d94127f77b77f5b0c2289b99ceb5f4584cb2da4903b385108a4f3eb81c54"
     },
     {
       "path": "tests/native-ci-preparation.test.mjs",

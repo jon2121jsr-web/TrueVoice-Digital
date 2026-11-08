@@ -6,8 +6,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { verifyReleaseSource } from '../ios-release/validate.mjs';
-import { verifyNativeFiles } from '../native-validation/validate.mjs';
+import { verifyReleaseNativeFiles, verifyReleaseSource } from '../ios-release/validate.mjs';
 import { policy, assertSelection, validateSignedEnvironment, childEnvironment, validateProfile, selectIdentity, validateSignedApp, exportOptions, assertSigningOnlyChanges } from './policy.mjs';
 import { createDiagnostics } from './diagnostics.mjs';
 
@@ -164,7 +163,7 @@ function archiveExport() {
     archiveChecks, exportChecks, signingSettingChanges,
     archiveTreeSha256: treeHash(archive), archiveAppTreeSha256: treeHash(archivedApp),
     ipaSha256: fileHash(ipa), exportedAppTreeSha256: treeHash(exportedApp),
-    uploaded: false, publishingConfigured: false, directDeviceInstallable: false,
+    uploaded: false, directDeviceInstallable: false,
   };
   // Only approved artifact bytes and this controlled metadata are collected.
   fs.writeFileSync(path.join(reports, 'verification.json'), JSON.stringify(result, null, 2));
@@ -191,6 +190,7 @@ export function main(step) {
   } else if (step === 'dependencies') capture('locked-npm-install', 'npm', ['ci', '--no-audit', '--no-fund']);
   else if (step === 'swift-tests') {
     const tests = capture('swift-tests', 'swift', ['test', '--package-path', 'ios/NativeAudioPolicy', '--verbose']);
+    capture('native-routing-tests', process.execPath, ['--test', 'tests/native-audio.test.mjs', 'tests/native-routing.test.mjs']);
     assert.match(tests.stdout.toString() + tests.stderr.toString(), /Executed 7 tests, with 0 failures/);
   } else if (step === 'web-build') {
     capture('web-build', process.execPath, ['ci/ios-release/build-web.mjs']);
@@ -198,14 +198,14 @@ export function main(step) {
   } else if (step === 'sync') {
     capture('capacitor-sync', 'npx', ['--no-install', 'cap', 'sync', 'ios']);
     capture('cocoapods-resolution', 'pod', ['install'], { cwd: path.join(root, 'ios/App') });
-    verifyNativeFiles();
+    verifyReleaseNativeFiles();
     const config = JSON.parse(fs.readFileSync('ios/App/App/capacitor.config.json'));
     assert.equal(config.appId, policy.bundleId); assert.equal(config.server.iosScheme, 'capacitor');
     assert.equal(config.server.hostname, 'localhost'); assert.equal(config.server.url, undefined);
     assert.ok(fs.existsSync('ios/App/App/public/icon-512-waveform-v1.png'));
     fs.writeFileSync(path.join(reports, 'pods.json'), JSON.stringify({ lockSha256: fileHash('ios/App/Podfile.lock') }, null, 2));
   } else archiveExport();
-  console.log('Signed validation step complete; no App Store upload or publishing.');
+  console.log('Signed release step complete.');
 }
 
 export function runDiagnosticStep(step) {

@@ -17,7 +17,7 @@ const entitlements = {
   'get-task-allow': false, 'beta-reports-active': true,
 };
 const profile = () => ({ uuid: 'offline-uuid', name: 'offline-profile', teams: [policy.team], prefixes: [policy.team], platforms: ['iOS'], created: '2020-01-01', expires: '2099-01-01', hasDevices: false, allDevices: false, entitlements: { ...entitlements, 'keychain-access-groups': [policy.team + '.*'] }, certificateSha1: [sha1] });
-const app = () => ({ info: { CFBundleIdentifier: policy.bundleId, CFBundleShortVersionString: '1.0', CFBundleVersion: '23', UIBackgroundModes: ['audio'] }, signature: { team: policy.team, identifier: policy.bundleId, leafSha1: sha1 }, entitlements: { ...entitlements, 'keychain-access-groups': [policy.team + '.' + policy.bundleId] }, profile: profile(), identity, embeddedHash: 'same', selectedHash: 'same' });
+const app = () => ({ info: { CFBundleIdentifier: policy.bundleId, CFBundleShortVersionString: '1.0', CFBundleVersion: '24', UIBackgroundModes: ['audio'] }, signature: { team: policy.team, identifier: policy.bundleId, leafSha1: sha1 }, entitlements: { ...entitlements, 'keychain-access-groups': [policy.team + '.' + policy.bundleId] }, profile: profile(), identity, embeddedHash: 'same', selectedHash: 'same' });
 
 test('signed selection rejects other branches and workflows', () => {
   assert.doesNotThrow(() => assertSelection(policy.branch, policy.workflow));
@@ -90,17 +90,20 @@ test('artifact inspection rejects traversal, credentials, multiple apps and miss
   } finally { fs.rmSync(temp, { recursive: true }); }
 });
 
-test('workflow signing scope is exclusive and both unsigned definitions/runners are unchanged', () => {
+test('Build 24 signs and uploads only through the guarded release workflow', () => {
   const current = yaml.load(fs.readFileSync('codemagic.yaml', 'utf8'));
   const baseline = yaml.load(execFileSync('git', ['show', policy.baseline + ':codemagic.yaml'], { encoding: 'utf8' }));
   assert.deepEqual(Object.keys(current), ['workflows']);
   for (const name of Object.keys(baseline.workflows)) assert.deepEqual(current.workflows[name], baseline.workflows[name]);
-  for (const file of ['ci/ios-release/validate.mjs', 'ci/ios-release/build-web.mjs', 'ci/native-validation/validate.mjs', 'ci/native-validation/codemagic.yaml']) assert.equal(fs.readFileSync(file, 'utf8'), execFileSync('git', ['show', policy.baseline + ':' + file], { encoding: 'utf8' }));
+  for (const file of ['ci/ios-release/build-web.mjs', 'ci/native-validation/codemagic.yaml']) assert.equal(fs.readFileSync(file, 'utf8'), execFileSync('git', ['show', policy.baseline + ':' + file], { encoding: 'utf8' }));
   const w = current.workflows[policy.workflow];
   assert.equal(w.name, policy.workflow); assert.equal(w.when.condition, 'env.CM_BRANCH == "' + policy.branch + '"');
   assert.deepEqual(w.environment, { xcode: '26.2', node: '24.14.0', cocoapods: '1.16.2', groups: ['pulse_ios_public_runtime'], ios_signing: { provisioning_profiles: [{ profile: policy.profileReference, environment_variable: policy.profilePathVariable }], certificates: [policy.certificateReference] } });
   const inspect = obj => { for (const [key, value] of Object.entries(obj ?? {})) { assert.doesNotMatch(key, /^(triggering|events|publishing|integrations)$/); if (value && typeof value === 'object') inspect(value); } };
-  inspect(current);
+  inspect(baseline);
+  assert.deepEqual(w.integrations, { app_store_connect: 'Codemagic CI' });
+  assert.deepEqual(w.publishing, { app_store_connect: { auth: 'integration', submit_to_testflight: false } });
+  assert.equal(w.triggering, undefined);
   assert.deepEqual(w.scripts.map(s => s.script), ['preflight', 'dependencies', 'swift-tests', 'web-build', 'sync', 'archive-export'].map(s => 'node ci/ios-signed/run.mjs ' + s));
   assert.deepEqual(w.artifacts, ['.native-validation/signed/export/*.ipa', '.native-validation/signed/reports/*.json']);
   const runner = fs.readFileSync('ci/ios-signed/validate.mjs', 'utf8');
@@ -108,9 +111,9 @@ test('workflow signing scope is exclusive and both unsigned definitions/runners 
   assert.ok(runner.includes("process.env.CM_TRIGGER_SOURCE, 'api'"));
 });
 
-test('signed artifact version policy accepts only marketing 1.0 and build 23', () => {
+test('signed artifact version policy accepts only marketing 1.0 and build 24', () => {
   assert.doesNotThrow(() => validateSignedApp(app()));
-  for (const build of ['1', '22', '24']) {
+  for (const build of ['1', '22', '23', '25']) {
     const a = app(); a.info.CFBundleVersion = build;
     assert.throws(() => validateSignedApp(a), /Unreviewed build-number change/);
   }
@@ -141,7 +144,7 @@ test('App Debug and Release settings resolve plist versions accepted by signed p
       assert.equal(parts.length, 2, 'Expected one ' + key + ' in App ' + name);
       return parts[1].split(';')[0];
     };
-    assert.equal(setting('CURRENT_PROJECT_VERSION'), '23');
+    assert.equal(setting('CURRENT_PROJECT_VERSION'), '24');
     assert.equal(setting('MARKETING_VERSION'), '1.0');
     assert.equal(setting('PRODUCT_BUNDLE_IDENTIFIER'), policy.bundleId);
     const a = app();

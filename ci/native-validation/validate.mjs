@@ -71,8 +71,8 @@ function guardEnvironment() {
     'CM_CERTIFICATE_PATH', 'CM_PROVISIONING_PROFILE_PATH',
   ]) assert.ok(!process.env[name], `Remove unrelated credential from validation environment: ${name}`);
 }
-export function verifyNativeFiles() {
-  const manifest = JSON.parse(fs.readFileSync(sourceManifest));
+export function verifyNativeFiles(manifestFile = sourceManifest) {
+  const manifest = JSON.parse(fs.readFileSync(manifestFile));
   for (const e of manifest.entries.filter(e => e.path.endsWith('.swift'))) {
     assert.equal(hash(fs.readFileSync(path.join(root, e.path))), e.sha256, 'Sync changed reviewed Swift source');
   }

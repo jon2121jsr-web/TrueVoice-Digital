@@ -23,7 +23,7 @@ test('missing, placeholder, unexpected or private runtime inputs fail closed', (
 });
 test('new workflow is manual and unsigned; original validation workflow remains isolated', () => {
   const root = yaml.load(fs.readFileSync('codemagic.yaml', 'utf8'));
-  assert.deepEqual(Object.keys(root.workflows), ['ios-native-validation', 'ios-release-archive-validation', 'ios-signed-archive-export-validation']);
+  assert.deepEqual(Object.keys(root.workflows), ['ios-native-validation', 'ios-release-archive-validation', 'ios-testflight-build24', 'ios-build23-upload-only']);
   const original = yaml.load(fs.readFileSync('ci/native-validation/codemagic.yaml', 'utf8'));
   assert.deepEqual(root.workflows['ios-native-validation'], original.workflows['ios-native-validation']);
   const w = root.workflows['ios-release-archive-validation'];

@@ -171,8 +171,11 @@ test('Xcode sources, storyboard registration and audio background mode are wired
   assert.ok(fs.readFileSync('ios/App/App/Base.lproj/Main.storyboard', 'utf8').includes('customClass="RadioBridgeViewController"'));
   assert.match(fs.readFileSync('ios/App/App/Info.plist', 'utf8'), /UIBackgroundModes[\s\S]*?<string>audio<\/string>/);
   const swift = fs.readFileSync('ios/App/App/TrueVoiceRadioPlugin.swift', 'utf8');
-  assert.ok(swift.includes('https://streaming.live365.com/a61535'));
-  assert.doesNotMatch(swift, /stream\.truevoice\.digital\/(?:listen|hls)|seek\(to:/);
+  assert.ok(swift.includes('https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3'));
+  assert.ok(swift.includes('https://stream.truevoice.digital/api/nowplaying/truevoice_digital'));
+  assert.match(swift, /metadataDelay: TimeInterval = 2\b/);
+  assert.match(swift, /started \+ Self\.metadataDelay/);
+  assert.doesNotMatch(swift, /streaming\.live365\.com|seek\(to:/);
   assert.ok(fs.readFileSync('src/App.jsx', 'utf8').includes('!IS_NATIVE_RADIO && <audio'));
 });
 

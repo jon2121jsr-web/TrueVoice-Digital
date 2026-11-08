@@ -1,5 +1,5 @@
 # Candidate root codemagic.yaml for the dedicated CI branch only.
-# No automatic events or publishing. Signing is scoped to the separate signed workflow.
+# Release publishing is scoped to the manually triggered Build 24 workflow.
 workflows:
   ios-native-validation:
     name: ios-native-validation
@@ -63,12 +63,14 @@ workflows:
       - .native-validation/release/logs/*.log
       - .native-validation/release/reports/*.json
 
-  ios-signed-archive-export-validation:
-    name: ios-signed-archive-export-validation
+  ios-testflight-build24:
+    name: ios-testflight-build24
     instance_type: mac_mini_m2
     max_build_duration: 60
     when:
       condition: env.CM_BRANCH == "release/ios-testflight-1b04"
+    integrations:
+      app_store_connect: Codemagic CI
     environment:
       xcode: "26.2"
       node: "24.14.0"
@@ -98,6 +100,10 @@ workflows:
       # Never collect private tool output, keychain, profiles or certificate files.
       - .native-validation/signed/export/*.ipa
       - .native-validation/signed/reports/*.json
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
 
   ios-build23-upload-only:
     name: Upload existing TrueVoice Digital 1.0 (23)

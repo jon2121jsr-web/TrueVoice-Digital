@@ -47,8 +47,9 @@ public class TrueVoiceRadioPlugin: CAPPlugin, CAPBridgedPlugin {
 // All AVPlayer, policy and metadata state is confined to the main queue. There
 // is one radio engine per registered plugin, no WebView audio or fallback URL.
 private final class NativeRadioEngine {
-    private static let stream = URL(string: "https://streaming.live365.com/a61535")!
-    private static let metadataURL = URL(string: "https://www.truevoice.digital/api/nowplaying")!
+    private static let stream = URL(string: "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3")!
+    private static let metadataDelay: TimeInterval = 2
+    private static let metadataURL = URL(string: "https://stream.truevoice.digital/api/nowplaying/truevoice_digital")!
     private var policy = RadioPlaybackPolicy()
     private var player = AVPlayer()
     private var revision = 0
@@ -302,7 +303,7 @@ private final class NativeRadioEngine {
                     var next: JSObject = ["title": String(title.prefix(256)), "artist": String((song["artist"] as? String ?? "TrueVoice Digital").prefix(256)), "album": "TrueVoice Digital"]
                     if let art = song["art"] as? String, art.count <= 2048, URL(string: art)?.scheme == "https" { next["art"] = art }
                     self.trackStarted = started
-                    let due = started + 55 // Preserve the accepted Live365 metadata offset.
+                    let due = started + Self.metadataDelay
                     if due <= Date().timeIntervalSince1970 { self.track = next; self.pendingTrack = nil }
                     else { self.pendingTrack = (next, due) }
                 }
