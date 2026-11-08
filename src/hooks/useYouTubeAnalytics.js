@@ -42,8 +42,8 @@ function matchShow(title = '') {
 }
 
 async function fetchJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`YouTube API ${res.status}: ${await res.text()}`);
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`YouTube API ${res.status}`);
   return res.json();
 }
 
@@ -108,7 +108,7 @@ export function useYouTubeAnalytics({ maxResults = 50 } = {}) {
   const [error,   setError]   = useState(null);
 
   useEffect(() => {
-    if (!API_KEY || !CHANNEL_ID) {
+    if ((!USE_PROXY && !API_KEY) || !CHANNEL_ID) {
       setError('VITE_YOUTUBE_API_KEY or VITE_YOUTUBE_CHANNEL_ID not set');
       setLoading(false);
       return;
@@ -131,14 +131,9 @@ export function useYouTubeAnalytics({ maxResults = 50 } = {}) {
       })
       .catch(err => {
         if (cancelled) return;
-        // 400/403 from localhost almost always means the API key has domain
-        // restrictions in Google Cloud Console. Data loads automatically on
-        // the production domain (truevoice.digital) where the key is whitelisted.
-        if (err.message.includes('400') || err.message.includes('403')) {
-          setError('YouTube API key is restricted to production domain. Video data will appear after deploying to truevoice.digital.');
-        } else {
-          setError(err.message);
-        }
+        setError(err.message.includes('400') || err.message.includes('403')
+          ? 'Video metrics unavailable: API request denied. Check backend API permissions and configuration.'
+          : 'Video metrics unavailable. Check connectivity and retry.');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

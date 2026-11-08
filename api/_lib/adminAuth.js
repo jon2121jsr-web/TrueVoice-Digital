@@ -11,11 +11,7 @@ import { isRestrictedPreview } from './previewGuard.js';
  */
 
 import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = isRestrictedPreview() ? null : createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+import process from 'node:process';
 
 export async function verifyAdmin(req) {
   if (isRestrictedPreview()) return { error: 'Operation unavailable in Preview', status: 403 };
@@ -25,24 +21,36 @@ export async function verifyAdmin(req) {
     return { error: 'Missing bearer token', status: 401 };
   }
 
-  const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token);
-  if (userErr || !userData?.user?.email) {
-    return { error: 'Invalid or expired session', status: 401 };
-  }
+  try {
+    const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: (url, options) => fetch(url, { ...options, signal: options?.signal
+        ? AbortSignal.any([options.signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000) }) },
+    });
+    const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token);
+    if (userErr && ![400, 401, 403].includes(userErr.status)) {
+      return { error: 'Authentication service unavailable. Retry shortly.', status: 503 };
+    }
+    if (userErr || !userData?.user?.email) {
+      return { error: 'Invalid or expired session', status: 401 };
+    }
 
-  const email = userData.user.email;
-  const { data: adminRow, error: adminErr } = await supabaseAdmin
-    .from('admin_users')
-    .select('email, role')
-    .eq('email', email)
-    .maybeSingle();
+    const email = userData.user.email;
+    const { data: adminRow, error: adminErr } = await supabaseAdmin
+      .from('admin_users')
+      .select('email, role')
+      .eq('email', email)
+      .maybeSingle();
 
-  if (adminErr) {
-    return { error: adminErr.message, status: 500 };
-  }
-  if (!adminRow) {
-    return { error: 'Not an admin', status: 403 };
-  }
+    if (adminErr) {
+      return { error: 'Admin membership service unavailable. Retry shortly.', status: 503 };
+    }
+    if (!adminRow) {
+      return { error: 'Not an admin', status: 403 };
+    }
 
-  return { user: userData.user, admin: adminRow, supabaseAdmin };
+    return { user: userData.user, admin: adminRow, supabaseAdmin };
+  } catch {
+    return { error: 'Admin verification unavailable. Check backend connectivity and configuration.', status: 503 };
+  }
 }

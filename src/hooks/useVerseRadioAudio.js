@@ -15,12 +15,7 @@
 import { useEffect, useState } from "react";
 import { preferredStreamUrl } from "../lib/streamUrl";
 
-const LIVE365_STREAM_URL = "https://streaming.live365.com/a61535";
-const LIVE_STREAM_URL = preferredStreamUrl(
-  import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL
-);
-const AZURACAST_FALLBACK_URL =
-  "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3";
+const LIVE_STREAM_URL = preferredStreamUrl();
 
 let sharedAudio = null;
 let sharedMuted = true;
@@ -47,12 +42,7 @@ function startPlayback(audio) {
     audio.src = LIVE_STREAM_URL;
   }
   audio.play().catch(() => {
-    audio.src = AZURACAST_FALLBACK_URL;
-    audio.play().catch(() => {
-      // Autoplay blocked entirely (e.g. an unmuted resume with no fresh
-      // gesture behind it) -- the mute button is still a real click, and
-      // toggling it calls play() again below, which will succeed then.
-    });
+    // No direct-origin fallback; wait for the next deliberate user action.
   });
 }
 

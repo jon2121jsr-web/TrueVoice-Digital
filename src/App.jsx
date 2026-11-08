@@ -79,12 +79,7 @@ const SHOW_SLUG_TO_SECTION = {
 };
 
 // ─── Stream URLs ──────────────────────────────────────────────────────────────
-const LIVE365_STREAM_URL =
-  "https://streaming.live365.com/a61535";
-
-const LIVE_STREAM_URL = preferredStreamUrl(
-  import.meta.env.VITE_TRUEVOICE_STREAM_URL || LIVE365_STREAM_URL
-);
+const LIVE_STREAM_URL = preferredStreamUrl();
 
 // ─── Social links ─────────────────────────────────────────────────────────────
 const SOCIAL = {

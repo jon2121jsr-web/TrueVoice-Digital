@@ -21,6 +21,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import './AdminDashboard.css';
 import { readAllVisits } from '../lib/visitorStore';
+import { withAdminDeadline } from '../lib/adminData';
 import { supabase } from '../lib/supabaseClient';
 import {
   LineChart, Line, BarChart, Bar, Cell,
@@ -75,9 +76,11 @@ function SignInGate() {
   const submit = async () => {
     setErr('');
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) setErr(error.message);
+    try {
+      const { error } = await withAdminDeadline(supabase.auth.signInWithPassword({ email, password }));
+      if (error) setErr('Sign-in failed. Check your email/password and try again.');
+    } catch { setErr('Sign-in unavailable. Check connectivity and retry.'); }
+    finally { setLoading(false); }
     // On success, the onAuthStateChange listener in AdminDashboard updates session.
   };
 
@@ -119,10 +122,12 @@ function SetPasswordGate({ onDone }) {
     setErr('');
     if (password.length < 6) { setErr('Password must be at least 6 characters.'); return; }
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) { setErr(error.message); return; }
-    onDone();
+    try {
+      const { error } = await withAdminDeadline(supabase.auth.updateUser({ password }));
+      if (error) { setErr('Password update failed. Retry or request a new recovery link.'); return; }
+      onDone();
+    } catch { setErr('Password update unavailable. Check connectivity and retry.'); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -221,7 +226,7 @@ function ErrorNote({ msg }) {
   return <p className="admin-error-note">⚠ {msg}</p>;
 }
 
-function VisitorsTab({ range }) {
+function VisitorsTab({ range, token }) {
   const [visits, setVisits]   = useState(null);
   const [error,  setError]    = useState(null);
 
@@ -229,7 +234,7 @@ function VisitorsTab({ range }) {
     let cancelled = false;
     setVisits(null);
     setError(null);
-    readAllVisits(range)
+    readAllVisits(range, token)
       .then(rows => {
         if (cancelled) return;
         if (!Array.isArray(rows)) {
@@ -245,7 +250,7 @@ function VisitorsTab({ range }) {
         setVisits([]);
       });
     return () => { cancelled = true; };
-  }, [range]);
+  }, [range, token]);
 
   const data = useMemo(() => {
     if (!visits) return null;
@@ -288,6 +293,7 @@ function VisitorsTab({ range }) {
     return { total: visits.length, today: todayCount, dailyChart, topPaths };
   }, [visits, range]);
 
+  if (error) return <ErrorNote msg={error} />;
   if (!data) {
     return <p className="admin-muted-text">Loading visits…</p>;
   }
@@ -659,55 +665,64 @@ const TABS = ['Overview', 'Listeners', 'Video', 'Feed', 'Chime In', 'Visitors', 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
-  const [session, setSession]   = useState(undefined); // undefined = checking, null = signed out
-  const [adminRow, setAdminRow] = useState(undefined); // undefined = checking, null = not an admin
+  const [session, setSession] = useState(undefined);
+  const [access, setAccess] = useState(null);
+  const [authError, setAuthError] = useState(null);
+  const [retry, setRetry] = useState(0);
   const [recoveryMode, setRecoveryMode] = useState(() => window.location.hash.includes('type=recovery'));
+  useEffect(() => {
+    let active = true, changed = false;
+    setAuthError(null);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+      changed = true;
+      if (!active) return;
+      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true);
+      setAuthError(null); setSession(next ?? null);
+    });
+    withAdminDeadline(supabase.auth.getSession()).then(({ data, error }) => {
+      if (!active || changed) return;
+      if (error) throw error;
+      setSession(data.session ?? null);
+    }).catch(() => { if (active && !changed) setAuthError('Session check failed. Check connectivity and retry.'); });
+    return () => { active = false; sub.subscription.unsubscribe(); };
+  }, [retry]);
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    withAdminDeadline(supabase.from('admin_users').select('email, role')
+      .eq('email', session.user.email).maybeSingle()).then(({ data, error }) => {
+        if (!active) return;
+        if (error) throw error;
+        setAccess({ session, row: data ?? null });
+      }).catch(() => { if (active) setAuthError('Admin membership check failed. Retry; if it persists, check backend connectivity and access.'); });
+    return () => { active = false; };
+  }, [session, retry]);
+  if (recoveryMode) return <SetPasswordGate onDone={() => setRecoveryMode(false)} />;
+  if (authError) return <AuthCard><ErrorNote msg={authError} /><button className="admin-btn-primary" onClick={() => { setAccess(null); setRetry(v => v + 1); }}>Retry connection</button></AuthCard>;
+  if (session === undefined || (session && access?.session !== session)) return <LoadingGate />;
+  if (!session) return <SignInGate />;
+  if (!access.row) return <NotAuthorizedGate email={session.user.email} />;
+  return <AdminContent key={session.access_token} session={session} />;
+}
+
+function AdminContent({ session }) {
   const [activeTab, setActiveTab] = useState('Overview');
   const [range, setRange] = useState(7);
   const [clock, setClock] = useState('');
-
-  const azura    = useAzuraCast();
-  const youtube  = useYouTubeAnalytics({ maxResults: 50 });
-  const stripe   = useStripeDonations({ days: range });
-  const analytics = useSiteAnalytics({ days: range });
-
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
-      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true);
-      setSession(sess ?? null);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (session === undefined) return;
-    if (session === null) { setAdminRow(null); return; }
-    let cancelled = false;
-    setAdminRow(undefined);
-    supabase
-      .from('admin_users')
-      .select('email, role')
-      .eq('email', session.user.email)
-      .maybeSingle()
-      .then(({ data }) => { if (!cancelled) setAdminRow(data ?? null); });
-    return () => { cancelled = true; };
-  }, [session]);
-
-  useEffect(() => {
-    const iv = setInterval(() => {
-      setClock(new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit' }));
-    }, 1000);
+    const iv = setInterval(() => setClock(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })), 1000);
     return () => clearInterval(iv);
   }, []);
+  return <AdminMetrics {...{ session, activeTab, setActiveTab, range, setRange, clock }} />;
+}
 
-  if (recoveryMode) return <SetPasswordGate onDone={() => setRecoveryMode(false)} />;
-  if (session === undefined || (session && adminRow === undefined)) return <LoadingGate />;
-  if (!session) return <SignInGate />;
-  if (!adminRow) return <NotAuthorizedGate email={session.user.email} />;
-
-  const listeners  = azura.nowPlaying?.listeners ?? 0;
-  const nowPlaying = azura.nowPlaying?.show      ?? 'Loading…';
+function AdminMetrics({ session, activeTab, setActiveTab, range, setRange, clock }) {
+  const azura = useAzuraCast();
+  const youtube = useYouTubeAnalytics({ maxResults: 50 });
+  const stripe = useStripeDonations({ days: range, token: session.access_token });
+  const analytics = useSiteAnalytics({ days: range, token: session.access_token });
+  const listeners  = azura.nowPlaying?.listeners ?? 'Unavailable';
+  const nowPlaying = azura.nowPlaying?.show ?? (azura.loading ? 'Loading...' : 'Unavailable');
 
   return (
     <div className="admin-page">
@@ -751,19 +766,22 @@ export default function AdminDashboard() {
       </div>
 
       <div className="admin-content">
+        {(azura.error || youtube.error || stripe.error || analytics.error) && (
+          <button className="admin-range-btn" onClick={() => window.location.reload()}>Retry data connections</button>
+        )}
 
         {/* ── OVERVIEW ─────────────────────────────────────────── */}
         {activeTab === 'Overview' && (
           <>
             <div className="admin-metric-grid">
-              <MetricCard label="Live listeners" value={listeners} delta={azura.loading ? 'Loading…' : azura.error ?? undefined} deltaUp />
-              <MetricCard label={`Visitors (${range}d)`} value={analytics.summary?.uniqueVisitors?.toLocaleString()} delta={analytics.loading ? 'Loading…' : undefined} deltaUp />
-              <MetricCard label={`Video views (${range}d)`} value={youtube.totals.views?.toLocaleString()} delta={youtube.loading ? 'Loading…' : undefined} deltaUp />
-              <MetricCard label={`Donations (${range}d)`} value={stripe.totals.grossDisplay} delta={`${stripe.totals.count} transactions`} deltaUp />
+              <MetricCard label="AzuraCast listeners" value={listeners} delta={azura.loading ? 'Loading…' : azura.error ?? undefined} deltaUp />
+              <MetricCard label={`Visitor sessions (${range}d)`} value={analytics.summary?.uniqueVisitors?.toLocaleString()} delta={analytics.loading ? 'Loading...' : analytics.error ?? undefined} deltaUp />
+              <MetricCard label="Lifetime views (latest 50 uploads)" value={youtube.loading || youtube.error ? null : youtube.totals.views?.toLocaleString()} delta={youtube.loading ? 'Loading…' : undefined} deltaUp />
+              <MetricCard label={`Donations (${range}d)`} value={stripe.totals.grossDisplay} delta={stripe.loading ? 'Loading...' : stripe.error ?? `${stripe.totals.count} transactions`} deltaUp />
             </div>
 
             <div className="admin-grid-main">
-              <Panel title="Listener trend" meta={`${range}d`}>
+              <Panel title="Listener trend" meta="Last 20 samples (~10m)">
                 <ResponsiveContainer width="100%" height={180}>
                   <LineChart data={azura.chartData}>
                     <XAxis dataKey="label" stroke={C.border} tick={CHART_AXIS_TICK} />
@@ -776,9 +794,9 @@ export default function AdminDashboard() {
               <Panel title="Now live on stream" meta={<LiveBadge />}>
                 {[
                   ['Current listeners', listeners],
-                  ['Peak (session)',    azura.peakToday],
+                  ['Peak (last 60 samples)', azura.peakToday ?? 'Unavailable'],
                   ['Now playing',      nowPlaying],
-                  ['Avg listen (session)', `${Math.round(azura.history.length * 0.5)}m`],
+                  ['Sampling window', 'Last 20 samples (~10m)'],
                 ].map(([l, v]) => (
                   <div key={l} className="admin-list-row admin-list-row--p9">
                     <span className="admin-list-row-label">{l}</span>
@@ -818,10 +836,10 @@ export default function AdminDashboard() {
         {activeTab === 'Listeners' && (
           <>
             <div className="admin-metric-grid">
-              <MetricCard label="Current listeners" value={azura.nowPlaying?.listeners} delta={azura.loading ? 'Loading…' : azura.error ?? undefined} deltaUp />
-              <MetricCard label="Peak (session)" value={azura.peakToday} deltaUp />
-              <MetricCard label="Unique listeners (session)" value={azura.nowPlaying?.listenersUnique} deltaUp />
-              <MetricCard label="Now playing" value={azura.nowPlaying?.show ?? 'Loading…'} delta={azura.nowPlaying?.artist ?? undefined} deltaUp />
+              <MetricCard label="AzuraCast current listeners" value={azura.nowPlaying?.listeners} delta={azura.loading ? 'Loading…' : azura.error ?? undefined} deltaUp />
+              <MetricCard label="Peak (last 60 samples)" value={azura.peakToday} deltaUp />
+              <MetricCard label="AzuraCast unique (current)" value={azura.nowPlaying?.listenersUnique} deltaUp />
+              <MetricCard label="Now playing" value={nowPlaying} delta={azura.nowPlaying?.artist ?? undefined} deltaUp />
             </div>
             <Panel title="Listener trend" meta={<LiveBadge />}>
               <ResponsiveContainer width="100%" height={340}>
@@ -841,13 +859,13 @@ export default function AdminDashboard() {
         {activeTab === 'Video' && (
           <>
             <div className="admin-metric-grid">
-              <MetricCard label="Total views"    value={youtube.totals.views?.toLocaleString()} />
-              <MetricCard label="Total likes"    value={youtube.totals.likes?.toLocaleString()} />
-              <MetricCard label="Videos tracked" value={youtube.totals.videoCount} />
-              <MetricCard label="Shows" value={youtube.shows.length} />
+              <MetricCard label="Total views"    value={youtube.loading || youtube.error ? null : youtube.totals.views?.toLocaleString()} />
+              <MetricCard label="Total likes"    value={youtube.loading || youtube.error ? null : youtube.totals.likes?.toLocaleString()} />
+              <MetricCard label="Videos tracked" value={youtube.loading || youtube.error ? null : youtube.totals.videoCount} />
+              <MetricCard label="Shows" value={youtube.loading || youtube.error ? null : youtube.shows.length} />
             </div>
             {youtube.error && <ErrorNote msg={youtube.error} />}
-            <Panel title="Views by show" meta="YouTube Data API v3" className="admin-panel--mb">
+            <Panel title="Lifetime views by show" meta="Latest 50 uploads" className="admin-panel--mb">
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={youtube.shows.slice(0,6).map((s,i) => ({ name: s.label, views: s.totalViews, fill: SHOW_COLORS[i] }))}>
                   <XAxis dataKey="name" stroke={C.border} tick={CHART_AXIS_TICK} />
@@ -890,7 +908,7 @@ export default function AdminDashboard() {
         {activeTab === 'Chime In' && <ChimeModerationTab />}
 
         {/* ── VISITORS ─────────────────────────────────────────── */}
-        {activeTab === 'Visitors' && <VisitorsTab range={range} />}
+        {activeTab === 'Visitors' && <VisitorsTab range={range} token={session.access_token} />}
 
         {/* ── TEAM ─────────────────────────────────────────────── */}
         {activeTab === 'Team' && <TeamTab session={session} />}
@@ -899,10 +917,10 @@ export default function AdminDashboard() {
         {activeTab === 'Donations' && (
           <>
             <div className="admin-metric-grid">
-              <MetricCard label={`Gross (${range}d)`}    value={stripe.totals.grossDisplay}   delta={`${stripe.totals.count} transactions`} deltaUp />
-              <MetricCard label="Net received"            value={stripe.totals.netDisplay}     delta="After Stripe fees" deltaUp />
+              <MetricCard label={`Gross (${range}d)`} value={stripe.totals.grossDisplay} delta={stripe.loading ? 'Loading...' : stripe.error ?? `${stripe.totals.count} transactions`} deltaUp />
+              <MetricCard label="Estimated net"            value={stripe.totals.netDisplay}     delta="Estimated processing fees" deltaUp />
               <MetricCard label="Average donation"        value={stripe.totals.averageDisplay} deltaUp />
-              <MetricCard label="Recurring"               value={stripe.totals.recurringDisplay} delta="Monthly subscriptions" deltaUp />
+              <MetricCard label="Recurring"               value={stripe.totals.recurringDisplay} delta="Recurring donations in selected range" deltaUp />
             </div>
             {stripe.error && <ErrorNote msg={stripe.error} />}
             <div className="admin-grid-main">
@@ -920,12 +938,12 @@ export default function AdminDashboard() {
                 {[
                   ['One-time',  stripe.totals.oneTimeDisplay],
                   ['Recurring', stripe.totals.recurringDisplay],
-                  ['Fees',      stripe.totals.feesDisplay, true],
-                  ['Net',       stripe.totals.netDisplay, false, true],
+                  ['Estimated fees',      stripe.totals.feesDisplay, true],
+                  ['Estimated net',       stripe.totals.netDisplay, false, true],
                 ].map(([l, v, isNeg, isBig]) => (
                   <div key={l} className={`admin-breakdown-row${isBig ? ' admin-breakdown-row--big' : ''}`}>
                     <span className={isBig ? 'admin-breakdown-label--big' : 'admin-breakdown-label'}>{l}</span>
-                    <span className={`admin-breakdown-value${isNeg ? ' admin-breakdown-value--neg' : isBig ? ' admin-breakdown-value--pos' : ''}`}>{isNeg ? '-' : ''}{v}</span>
+                    <span className={`admin-breakdown-value${isNeg ? ' admin-breakdown-value--neg' : isBig ? ' admin-breakdown-value--pos' : ''}`}>{v == null ? 'Unavailable' : `${isNeg ? '-' : ''}${v}`}</span>
                   </div>
                 ))}
               </Panel>
