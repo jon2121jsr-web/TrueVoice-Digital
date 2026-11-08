@@ -1,7 +1,9 @@
 import AVFoundation
 import Foundation
 import Capacitor
+import ImageIO
 import MediaPlayer
+import os
 import UIKit
 
 @objc(TrueVoiceRadioPlugin)
@@ -50,8 +52,10 @@ private final class NativeRadioEngine {
     private static let stream = URL(string: "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3")!
     private static let metadataDelay: TimeInterval = 2
     private static let metadataURL = URL(string: "https://stream.truevoice.digital/api/nowplaying/truevoice_digital")!
+    private static let playbackLog = Logger(subsystem: "digital.truevoice.app", category: "RadioPlayback")
     private var policy = RadioPlaybackPolicy()
     private var player = AVPlayer()
+    private var itemNumber = 0
     private var revision = 0
     private var epoch = 0
     private var error: String?
@@ -75,6 +79,11 @@ private final class NativeRadioEngine {
     private let session: URLSession
     private let changed: (JSObject) -> Void
     private var stationArt: MPMediaItemArtwork?
+    private var artworkURL: URL?
+    private var artworkTask: URLSessionDownloadTask?
+    private var artworkRequestID = UUID()
+    private var artworkRetryAfter = Date.distantPast
+    private var trackArtwork: MPMediaItemArtwork?
 
     init(changed: @escaping (JSObject) -> Void) {
         self.changed = changed
@@ -101,11 +110,15 @@ private final class NativeRadioEngine {
         })
         notifications.append(center.addObserver(forName: AVPlayerItem.failedToPlayToEndTimeNotification, object: nil, queue: .main) { [weak self] note in
             guard let self = self, let item = note.object as? AVPlayerItem, item === self.player.currentItem else { return }
-            self.scheduleRecovery()
+            self.scheduleRecovery(reason: "failed-to-end")
         })
         notifications.append(center.addObserver(forName: AVPlayerItem.didPlayToEndTimeNotification, object: nil, queue: .main) { [weak self] note in
             guard let self = self, let item = note.object as? AVPlayerItem, item === self.player.currentItem else { return }
-            self.scheduleRecovery()
+            self.scheduleRecovery(reason: "ended")
+        })
+        notifications.append(center.addObserver(forName: AVPlayerItem.playbackStalledNotification, object: nil, queue: .main) { [weak self] note in
+            guard let self = self, let item = note.object as? AVPlayerItem, item === self.player.currentItem else { return }
+            self.logPlayback("stalled")
         })
         installRemoteCommands()
         publish() // Disabled remote commands until the first explicit Play.
@@ -131,7 +144,7 @@ private final class NativeRadioEngine {
         guard policy.play(owner: owner, expectedIntentVersion: expectedIntentVersion) else { return false }
         cancelRecovery()
         error = nil
-        startItem()
+        startItem(reason: reconnect ? "explicit-reconnect" : "play")
         startMetadata()
         publish()
         return true
@@ -157,14 +170,20 @@ private final class NativeRadioEngine {
         try audio.setActive(true)
     }
 
-    private func startItem() {
+    private func startItem(reason: String) {
         guard policy.mayPlay else { return }
         do { try activateSession() }
-        catch { fail("Audio session unavailable. Tap Play to retry."); return }
+        catch {
+            Self.playbackLog.error("Audio session activation failed code=\((error as NSError).code, privacy: .public)")
+            fail("Audio session unavailable. Tap Play to retry.")
+            return
+        }
         player.pause()
         itemObservation = nil
         let item = AVPlayerItem(url: Self.stream)
         // Use the provider's unmodified URL/redirects/ads; no seeks or ad skips.
+        itemNumber += 1
+        Self.playbackLog.notice("New item=\(self.itemNumber, privacy: .public) trigger=\(reason, privacy: .public) source=\(Self.stream.absoluteString, privacy: .public)")
         player.replaceCurrentItem(with: item)
         lastTime = 0
         lastProgress = Date()
@@ -172,7 +191,7 @@ private final class NativeRadioEngine {
         itemObservation = item.observe(\.status, options: [.new]) { [weak self, weak item] _, _ in
             DispatchQueue.main.async {
                 guard let self = self, let item = item, item === self.player.currentItem else { return }
-                if item.status == .failed { self.scheduleRecovery() }
+                if item.status == .failed { self.scheduleRecovery(reason: "item-failed") }
             }
         }
         player.play()
@@ -180,8 +199,12 @@ private final class NativeRadioEngine {
 
     private func observePlayer() {
         player.automaticallyWaitsToMinimizeStalling = true
-        playerObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] _, _ in
-            DispatchQueue.main.async { self?.publish() }
+        playerObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
+            DispatchQueue.main.async { [weak player] in
+                guard let self = self, let player = player, player === self.player else { return }
+                self.logPlayback("time-control")
+                self.publish()
+            }
         }
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 600), queue: .main) { [weak self] _ in
             self?.tick()
@@ -206,12 +229,22 @@ private final class NativeRadioEngine {
             if let since = healthySince, Date().timeIntervalSince(since) >= 30 { policy.recovered() }
         } else {
             if player.timeControlStatus != .playing || Date().timeIntervalSince(lastProgress) >= 2 { healthySince = nil }
-            if Date().timeIntervalSince(lastProgress) >= 20 { scheduleRecovery() }
+            if Date().timeIntervalSince(lastProgress) >= 20 { scheduleRecovery(reason: "watchdog") }
         }
     }
 
-    private func scheduleRecovery() {
+    private func logPlayback(_ event: String) {
+        guard let item = player.currentItem else { return }
+        let reason = player.reasonForWaitingToPlay?.rawValue ?? "none"
+        let access = item.accessLog()?.events.last
+        let errorCode = item.errorLog()?.events.last?.errorStatusCode ?? item.error.map { ($0 as NSError).code } ?? 0
+        let idle = max(0, Date().timeIntervalSince(lastProgress))
+        Self.playbackLog.notice("item=\(self.itemNumber, privacy: .public) event=\(event, privacy: .public) state=\(self.player.timeControlStatus.rawValue, privacy: .public) wait=\(reason, privacy: .public) empty=\(item.isPlaybackBufferEmpty, privacy: .public) idle=\(idle, privacy: .public) bytes=\(access?.numberOfBytesTransferred ?? -1, privacy: .public) stalls=\(access?.numberOfStalls ?? -1, privacy: .public) error=\(errorCode, privacy: .public)")
+    }
+
+    private func scheduleRecovery(reason: String) {
         guard policy.mayPlay, recovery == nil else { return }
+        logPlayback(reason)
         guard let delay = policy.nextRetryDelay() else {
             fail("Stream unavailable. Tap Play to retry."); return
         }
@@ -221,7 +254,7 @@ private final class NativeRadioEngine {
         let job = DispatchWorkItem { [weak self] in
             guard let self = self, token == self.epoch, self.policy.mayPlay else { return }
             self.recovery = nil
-            self.startItem()
+            self.startItem(reason: "recovery-\(reason)")
             self.publish()
         }
         recovery = job
@@ -249,6 +282,7 @@ private final class NativeRadioEngine {
         guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
         if type == .began {
+            logPlayback("interruption-began")
             policy.interruptionBegan(); cancelRecovery(); player.pause(); publish()
         } else {
             let rawOptions = note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
@@ -268,7 +302,7 @@ private final class NativeRadioEngine {
         watchdogTimer?.invalidate()
         player = AVPlayer()
         observePlayer()
-        if policy.mayPlay { startItem() }
+        if policy.mayPlay { startItem(reason: "media-services-reset") }
         publish()
     }
 
@@ -338,7 +372,55 @@ private final class NativeRadioEngine {
             command.isEnabled = false
         }
     }
+
+    private func updateArtwork() {
+        let url = policy.mayPlay ? (track["art"] as? String).flatMap { URL(string: $0) } : nil
+        if url != artworkURL {
+            artworkTask?.cancel()
+            artworkTask = nil
+            artworkRequestID = UUID()
+            artworkURL = url
+            trackArtwork = nil
+            artworkRetryAfter = .distantPast
+        }
+        guard let url = url, artworkTask == nil, trackArtwork == nil,
+              artworkRetryAfter <= Date() else { return }
+
+        let requestID = UUID()
+        artworkRequestID = requestID
+        let task = session.downloadTask(with: url) { [weak self] file, response, _ in
+            let image = Self.artworkImage(file: file, response: response)
+            DispatchQueue.main.async {
+                guard let self = self, self.artworkRequestID == requestID else { return }
+                self.artworkTask = nil
+                guard let image = image else {
+                    self.artworkRetryAfter = Date().addingTimeInterval(30)
+                    return
+                }
+                self.trackArtwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+                self.publish()
+            }
+        }
+        artworkTask = task
+        task.resume()
+    }
+
+    private static func artworkImage(file: URL?, response: URLResponse?) -> UIImage? {
+        guard let file = file, let response = response as? HTTPURLResponse,
+              response.statusCode == 200, response.url?.scheme == "https",
+              let size = (try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize,
+              size <= 5_242_880,
+              let source = CGImageSourceCreateWithURL(file as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: 512
+              ] as CFDictionary) else { return nil }
+        return UIImage(cgImage: thumbnail)
+    }
+
     private func publish() {
+        updateArtwork()
         revision += 1
         let center = MPRemoteCommandCenter.shared()
         let enabled = policy.activated && !policy.videoActive
@@ -354,7 +436,7 @@ private final class NativeRadioEngine {
                 MPNowPlayingInfoPropertyPlaybackRate: policy.mayPlay && player.timeControlStatus == .playing ? 1.0 : 0.0
             ]
             // No duration, seek position or fabricated elapsed timeline for live radio.
-            if let stationArt = stationArt { info[MPMediaItemPropertyArtwork] = stationArt }
+            if let artwork = trackArtwork ?? stationArt { info[MPMediaItemPropertyArtwork] = artwork }
             MPNowPlayingInfoCenter.default().nowPlayingInfo = info
         } else if policy.videoActive {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
@@ -365,6 +447,7 @@ private final class NativeRadioEngine {
         recovery?.cancel(); player.pause()
         metadataTimer?.invalidate(); watchdogTimer?.invalidate()
         metadataTask?.cancel(); session.invalidateAndCancel()
+        artworkTask?.cancel()
         if let timeObserver = timeObserver { player.removeTimeObserver(timeObserver) }
         notifications.forEach { NotificationCenter.default.removeObserver($0) }
         commands.forEach { $0.0.removeTarget($0.1) }

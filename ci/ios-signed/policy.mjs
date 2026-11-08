@@ -74,7 +74,7 @@ export function validateSignedApp({ info, signature, entitlements, profile, iden
   assert.equal(info.CFBundleIdentifier, policy.bundleId);
   assert.ok(info.UIBackgroundModes?.includes('audio'));
   assert.equal(info.CFBundleShortVersionString, '1.0', 'Unreviewed version change');
-  assert.equal(String(info.CFBundleVersion), '24', 'Unreviewed build-number change');
+  assert.equal(String(info.CFBundleVersion), '25', 'Unreviewed build-number change');
   assert.equal(signature.team, policy.team);
   assert.equal(signature.identifier, policy.bundleId);
   assert.equal(signature.leafSha1, identity.sha1, 'Signature certificate mismatch');

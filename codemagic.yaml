@@ -1,5 +1,5 @@
 # Candidate root codemagic.yaml for the dedicated CI branch only.
-# Release publishing is scoped to the manually triggered Build 24 workflow.
+# Release publishing is scoped to the manually triggered Build 25 workflow.
 workflows:
   ios-native-validation:
     name: ios-native-validation
@@ -63,8 +63,8 @@ workflows:
       - .native-validation/release/logs/*.log
       - .native-validation/release/reports/*.json
 
-  ios-testflight-build24:
-    name: ios-testflight-build24
+  ios-testflight-build25:
+    name: ios-testflight-build25
     instance_type: mac_mini_m2
     max_build_duration: 60
     when:

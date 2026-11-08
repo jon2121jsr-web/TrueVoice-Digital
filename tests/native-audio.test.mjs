@@ -179,6 +179,22 @@ test('Xcode sources, storyboard registration and audio background mode are wired
   assert.ok(fs.readFileSync('src/App.jsx', 'utf8').includes('!IS_NATIVE_RADIO && <audio'));
 });
 
+test('native diagnostics distinguish waiting on an item from replacing it', () => {
+  const swift = fs.readFileSync('ios/App/App/TrueVoiceRadioPlugin.swift', 'utf8');
+  assert.match(swift, /itemNumber \+= 1[\s\S]*?replaceCurrentItem\(with: item\)/);
+  assert.match(swift, /AVPlayerItem\.playbackStalledNotification/);
+  assert.match(swift, /player\.reasonForWaitingToPlay/);
+  assert.match(swift, /scheduleRecovery\(reason: "watchdog"\)/);
+});
+
+test('lock-screen artwork follows the displayed native track with a station fallback', () => {
+  const swift = fs.readFileSync('ios/App/App/TrueVoiceRadioPlugin.swift', 'utf8');
+  assert.match(swift, /let url = policy\.mayPlay \? \(track\["art"\] as\? String\)/);
+  assert.match(swift, /if url != artworkURL \{\s+artworkTask\?\.cancel\(\)/);
+  assert.match(swift, /guard let self = self, self\.artworkRequestID == requestID else \{ return \}/);
+  assert.match(swift, /trackArtwork \?\? stationArt \{ info\[MPMediaItemPropertyArtwork\] = artwork \}/);
+});
+
 test('real native PULSE controller renders native events and remote Pause without WebView polling', async () => {
   let emit;
   const slots = []; let index = 0;

@@ -17,7 +17,7 @@ const entitlements = {
   'get-task-allow': false, 'beta-reports-active': true,
 };
 const profile = () => ({ uuid: 'offline-uuid', name: 'offline-profile', teams: [policy.team], prefixes: [policy.team], platforms: ['iOS'], created: '2020-01-01', expires: '2099-01-01', hasDevices: false, allDevices: false, entitlements: { ...entitlements, 'keychain-access-groups': [policy.team + '.*'] }, certificateSha1: [sha1] });
-const app = () => ({ info: { CFBundleIdentifier: policy.bundleId, CFBundleShortVersionString: '1.0', CFBundleVersion: '24', UIBackgroundModes: ['audio'] }, signature: { team: policy.team, identifier: policy.bundleId, leafSha1: sha1 }, entitlements: { ...entitlements, 'keychain-access-groups': [policy.team + '.' + policy.bundleId] }, profile: profile(), identity, embeddedHash: 'same', selectedHash: 'same' });
+const app = () => ({ info: { CFBundleIdentifier: policy.bundleId, CFBundleShortVersionString: '1.0', CFBundleVersion: '25', UIBackgroundModes: ['audio'] }, signature: { team: policy.team, identifier: policy.bundleId, leafSha1: sha1 }, entitlements: { ...entitlements, 'keychain-access-groups': [policy.team + '.' + policy.bundleId] }, profile: profile(), identity, embeddedHash: 'same', selectedHash: 'same' });
 
 test('signed selection rejects other branches and workflows', () => {
   assert.doesNotThrow(() => assertSelection(policy.branch, policy.workflow));
@@ -90,7 +90,7 @@ test('artifact inspection rejects traversal, credentials, multiple apps and miss
   } finally { fs.rmSync(temp, { recursive: true }); }
 });
 
-test('Build 24 signs and uploads only through the guarded release workflow', () => {
+test('Build 25 signs and uploads only through the guarded release workflow', () => {
   const current = yaml.load(fs.readFileSync('codemagic.yaml', 'utf8'));
   const baseline = yaml.load(execFileSync('git', ['show', policy.baseline + ':codemagic.yaml'], { encoding: 'utf8' }));
   assert.deepEqual(Object.keys(current), ['workflows']);
@@ -111,9 +111,9 @@ test('Build 24 signs and uploads only through the guarded release workflow', () 
   assert.ok(runner.includes("process.env.CM_TRIGGER_SOURCE, 'api'"));
 });
 
-test('signed artifact version policy accepts only marketing 1.0 and build 24', () => {
+test('signed artifact version policy accepts only marketing 1.0 and build 25', () => {
   assert.doesNotThrow(() => validateSignedApp(app()));
-  for (const build of ['1', '22', '23', '25']) {
+  for (const build of ['1', '22', '23', '24']) {
     const a = app(); a.info.CFBundleVersion = build;
     assert.throws(() => validateSignedApp(a), /Unreviewed build-number change/);
   }
@@ -144,7 +144,7 @@ test('App Debug and Release settings resolve plist versions accepted by signed p
       assert.equal(parts.length, 2, 'Expected one ' + key + ' in App ' + name);
       return parts[1].split(';')[0];
     };
-    assert.equal(setting('CURRENT_PROJECT_VERSION'), '24');
+    assert.equal(setting('CURRENT_PROJECT_VERSION'), '25');
     assert.equal(setting('MARKETING_VERSION'), '1.0');
     assert.equal(setting('PRODUCT_BUNDLE_IDENTIFIER'), policy.bundleId);
     const a = app();
