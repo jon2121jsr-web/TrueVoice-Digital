@@ -1,7 +1,7 @@
 {
   "baseline": "1c3ebb18eee5151c47d844ea97100651624c98e6",
   "branch": "release/ios-testflight-1b04",
-  "phase": "TestFlight Build 25",
+  "phase": "TestFlight Build 26",
   "entries": [
     {
       "path": ".gitattributes",
@@ -405,7 +405,7 @@
     },
     {
       "path": "ci/ios-release/release.test.mjs",
-      "sha256": "2f84ea9f7020fc9a97f93a8097cceb3bf483c372d4e20ce1c198b1be8e04fb79"
+      "sha256": "ac77de52533540d25b07c5fcda3884d9baf9586e64fe4440a5532647ca7df23b"
     },
     {
       "path": "ci/ios-release/runtime-profile.json",
@@ -433,11 +433,11 @@
     },
     {
       "path": "ci/ios-signed/policy.json",
-      "sha256": "f5fe0206545f63733ac1ed4b34557539fae49543b9017cbd9e8059593778ee16"
+      "sha256": "97e064ed5494d5bf540281bf9d54c90923699f58ed433117f5f9c1bb6e8f3df6"
     },
     {
       "path": "ci/ios-signed/policy.mjs",
-      "sha256": "d36302e37b4033db8e8c182c14b4b5d1c766a408b992b532ce00e65502453bca"
+      "sha256": "7fd0936c16eefeea327b6911bd0d506d017e9d01f78ffce4e6f1b35b7e0555e0"
     },
     {
       "path": "ci/ios-signed/run.mjs",
@@ -449,7 +449,7 @@
     },
     {
       "path": "ci/ios-signed/signed.test.mjs",
-      "sha256": "67038606a6a717eafba9020fc2f9aa59268045905cab290ccde5e7c58b670ee0"
+      "sha256": "6ed8e37e9910dca8d110e5ecdd0495ba83265444086fef1af33e205adfbd243b"
     },
     {
       "path": "ci/ios-signed/validate.mjs",
@@ -489,7 +489,7 @@
     },
     {
       "path": "codemagic.yaml",
-      "sha256": "b497544b94d223f29dc9e855578bc2bfb3a8aa8627f071c9bc17924f3e6f046b"
+      "sha256": "70efe9bee95a6acf900fa1a902f06d694eaf2338291654c66c128e1f09ed152c"
     },
     {
       "path": "docs/PULSE-Phase4B-final-validation.md",
@@ -645,7 +645,7 @@
     },
     {
       "path": "ios/App/App.xcodeproj/project.pbxproj",
-      "sha256": "b82203e14d7b28b3b6453e587ec9ec680967c83aafa64b4042d5df1df4ffd025"
+      "sha256": "74980bb099a2527cc2664787b7860ad0567cc8dddca27b22afe1a433f458c0ba"
     },
     {
       "path": "ios/App/App.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
@@ -701,7 +701,7 @@
     },
     {
       "path": "ios/App/App/TrueVoiceRadioPlugin.swift",
-      "sha256": "add522721489e938039e14e9d4e878b93534f942e6fe976df85f128239204793"
+      "sha256": "98be7af1eb6e38ee65bbe8a08e6e71586df2ecfbcf97fcf1450544f5ea1be003"
     },
     {
       "path": "ios/App/Podfile",
@@ -1437,7 +1437,7 @@
     },
     {
       "path": "tests/native-audio.test.mjs",
-      "sha256": "70b949f424e606b5754e9b13af3dabd3e8dc3c104fa06edb6aeb25f6657cc0f8"
+      "sha256": "6627f2cc3216584d88b13337e7e54db4a14d5de164fe9c0554b15771d34a9e01"
     },
     {
       "path": "tests/native-ci-preparation.test.mjs",
