@@ -49,8 +49,8 @@ public class TrueVoiceRadioPlugin: CAPPlugin, CAPBridgedPlugin {
 // All AVPlayer, policy and metadata state is confined to the main queue. There
 // is one radio engine per registered plugin, no WebView audio or fallback URL.
 private final class NativeRadioEngine {
-    private static let stream = URL(string: "https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3")!
-    private static let metadataDelay: TimeInterval = 2
+    private static let stream = URL(string: "https://streaming.live365.com/a61535")!
+    private static let metadataDelay: TimeInterval = 55
     private static let metadataURL = URL(string: "https://stream.truevoice.digital/api/nowplaying/truevoice_digital")!
     private static let playbackLog = Logger(subsystem: "digital.truevoice.app", category: "RadioPlayback")
     private var policy = RadioPlaybackPolicy()
