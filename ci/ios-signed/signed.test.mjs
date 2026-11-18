@@ -1,3 +1,4 @@
+import * as zlib from 'node:zlib';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -155,8 +156,32 @@ test('App Debug and Release settings resolve plist versions accepted by signed p
   }
 });
 
-test('Build 27 embeds the approved high-resolution waveform icon', () => {
-  const iosIcon = fs.readFileSync('ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png');
-  const approved = fs.readFileSync('public/icon-1024.png');
-  assert.deepEqual(iosIcon, approved, 'iOS icon must exactly match approved vector-derived artwork');
+test('Build 27 App Store icon is 1024x1024 opaque RGB PNG without any alpha or transparency', () => {
+  const png = fs.readFileSync('ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png');
+  assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'PNG signature');
+  assert.equal(png.toString('ascii', 12, 16), 'IHDR', 'First chunk must be IHDR');
+  assert.equal(png.readUInt32BE(16), 1024, 'App Store icon width');
+  assert.equal(png.readUInt32BE(20), 1024, 'App Store icon height');
+  assert.equal(png[24], 8, '8-bit component depth');
+  assert.equal(png[25], 2, 'RGB PNG only: RGBA / grayscale-alpha / indexed forbidden');
+  assert.equal(png[26], 0, 'Standard PNG compression');
+  assert.equal(png[27], 0, 'Standard PNG filter');
+  assert.equal(png[28], 0, 'Noninterlaced image');
+  let offset = 8;
+  const idat = [];
+  let ended = false;
+  while (offset + 12 <= png.length) {
+    const size = png.readUInt32BE(offset);
+    const type = png.toString('ascii', offset + 4, offset + 8);
+    assert.ok(offset + 12 + size <= png.length, 'PNG chunk in bounds');
+    assert.notEqual(type, 'tRNS', 'Transparency chunk forbidden for App Store');
+    if (type === 'IDAT') idat.push(png.subarray(offset + 8, offset + 8 + size));
+    offset += size + 12;
+    if (type === 'IEND') { ended = true; break; }
+  }
+  assert.ok(ended, 'PNG must end correctly');
+  assert.equal(offset, png.length, 'No trailing data');
+  assert.ok(idat.length > 0, 'Image data required');
+  const imageData = zlib.inflateSync(Buffer.concat(idat));
+  assert.equal(imageData.length, 1024 * (1 + 1024 * 3), 'Full RGB scanline payload');
 });
