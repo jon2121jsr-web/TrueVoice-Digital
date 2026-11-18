@@ -1,7 +1,7 @@
 {
   "baseline": "1c3ebb18eee5151c47d844ea97100651624c98e6",
   "branch": "release/ios-testflight-1b04",
-  "phase": "TestFlight Build 26",
+  "phase": "TestFlight Build 27",
   "entries": [
     {
       "path": ".gitattributes",
@@ -405,7 +405,7 @@
     },
     {
       "path": "ci/ios-release/release.test.mjs",
-      "sha256": "ac77de52533540d25b07c5fcda3884d9baf9586e64fe4440a5532647ca7df23b"
+      "sha256": "0bc586c9925ccdeae2795a85b5d1bf5ec1d37e85c32a918b32e107446e2c22fe"
     },
     {
       "path": "ci/ios-release/runtime-profile.json",
@@ -433,11 +433,11 @@
     },
     {
       "path": "ci/ios-signed/policy.json",
-      "sha256": "97e064ed5494d5bf540281bf9d54c90923699f58ed433117f5f9c1bb6e8f3df6"
+      "sha256": "16e87ffd9c66de39a7f3a3a9ebf31e826c50fbe75b4e2da53babec809587523b"
     },
     {
       "path": "ci/ios-signed/policy.mjs",
-      "sha256": "7fd0936c16eefeea327b6911bd0d506d017e9d01f78ffce4e6f1b35b7e0555e0"
+      "sha256": "357475248a10ab10c884c9e853e3da63aff10daf42fe3280ff2889af42cb9609"
     },
     {
       "path": "ci/ios-signed/run.mjs",
@@ -449,7 +449,7 @@
     },
     {
       "path": "ci/ios-signed/signed.test.mjs",
-      "sha256": "6ed8e37e9910dca8d110e5ecdd0495ba83265444086fef1af33e205adfbd243b"
+      "sha256": "dc35782a831ead99f7367e0eaca526f73cda1cb796256613f4f341eaba071d04"
     },
     {
       "path": "ci/ios-signed/validate.mjs",
@@ -489,7 +489,7 @@
     },
     {
       "path": "codemagic.yaml",
-      "sha256": "70efe9bee95a6acf900fa1a902f06d694eaf2338291654c66c128e1f09ed152c"
+      "sha256": "eaf464126efac0689fd2f1a5d280654013290c16a5c48aa9836b45ed0fec8ca0"
     },
     {
       "path": "docs/PULSE-Phase4B-final-validation.md",
@@ -645,7 +645,7 @@
     },
     {
       "path": "ios/App/App.xcodeproj/project.pbxproj",
-      "sha256": "74980bb099a2527cc2664787b7860ad0567cc8dddca27b22afe1a433f458c0ba"
+      "sha256": "edd92d7ecbc765ca2dbe5401ba2a9fa6d608f532fd58457548bdf3fec11bdcc1"
     },
     {
       "path": "ios/App/App.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
@@ -657,7 +657,7 @@
     },
     {
       "path": "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png",
-      "sha256": "08e7f5dc52ba83345cbd023135cd8448c26b8182f2eb734da77e168442d167d1"
+      "sha256": "7d065432740ab355541d5fa6152d4a262f7892343e5826cc401f712c6c4afbb0"
     },
     {
       "path": "ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json",
