@@ -18,7 +18,7 @@ workflows:
       - name: Install locked npm dependencies
         script: npm ci
       - name: Build TrueVoice web assets with approved public runtime
-        script: npm run build
+        script: node ci/ios-release/build-web.mjs
       - name: Sync Capacitor Android native project
         script: npx cap sync android
       - name: Configure Android SDK
