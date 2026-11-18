@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Approved TrueVoice blue waveform on opaque midnight canvas. -->
+    <path android:fillColor="#050816" android:pathData="M0,0h108v108h-108z"/>
+    <path android:fillColor="#00BDEB" android:pathData="M25,46 Q25,43 28,43 L29,43 Q32,43 32,46 L32,62 Q32,65 29,65 L28,65 Q25,65 25,62z"/>
+    <path android:fillColor="#00BDEB" android:pathData="M37,39 Q37,36 40,36 L41,36 Q44,36 44,39 L44,69 Q44,72 41,72 L40,72 Q37,72 37,69z"/>
+    <path android:fillColor="#00BDEB" android:pathData="M49,32 Q49,29 52,29 L53,29 Q56,29 56,32 L56,76 Q56,79 53,79 L52,79 Q49,79 49,76z"/>
+    <path android:fillColor="#008CFF" android:pathData="M61,25 Q61,22 64,22 L65,22 Q68,22 68,25 L68,83 Q68,86 65,86 L64,86 Q61,86 61,83z"/>
+    <path android:fillColor="#008CFF" android:pathData="M73,34 Q73,31 76,31 L77,31 Q80,31 80,34 L80,74 Q80,77 77,77 L76,77 Q73,77 73,74z"/>
+</vector>
