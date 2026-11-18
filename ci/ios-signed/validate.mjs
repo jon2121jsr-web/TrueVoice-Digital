@@ -1,5 +1,6 @@
 // Future approved macOS worker only. No raw signing-tool output is logged.
 import fs from 'node:fs';
+import { inflateSync } from 'node:zlib';
 import path from 'node:path';
 import os from 'node:os';
 import assert from 'node:assert/strict';
@@ -169,6 +170,34 @@ function archiveExport() {
   fs.writeFileSync(path.join(reports, 'verification.json'), JSON.stringify(result, null, 2));
 }
 
+
+export function verifyAppStoreIcon() {
+  const png = fs.readFileSync(path.join(root, 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'));
+  assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'App icon must be PNG');
+  assert.equal(png.toString('ascii', 12, 16), 'IHDR', 'App icon IHDR missing');
+  assert.equal(png.readUInt32BE(16), 1024, 'App icon must be 1024px wide');
+  assert.equal(png.readUInt32BE(20), 1024, 'App icon must be 1024px high');
+  assert.equal(png[24], 8, 'App icon needs 8-bit channel depth');
+  assert.equal(png[25], 2, 'App icon must use opaque RGB color type 2, not RGBA or palette');
+  assert.equal(png[26], 0, 'Unsupported app icon compression');
+  assert.equal(png[27], 0, 'Unsupported app icon filter method');
+  assert.equal(png[28], 0, 'Unsupported app icon interlacing');
+  let offset = 8, ended = false;
+  const idat = [];
+  while (offset + 12 <= png.length) {
+    const size = png.readUInt32BE(offset);
+    const type = png.toString('ascii', offset + 4, offset + 8);
+    assert.ok(offset + size + 12 <= png.length, 'Invalid app icon chunk length');
+    assert.notEqual(type, 'tRNS', 'App icon contains forbidden transparency chunk');
+    if (type === 'IDAT') idat.push(png.subarray(offset + 8, offset + 8 + size));
+    offset += size + 12;
+    if (type === 'IEND') { ended = true; break; }
+  }
+  assert.ok(ended && offset === png.length, 'App icon file is incomplete');
+  assert.ok(idat.length, 'App icon image data missing');
+  assert.equal(inflateSync(Buffer.concat(idat)).length, 1024 * (1 + 1024 * 3), 'Invalid RGB app icon scanline data');
+}
+
 export function main(step) {
   assert.ok(['preflight', 'dependencies', 'swift-tests', 'web-build', 'sync', 'archive-export'].includes(step));
   assert.equal(os.platform(), 'darwin', 'Approved macOS worker required');
@@ -176,6 +205,7 @@ export function main(step) {
   assert.equal(process.env.CM_TRIGGER_SOURCE, 'api', 'Webhook and scheduled runs prohibited');
   assert.ok(!process.env.CM_TAG && process.env.CM_PULL_REQUEST !== 'true', 'Tags and pull-request runs prohibited');
   validateSignedEnvironment(process.env);
+  verifyAppStoreIcon(); // Reject alpha before the signed archive is attempted.
   process.chdir(root);
   if (step === 'preflight') {
     const source = verifyReleaseSource();
