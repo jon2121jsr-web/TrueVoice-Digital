@@ -449,11 +449,11 @@
     },
     {
       "path": "ci/ios-signed/signed.test.mjs",
-      "sha256": "dc35782a831ead99f7367e0eaca526f73cda1cb796256613f4f341eaba071d04"
+      "sha256": "cf616a3dc51fadb614640fc0ee2b9dce01ac2d9364955c336baafff30b87b89d"
     },
     {
       "path": "ci/ios-signed/validate.mjs",
-      "sha256": "1d9db0cba7bb00d2eac2cba1099be466796d7e0b95625ff1466379b00bfd34b0"
+      "sha256": "f8a22ae53d18d4a93852bc19b77b83216f252eb756b7683278eef6ff30ef90f1"
     },
     {
       "path": "ci/ios-upload/upload-existing.mjs",
