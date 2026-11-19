@@ -205,7 +205,12 @@ export function NowPlayingPanel({
       setError(state.error ?? null);
       setMetadataError(state.metadataError ?? null);
       setLoading(state.revision < 0 && !state.error);
-      if (state.metadata?.title) setDisplaySong(state.metadata);
+      if (state.metadata?.title) setDisplaySong(prev =>
+        prev?.title === state.metadata.title &&
+        prev?.artist === state.metadata.artist &&
+        (prev?.art || null) === (state.metadata.art || null)
+          ? prev : state.metadata
+      );
       setListeners(state.listeners ?? null); // AzuraCast count, never Live365 reach.
     });
     const refresh = () => { if (!document.hidden) nativeRadio.refresh().catch(() => {}); };
