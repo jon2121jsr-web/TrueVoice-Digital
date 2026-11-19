@@ -26,6 +26,14 @@ export async function initPushNotifications(navigate) {
   // do nothing. Nothing below this line should ever run in a browser tab.
   if (!Capacitor.isNativePlatform()) return;
 
+  // Android requires a provisioned Firebase google-services.json before FCM
+  // register() can be called. The current Android test build intentionally has
+  // no Firebase project/config, so attempting native registration crashes the
+  // entire app on the CapacitorPlugins thread (FirebaseApp not initialized).
+  // Keep iOS APNs registration unchanged; restore Android FCM only after a
+  // properly configured Firebase project and release-specific validation exist.
+  if (Capacitor.getPlatform() === 'android') return;
+
   // React 18/19 StrictMode double-invokes effects in dev; guard so a
   // second call in the same app session (e.g. a HMR remount) is a no-op
   // instead of registering twice or double-attaching listeners.
