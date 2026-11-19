@@ -17,6 +17,8 @@ workflows:
         script: node --test tests/android-play.test.mjs
       - name: Install locked npm dependencies
         script: npm ci
+      - name: Test native audio transport and Android media session guards
+        script: node --test tests/native-audio.test.mjs tests/android-play.test.mjs
       - name: Build TrueVoice web assets with approved public runtime
         script: node ci/ios-release/build-web.mjs
       - name: Sync Capacitor Android native project
