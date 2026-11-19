@@ -137,7 +137,7 @@ export function NowPlayingPanel({
 
   /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {
-    if (IS_NATIVE_RADIO) return;
+    if (IS_NATIVE_RADIO && !IS_ANDROID_NATIVE_RADIO) return;
     const id = window.setInterval(() => {
       watchdogRef.current?.();
       syncSourceTimingRef.current?.();
