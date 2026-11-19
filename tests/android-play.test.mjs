@@ -39,3 +39,13 @@ test('Android CI is build-only and does not publish without review', () => {
   const section = yaml.split('  android-play-debug-v1:')[1].split('\n  ios-native-validation:')[0];
   assert.doesNotMatch(section, /publishing:|google_play:|upload-key|keystore_password/);
 });
+
+test('Android avoids Firebase push registration until a Firebase project is provisioned', () => {
+  const push = read('src/lib/pushNotifications.js');
+  const native = push.indexOf('if (!Capacitor.isNativePlatform()) return;');
+  const android = push.indexOf("if (Capacitor.getPlatform() === 'android') return;");
+  const registration = push.indexOf('await PushNotifications.register()');
+  assert.ok(native >= 0 && android > native && registration > android, 'Android must exit before native FCM registration');
+  const gradle = read('android/app/build.gradle');
+  assert.match(gradle, /google-services\.json not found, google-services plugin not applied/);
+});
