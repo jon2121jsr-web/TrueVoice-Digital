@@ -49,3 +49,31 @@ test('Android avoids Firebase push registration until a Firebase project is prov
   const gradle = read('android/app/build.gradle');
   assert.match(gradle, /google-services\.json not found, google-services plugin not applied/);
 });
+
+test('Android Media3 owns one radio decoder and declares background media controls', () => {
+  const gradle = read('android/app/build.gradle');
+  const manifest = read('android/app/src/main/AndroidManifest.xml');
+  const activity = read('android/app/src/main/java/digital/truevoice/app/MainActivity.java');
+  const service = read('android/app/src/main/java/digital/truevoice/app/TrueVoicePlaybackService.java');
+  const plugin = read('android/app/src/main/java/digital/truevoice/app/TrueVoiceRadioPlugin.java');
+  const adapter = read('src/lib/nativeRadio.js');
+  const panel = read('src/components/NowPlayingPanel.jsx');
+  assert.match(gradle, /media3-exoplayer:1\.11\.1/);
+  assert.match(gradle, /media3-session:1\.11\.1/);
+  assert.match(manifest, /android\.permission\.FOREGROUND_SERVICE_MEDIA_PLAYBACK/);
+  assert.match(manifest, /android:foregroundServiceType="mediaPlayback"/);
+  assert.match(manifest, /androidx\.media3\.session\.MediaSessionService/);
+  assert.match(activity, /registerPlugin\(TrueVoiceRadioPlugin\.class\)/);
+  assert.match(service, /extends MediaSessionService/);
+  assert.match(service, /https:\/\/streaming\.live365\.com\/a61535/);
+  assert.match(service, /new ExoPlayer\.Builder/);
+  assert.match(service, /new MediaSession\.Builder/);
+  assert.match(plugin, /@CapacitorPlugin\(name = "TrueVoiceRadio"\)/);
+  for (const command of ['play', 'pause', 'getState', 'setVideoActive', 'setMetadata']) {
+    assert.ok(plugin.includes('@PluginMethod public void ' + command), 'Missing Android bridge method ' + command);
+  }
+  assert.match(adapter, /Capacitor\.getPlatform\(\) === 'android'/);
+  assert.match(panel, /IS_ANDROID_NATIVE_RADIO \? streamUrl : null/);
+  assert.match(panel, /nativeRadio\.setMetadata/);
+  assert.match(read('src/App.jsx'), /!IS_NATIVE_RADIO && <audio/);
+});
