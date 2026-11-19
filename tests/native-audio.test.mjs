@@ -31,7 +31,7 @@ test('both native platforms register the radio bridge; browser does not', async 
   for (const platform of ['web', 'android', 'ios']) {
     const { api, context } = await load(undefined, platform);
     assert.equal(api.IS_NATIVE_RADIO, platform !== 'web');
-    assert.equal(context.registrations.join(','), platform === 'ios' ? 'TrueVoiceRadio' : '');
+    assert.equal(context.registrations.join(','), platform !== 'web' ? 'TrueVoiceRadio' : '');
     assert.equal(context.audioCreated, 0);
   }
 });
