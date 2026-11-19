@@ -78,8 +78,9 @@ export function NowPlayingPanel({
     metadataRef.current = timeline;
     const el = audioRef?.current;
     const syncSourceTiming = () => {
-      if (!alive || !el?.currentSrc) return; // Keep timing during transient empties.
-      const timing = streamMetadataTiming(el.currentSrc, STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC);
+      const currentSource = el?.currentSrc || (IS_ANDROID_NATIVE_RADIO ? streamUrl : null);
+      if (!alive || !currentSource) return; // Keep timing during transient empties.
+      const timing = streamMetadataTiming(currentSource, STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC);
       const nextSong = timeline.setDelay(timing.seconds);
       if (nextSong) setDisplaySong(nextSong);
     };
@@ -133,7 +134,19 @@ export function NowPlayingPanel({
         syncSourceTimingRef.current = null;
       }
     };
-  }, [STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC, audioRef]);
+  }, [STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC, audioRef, streamUrl]);
+
+  // The Android Media3 service owns playback while this timeline continues
+  // to align album/artist information with the Live365 relay's 55s delay.
+  // Metadata-only replacements use the same stream URL and retain transport.
+  useEffect(() => {
+    if (!IS_ANDROID_NATIVE_RADIO || !displaySong?.title) return;
+    nativeRadio.setMetadata({
+      title: displaySong.title,
+      artist: displaySong.artist || 'TrueVoice Digital',
+      art: displaySong.art || '',
+    }).catch(() => {});
+  }, [displaySong]);
 
   /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {
