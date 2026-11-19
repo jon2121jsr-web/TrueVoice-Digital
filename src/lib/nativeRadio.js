@@ -1,6 +1,8 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
-export const IS_NATIVE_RADIO = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+export const IS_NATIVE_RADIO = Capacitor.isNativePlatform() &&
+  (Capacitor.getPlatform() === 'ios' || Capacitor.getPlatform() === 'android');
+export const IS_ANDROID_NATIVE_RADIO = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
 
 // A transport adapter, not a second playback state machine. Native snapshots
 // are authoritative; revision numbers reject late command/read responses.
@@ -51,6 +53,7 @@ export function createNativeRadio(plugin, { canPlay = () => true } = {}) {
     pause: (owner = 'radio') => command('pause', { owner }),
     setVideoActive: active => command('setVideoActive', { active }),
     refresh: () => command('getState'),
+    setMetadata: song => command('setMetadata', song),
     getSnapshot: () => snapshot,
   };
 }
@@ -63,7 +66,7 @@ if (IS_NATIVE_RADIO && typeof document !== 'undefined') {
   const rememberGesture = event => { if (event.isTrusted) gestureAt = Date.now(); };
   ['pointerup', 'click', 'keydown'].forEach(type => document.addEventListener(type, rememberGesture, true));
 }
-// There is deliberately no web implementation or HTML-audio fallback on iOS.
+// Neither native platform falls back to a competing WebView audio decoder.
 export const nativeRadio = IS_NATIVE_RADIO ? createNativeRadio(registerPlugin('TrueVoiceRadio'), {
   canPlay: () => gestureAt > 0 && Date.now() - gestureAt < 1500,
 }) : null;

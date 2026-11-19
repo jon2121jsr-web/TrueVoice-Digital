@@ -1,6 +1,6 @@
 // src/components/NowPlayingPanel.jsx
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { IS_NATIVE_RADIO, nativeRadio } from "../lib/nativeRadio";
+import { IS_NATIVE_RADIO, IS_ANDROID_NATIVE_RADIO, nativeRadio } from "../lib/nativeRadio";
 import { fetchNowPlaying } from "../services/api";
 import { trackStreamPlay } from '../lib/analytics.js';
 import { createMetadataTimeline, metadataDelaySeconds, METADATA_POLL_MS } from "../lib/metadataTimeline";
@@ -71,15 +71,16 @@ export function NowPlayingPanel({
 
   /* ── Poll fresh AzuraCast metadata every 5 seconds ──────────────────────────────────── */
   useEffect(() => {
-    if (IS_NATIVE_RADIO) return; // Native owns background-safe metadata polling.
+    if (IS_NATIVE_RADIO && !IS_ANDROID_NATIVE_RADIO) return; // iOS owns background-safe metadata polling.
     let alive = true;
     let inFlight = false;
     const timeline = createMetadataTimeline(STREAM_DELAY_SEC);
     metadataRef.current = timeline;
     const el = audioRef?.current;
     const syncSourceTiming = () => {
-      if (!alive || !el?.currentSrc) return; // Keep timing during transient empties.
-      const timing = streamMetadataTiming(el.currentSrc, STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC);
+      const currentSource = el?.currentSrc || (IS_ANDROID_NATIVE_RADIO ? streamUrl : null);
+      if (!alive || !currentSource) return; // Keep timing during transient empties.
+      const timing = streamMetadataTiming(currentSource, STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC);
       const nextSong = timeline.setDelay(timing.seconds);
       if (nextSong) setDisplaySong(nextSong);
     };
@@ -133,11 +134,23 @@ export function NowPlayingPanel({
         syncSourceTimingRef.current = null;
       }
     };
-  }, [STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC, audioRef]);
+  }, [STREAM_DELAY_SEC, LIVE365_METADATA_DELAY_SEC, AZURACAST_METADATA_DELAY_SEC, audioRef, streamUrl]);
+
+  // The Android Media3 service owns playback while this timeline continues
+  // to align album/artist information with the Live365 relay's 55s delay.
+  // Metadata-only replacements use the same stream URL and retain transport.
+  useEffect(() => {
+    if (!IS_ANDROID_NATIVE_RADIO || !displaySong?.title) return;
+    nativeRadio.setMetadata({
+      title: displaySong.title,
+      artist: displaySong.artist || 'TrueVoice Digital',
+      art: displaySong.art || '',
+    }).catch(() => {});
+  }, [displaySong]);
 
   /* ── 1-second tick — flip pending song when delay expires ─────────────── */
   useEffect(() => {
-    if (IS_NATIVE_RADIO) return;
+    if (IS_NATIVE_RADIO && !IS_ANDROID_NATIVE_RADIO) return;
     const id = window.setInterval(() => {
       watchdogRef.current?.();
       syncSourceTimingRef.current?.();
@@ -192,7 +205,12 @@ export function NowPlayingPanel({
       setError(state.error ?? null);
       setMetadataError(state.metadataError ?? null);
       setLoading(state.revision < 0 && !state.error);
-      if (state.metadata?.title) setDisplaySong(state.metadata);
+      if (state.metadata?.title) setDisplaySong(prev =>
+        prev?.title === state.metadata.title &&
+        prev?.artist === state.metadata.artist &&
+        (prev?.art || null) === (state.metadata.art || null)
+          ? prev : state.metadata
+      );
       setListeners(state.listeners ?? null); // AzuraCast count, never Live365 reach.
     });
     const refresh = () => { if (!document.hidden) nativeRadio.refresh().catch(() => {}); };
