@@ -46,3 +46,16 @@ The initial `app-debug.apk` crashes on Android 14 and 17 because `@capacitor/pus
 
 The test-build fix deliberately skips Android push registration before loading the native push plugin. **Android push notifications are not available in this candidate.** iOS notification behavior is unchanged. Before enabling Android push, provision the correct Firebase project/client configuration and implement a guarded initialization test. Rebuild the APK; reinstall it on Pixel 4a and verify startup and Live365 audio. Do not confuse successful compilation with a successful device test.
 
+
+## Android media controls test candidate — 19 Nov 2026
+
+The Android notification panel exposed no media session while the HTML-audio stream continued playing. The Android-only Media3 implementation adds:
+- `TrueVoicePlaybackService`: one ExoPlayer and MediaSessionService owning the Live365 stream and its Android media notification.
+- `TrueVoiceRadioPlugin`: Capacitor commands for play, pause, native state and video handoff. No second HTML audio decoder.
+- Native player metadata receives the established delayed Live365 song timeline from `NowPlayingPanel`, replacing metadata on the same URI.
+- `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MEDIA_PLAYBACK` permissions, and a `mediaPlayback` foreground service.
+- Android testing and native routing guards in Codemagic; iOS Swift radio and public site remain unchanged.
+
+**Status: source candidate, not device validated.** Run the Android debug workflow, uninstall the previous debug-signed APK if signatures differ, and install the new APK on the Pixel 4a. First verify launch and stream playback. Then with audio active: Home -> notification controls -> pause -> play -> lock screen -> unlock -> video handoff -> 10 clean voice drops. Capture logs for any crash or stalled stream. The previously passing WebView audio route has been replaced only on Android; no Android feature can be marked passed until re-tested.
+
+**Do not publish** until the session service is stable, signing and AAB are configured, and Google Play policy checks are complete.
