@@ -27,7 +27,7 @@ public final class TrueVoiceRadioPlugin extends Plugin {
     private final List<Consumer<MediaController>> queued = new ArrayList<>();
     private long revision = 0;
     private int intentVersion = 0;
-    private boolean activated = false;
+    private String owner = "radio";
     private boolean videoActive = false;
     private String lastError = null;
     private String title = "TrueVoice Digital";
@@ -84,7 +84,7 @@ public final class TrueVoiceRadioPlugin extends Plugin {
         boolean playing = controller != null && controller.isPlaying();
         state.put("revision", ++revision);
         state.put("intentVersion", intentVersion);
-        state.put("owner", "radio");
+        state.put("owner", owner);
         state.put("wantsPlayback", wants);
         state.put("playing", playing);
         state.put("buffering", wants && !playing);
@@ -115,12 +115,17 @@ public final class TrueVoiceRadioPlugin extends Plugin {
                 call.reject("Close the video before listening live");
                 return;
             }
+            Integer expected = call.getInt("intentVersion");
+            if (expected != null && expected != intentVersion) {
+                call.reject("Stale play intent; user or remote control changed playback");
+                return;
+            }
+            owner = call.getString("owner", "radio");
             // Never resume a stale MP3 byte stream after an intentional Pause.
             if (!c.getPlayWhenReady()) {
                 c.setMediaItem(TrueVoicePlaybackService.radioItem(title, artist, artwork));
                 c.prepare();
             }
-            activated = true;
             intentVersion++;
             lastError = null;
             c.play();
@@ -131,6 +136,11 @@ public final class TrueVoiceRadioPlugin extends Plugin {
 
     @PluginMethod public void pause(PluginCall call) {
         withController(call, c -> {
+            String requester = call.getString("owner");
+            if (requester != null && !requester.equals(owner)) {
+                call.resolve(state());
+                return;
+            }
             c.pause();
             c.stop(); // Release stream resource while preserving a session for system Play.
             intentVersion++;
