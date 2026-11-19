@@ -39,3 +39,10 @@ The iOS application uses a native Swift audio plugin. `IS_NATIVE_RADIO` currentl
 ## Build
 
 Trigger `android-play-debug-v1` in Codemagic on `release/android-play-1`. Download the `app-debug.apk` artifact and test on Android. **This debug APK is not an upload-ready Play Store bundle.**
+
+## Android Firebase startup crash — first APK diagnosed 19 Nov 2026
+
+The initial `app-debug.apk` crashes on Android 14 and 17 because `@capacitor/push-notifications` attempts to register with FCM when `google-services.json` and a default FirebaseApp are absent (`java.lang.IllegalStateException: Default FirebaseApp is not initialized`).
+
+The test-build fix deliberately skips Android push registration before loading the native push plugin. **Android push notifications are not available in this candidate.** iOS notification behavior is unchanged. Before enabling Android push, provision the correct Firebase project/client configuration and implement a guarded initialization test. Rebuild the APK; reinstall it on Pixel 4a and verify startup and Live365 audio. Do not confuse successful compilation with a successful device test.
+
