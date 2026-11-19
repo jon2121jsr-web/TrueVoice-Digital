@@ -1,6 +1,6 @@
 // src/components/NowPlayingPanel.jsx
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { IS_NATIVE_RADIO, nativeRadio } from "../lib/nativeRadio";
+import { IS_NATIVE_RADIO, IS_ANDROID_NATIVE_RADIO, nativeRadio } from "../lib/nativeRadio";
 import { fetchNowPlaying } from "../services/api";
 import { trackStreamPlay } from '../lib/analytics.js';
 import { createMetadataTimeline, metadataDelaySeconds, METADATA_POLL_MS } from "../lib/metadataTimeline";
