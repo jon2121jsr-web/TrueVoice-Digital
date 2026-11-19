@@ -1,6 +1,7 @@
 package digital.truevoice.app;
 
 import android.content.ComponentName;
+import android.util.Log;
 import androidx.core.content.ContextCompat;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
@@ -22,6 +23,7 @@ import java.util.function.Consumer;
 /** Adapter from the existing TrueVoice JavaScript transport to Media3. */
 @CapacitorPlugin(name = "TrueVoiceRadio")
 public final class TrueVoiceRadioPlugin extends Plugin {
+    private static final String TAG = "TrueVoiceRadio";
     private ListenableFuture<MediaController> pending;
     private MediaController controller;
     private final List<Consumer<MediaController>> queued = new ArrayList<>();
@@ -65,6 +67,7 @@ public final class TrueVoiceRadioPlugin extends Plugin {
                     publish();
                 } catch (Exception e) {
                     queued.clear();
+                    Log.e(TAG, "Media3 controller connection failed", e);
                     lastError = "Android radio could not start. Tap Play to retry.";
                     call.reject(lastError, e);
                 } finally {
@@ -74,6 +77,7 @@ public final class TrueVoiceRadioPlugin extends Plugin {
         } catch (Exception e) {
             queued.clear();
             pending = null;
+            Log.e(TAG, "Media3 controller initialization failed", e);
             call.reject("Unable to connect to Android radio", e);
         }
     }
