@@ -1,6 +1,8 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
-export const IS_NATIVE_RADIO = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+export const IS_NATIVE_RADIO = Capacitor.isNativePlatform() &&
+  (Capacitor.getPlatform() === 'ios' || Capacitor.getPlatform() === 'android');
+export const IS_ANDROID_NATIVE_RADIO = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
 
 // A transport adapter, not a second playback state machine. Native snapshots
 // are authoritative; revision numbers reject late command/read responses.
