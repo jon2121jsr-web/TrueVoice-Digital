@@ -53,6 +53,7 @@ export function createNativeRadio(plugin, { canPlay = () => true } = {}) {
     pause: (owner = 'radio') => command('pause', { owner }),
     setVideoActive: active => command('setVideoActive', { active }),
     refresh: () => command('getState'),
+    setMetadata: song => command('setMetadata', song),
     getSnapshot: () => snapshot,
   };
 }
