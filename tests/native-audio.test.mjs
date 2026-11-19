@@ -27,7 +27,7 @@ const state = (revision, overrides = {}) => ({ revision, owner: 'radio', playing
 const deferred = () => { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; };
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
-test('only native iOS registers AVPlayer bridge; Android/browser have no native radio', async () => {
+test('both native platforms register the radio bridge; browser does not', async () => {
   for (const platform of ['web', 'android', 'ios']) {
     const { api, context } = await load(undefined, platform);
     assert.equal(api.IS_NATIVE_RADIO, platform === 'ios');
