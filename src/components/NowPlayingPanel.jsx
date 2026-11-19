@@ -71,7 +71,7 @@ export function NowPlayingPanel({
 
   /* ── Poll fresh AzuraCast metadata every 5 seconds ──────────────────────────────────── */
   useEffect(() => {
-    if (IS_NATIVE_RADIO) return; // Native owns background-safe metadata polling.
+    if (IS_NATIVE_RADIO && !IS_ANDROID_NATIVE_RADIO) return; // iOS owns background-safe metadata polling.
     let alive = true;
     let inFlight = false;
     const timeline = createMetadataTimeline(STREAM_DELAY_SEC);
