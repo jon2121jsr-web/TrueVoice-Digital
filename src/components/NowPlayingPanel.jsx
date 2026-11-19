@@ -205,7 +205,10 @@ export function NowPlayingPanel({
       setError(state.error ?? null);
       setMetadataError(state.metadataError ?? null);
       setLoading(state.revision < 0 && !state.error);
-      if (state.metadata?.title) setDisplaySong(prev =>
+      // On Android the delayed AzuraCast timeline is the UI metadata source.
+      // Native Media3 snapshots can contain its station fallback and must not
+      // overwrite the current song / album art after every player event.
+      if (!IS_ANDROID_NATIVE_RADIO && state.metadata?.title) setDisplaySong(prev =>
         prev?.title === state.metadata.title &&
         prev?.artist === state.metadata.artist &&
         (prev?.art || null) === (state.metadata.art || null)

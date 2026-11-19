@@ -86,3 +86,11 @@ test('Media3 Live365 requests advertise a compatible User-Agent through the actu
   assert.match(service, /\.setMediaSourceFactory\(new DefaultMediaSourceFactory\(dataSource\)\)/);
   assert.match(service, /https:\/\/streaming\.live365\.com\/a61535/);
 });
+
+test('Android song art is not overwritten by native session fallback metadata', () => {
+  const panel = read('src/components/NowPlayingPanel.jsx');
+  assert.match(panel, /if \(!IS_ANDROID_NATIVE_RADIO && state\.metadata\?\.title\) setDisplaySong/);
+  assert.match(panel, /nativeRadio\.setMetadata/);
+  const plugin = read('android/app/src/main/java/digital/truevoice/app/TrueVoiceRadioPlugin.java');
+  assert.match(plugin, /Log\.e\(TAG, "Media3 controller connection failed", e\)/);
+});
