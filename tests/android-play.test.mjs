@@ -8,7 +8,7 @@ const read = p => readFileSync(p, 'utf8');
 test('Android Play candidate retains the verified Live365 listening source', () => {
   assert.equal(LIVE365_STREAM_URL, 'https://streaming.live365.com/a61535');
   assert.equal(preferredStreamUrl(), LIVE365_STREAM_URL);
-  assert.match(read('src/lib/nativeRadio.js'), /Capacitor\.getPlatform\(\) === 'ios'/);
+  assert.match(read('src/lib/nativeRadio.js'), /Capacitor\.getPlatform\(\) === 'android'/);
 });
 
 test('Google Play 2026 API level and Android package identity are configured', () => {
