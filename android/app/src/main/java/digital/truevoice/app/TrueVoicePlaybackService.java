@@ -9,6 +9,9 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Player;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSessionService;
 
@@ -44,7 +47,14 @@ public final class TrueVoicePlaybackService extends MediaSessionService {
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .setUsage(C.USAGE_MEDIA)
             .build();
+        // Live365's CDN rejects the platform default HTTP identity with 403
+        // after redirect. Use the browser-compatible User-Agent accepted by
+        // the same public station endpoint; do not alter the Live365 URL.
+        DefaultHttpDataSource.Factory httpSource = new DefaultHttpDataSource.Factory()
+            .setUserAgent("Mozilla/5.0");
+        DefaultDataSource.Factory dataSource = new DefaultDataSource.Factory(this, httpSource);
         player = new ExoPlayer.Builder(this)
+            .setMediaSourceFactory(new DefaultMediaSourceFactory(dataSource))
             .setAudioAttributes(attributes, true)
             .setHandleAudioBecomingNoisy(true)
             .build();

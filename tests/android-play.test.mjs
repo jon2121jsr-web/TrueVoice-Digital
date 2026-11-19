@@ -77,3 +77,12 @@ test('Android Media3 owns one radio decoder and declares background media contro
   assert.match(panel, /nativeRadio\.setMetadata/);
   assert.match(read('src/App.jsx'), /!IS_NATIVE_RADIO && <audio/);
 });
+
+test('Media3 Live365 requests advertise a compatible User-Agent through the actual HTTP source', () => {
+  const service = read('android/app/src/main/java/digital/truevoice/app/TrueVoicePlaybackService.java');
+  assert.match(service, /new DefaultHttpDataSource\.Factory\(\)/);
+  assert.match(service, /\.setUserAgent\("Mozilla\/5\.0"\)/);
+  assert.match(service, /new DefaultDataSource\.Factory\(this, httpSource\)/);
+  assert.match(service, /\.setMediaSourceFactory\(new DefaultMediaSourceFactory\(dataSource\)\)/);
+  assert.match(service, /https:\/\/streaming\.live365\.com\/a61535/);
+});

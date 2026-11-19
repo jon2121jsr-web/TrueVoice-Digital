@@ -59,3 +59,12 @@ The Android notification panel exposed no media session while the HTML-audio str
 **Status: source candidate, not device validated.** Run the Android debug workflow, uninstall the previous debug-signed APK if signatures differ, and install the new APK on the Pixel 4a. First verify launch and stream playback. Then with audio active: Home -> notification controls -> pause -> play -> lock screen -> unlock -> video handoff -> 10 clean voice drops. Capture logs for any crash or stalled stream. The previously passing WebView audio route has been replaced only on Android; no Android feature can be marked passed until re-tested.
 
 **Do not publish** until the session service is stable, signing and AAB are configured, and Google Play policy checks are complete.
+
+## Media3 playback blocked by Live365 HTTP 403 — 19 Nov 2026
+
+On the initial Media3 APK the Android system registered the media session and audio focus, but ExoPlayer's progressive stream connection returned `HttpDataSource.InvalidResponseCodeException: 403` after the Live365 station endpoint redirected to its CDN. The previous WebView player had played the same station URL.
+
+A targeted candidate fix configures `DefaultHttpDataSource.Factory.setUserAgent("Mozilla/5.0")` and supplies that factory to the Media3 player's `DefaultMediaSourceFactory`. This leaves the public provider URL, MediaSessionService, metadata timing and iOS source unchanged. The hypothesis is supported by a published June 2026 Live365 403 report and an Android Media3 403 case. This is **not proof the CDN will accept this candidate**.
+
+Acceptance gate: build APK; install on Pixel 4a; prove that audio starts and stays playing for at least ten voice drops, then test notification Play/Pause, lock screen, video handoff. If another 403 occurs, capture the actual CDN response and compare the request/redirect flow with WebView; do not repeatedly tweak URLs or bypass provider authorization.
+
