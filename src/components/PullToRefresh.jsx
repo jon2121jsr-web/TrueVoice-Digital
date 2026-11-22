@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { IS_NATIVE_RADIO, nativeRadio } from "../lib/nativeRadio";
 
 const THRESHOLD = 80; // px of pull needed to trigger
 
@@ -41,7 +42,13 @@ export default function PullToRefresh() {
         indicator.current.style.transform = "translateY(0)";
       }
       if (deltaY >= THRESHOLD) {
-        window.location.reload();
+        if (IS_NATIVE_RADIO) {
+          // Reloading WKWebView destroys its Capacitor JS connection while
+          // native AVPlayer is still alive. Refresh the existing bridge instead.
+          nativeRadio.refresh().catch(() => {});
+        } else {
+          window.location.reload();
+        }
       }
     };
 
