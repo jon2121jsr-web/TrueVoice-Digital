@@ -83,6 +83,7 @@ private final class NativeRadioEngine {
     private let changed: (JSObject) -> Void
     private var stationArt: MPMediaItemArtwork?
     private var artworkURL: URL?
+    private var loadedArtworkURL: URL?
     private var artworkTask: URLSessionDownloadTask?
     private var artworkRequestID = UUID()
     private var artworkRetryAfter = Date.distantPast
@@ -412,7 +413,7 @@ private final class NativeRadioEngine {
             // a station-logo flash at every track transition.
             artworkRetryAfter = .distantPast
         }
-        guard let url = url, artworkTask == nil, trackArtwork == nil,
+        guard let url = url, artworkTask == nil, loadedArtworkURL != url,
               artworkRetryAfter <= Date() else { return }
 
         let requestID = UUID()
@@ -427,6 +428,7 @@ private final class NativeRadioEngine {
                     return
                 }
                 self.trackArtwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+                self.loadedArtworkURL = url
                 self.publish()
             }
         }
