@@ -336,10 +336,33 @@ private final class NativeRadioEngine {
                 if started >= self.trackStarted {
                     var next: JSObject = ["title": String(title.prefix(256)), "artist": String((song["artist"] as? String ?? "TrueVoice Digital").prefix(256)), "album": "TrueVoice Digital"]
                     if let art = song["art"] as? String, art.count <= 2048, URL(string: art)?.scheme == "https" { next["art"] = art }
-                    self.trackStarted = started
                     let due = started + Self.metadataDelay
-                    if due <= Date().timeIntervalSince1970 { self.track = next; self.pendingTrack = nil }
-                    else { self.pendingTrack = (next, due) }
+                    if due <= Date().timeIntervalSince1970 {
+                        self.trackStarted = started
+                        self.track = next
+                        self.pendingTrack = nil
+                    } else {
+                        // Live365 lags AzuraCast. At startup use the last song
+                        // until the current song's delayed transition is due.
+                        if self.track.isEmpty,
+                           let history = root["song_history"] as? [[String: Any]],
+                           let previous = history.first,
+                           let previousSong = previous["song"] as? [String: Any],
+                           let previousTitle = previousSong["title"] as? String {
+                            var warm: JSObject = [
+                                "title": String(previousTitle.prefix(256)),
+                                "artist": String((previousSong["artist"] as? String ?? "TrueVoice Digital").prefix(256)),
+                                "album": "TrueVoice Digital"
+                            ]
+                            if let previousArt = previousSong["art"] as? String,
+                               previousArt.count <= 2048, URL(string: previousArt)?.scheme == "https" {
+                                warm["art"] = previousArt
+                            }
+                            self.track = warm
+                        }
+                        self.trackStarted = started
+                        self.pendingTrack = (next, due)
+                    }
                 }
                 self.listenerCount = ((root["listeners"] as? [String: Any])?["current"] as? NSNumber)?.intValue
                 self.publish()
@@ -380,7 +403,8 @@ private final class NativeRadioEngine {
             artworkTask = nil
             artworkRequestID = UUID()
             artworkURL = url
-            trackArtwork = nil
+            // Keep previous artwork while the next one downloads, avoiding
+            // a station-logo flash at every track transition.
             artworkRetryAfter = .distantPast
         }
         guard let url = url, artworkTask == nil, trackArtwork == nil,
