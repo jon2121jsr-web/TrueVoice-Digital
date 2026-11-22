@@ -20,7 +20,10 @@ public class TrueVoiceRadioPlugin: CAPPlugin, CAPBridgedPlugin {
         self?.notifyListeners("stateChanged", data: state)
     }
     @objc public func getState(_ call: CAPPluginCall) {
-        DispatchQueue.main.async { call.resolve(self.radio.snapshot()) }
+        DispatchQueue.main.async {
+            self.radio.refreshMetadata()
+            call.resolve(self.radio.snapshot())
+        }
     }
     @objc public func play(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
@@ -305,6 +308,8 @@ private final class NativeRadioEngine {
         if policy.mayPlay { startItem(reason: "media-services-reset") }
         publish()
     }
+
+    func refreshMetadata() { pollMetadata() }
 
     private func startMetadata() {
         guard metadataTimer == nil else { return }
