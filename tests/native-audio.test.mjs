@@ -252,3 +252,24 @@ test('real native PULSE controller renders native events and remote Pause withou
   await settle();
   assert.ok(calls.every(args => args.owner === 'radio'));
 });
+
+test('iOS pull-to-refresh refreshes the native bridge without reloading WKWebView', () => {
+  const pull = fs.readFileSync('src/components/PullToRefresh.jsx', 'utf8');
+  assert.match(pull, /if \(IS_NATIVE_RADIO\) \{/);
+  assert.match(pull, /nativeRadio\.refresh\(\)/);
+  assert.match(pull, /else \{\s*window\.location\.reload\(\)/);
+  const swift = fs.readFileSync('ios/App/App/TrueVoiceRadioPlugin.swift', 'utf8');
+  assert.match(swift, /self\.radio\.refreshMetadata\(\)/);
+  assert.match(swift, /func refreshMetadata\(\) \{ pollMetadata\(\) \}/);
+});
+
+test('iOS metadata warm-starts from song history and retains artwork across transitions', () => {
+  const swift = fs.readFileSync('ios/App/App/TrueVoiceRadioPlugin.swift', 'utf8');
+  assert.match(swift, /root\["song_history"\] as\? \[\[String: Any\]\]/);
+  assert.match(swift, /if self\.track\.isEmpty/);
+  assert.match(swift, /self\.pendingTrack = \(next, due\)/);
+  assert.match(swift, /private var loadedArtworkURL: URL\?/);
+  assert.match(swift, /loadedArtworkURL != url/);
+  assert.match(swift, /self\.loadedArtworkURL = url/);
+  assert.doesNotMatch(swift, /artworkURL = url\s+trackArtwork = nil/);
+});
