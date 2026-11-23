@@ -304,3 +304,29 @@ test('user-initiated radio Play retries a failed bridge once and uses fresh inte
   assert.equal(plays, 1);
   assert.equal(radio.getSnapshot().error, undefined);
 });
+
+test('failed refresh drops stale plugin listener and next deliberate Play reconnects', async () => {
+  const { api } = await load(); let connections = 0, reads = 0, removed = 0, plays = 0;
+  const radio = api.createNativeRadio({
+    addListener: async () => { connections++; return { remove() { removed++; } }; },
+    getState: async () => {
+      reads++;
+      if (reads === 2) throw Error('native plugin connection lost');
+      return state(reads, { intentVersion: 4 });
+    },
+    play: async options => {
+      plays++;
+      assert.equal(options.intentVersion, 4);
+      return state(10, { intentVersion: 5, playing: true, wantsPlayback: true });
+    },
+  });
+  radio.subscribe(() => {});
+  await settle();
+  await assert.rejects(radio.refresh(), /native plugin connection lost/);
+  await settle();
+  assert.equal(removed, 1);
+  const result = await radio.play();
+  assert.equal(result.playing, true);
+  assert.equal(connections, 2);
+  assert.equal(plays, 1);
+});
