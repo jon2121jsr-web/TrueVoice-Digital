@@ -125,6 +125,8 @@ private final class NativeRadioEngine {
             self.logPlayback("stalled")
         })
         installRemoteCommands()
+        // Preview metadata is independent of playback intent. Never auto-play.
+        startMetadata()
         publish() // Disabled remote commands until the first explicit Play.
     }
 
@@ -274,9 +276,8 @@ private final class NativeRadioEngine {
         player.pause()
         itemObservation = nil
         player.replaceCurrentItem(with: nil) // Explicit Pause/video handoff closes the listener resource.
-        metadataTimer?.invalidate(); metadataTimer = nil
-        metadataEpoch += 1
-        metadataTask?.cancel(); metadataTask = nil
+        // Keep the low-cost metadata preview alive after Pause and route changes.
+        // Only audio transport and audio session should be stopped here.
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
     private func fail(_ message: String) {
@@ -310,7 +311,11 @@ private final class NativeRadioEngine {
         publish()
     }
 
-    func refreshMetadata() { pollMetadata() }
+    func refreshMetadata() {
+        // In addition to reading the immediate native snapshot, request a fresh
+        // station preview. An in-flight response emits its own stateChanged.
+        pollMetadata()
+    }
 
     private func startMetadata() {
         guard metadataTimer == nil else { return }
@@ -320,7 +325,7 @@ private final class NativeRadioEngine {
         metadataTimer = timer
     }
     private func pollMetadata() {
-        guard policy.wantsPlayback, metadataTask == nil else { return }
+        guard metadataTask == nil else { return }
         var request = URLRequest(url: Self.metadataURL)
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -329,7 +334,6 @@ private final class NativeRadioEngine {
             DispatchQueue.main.async {
                 guard let self = self, token == self.metadataEpoch else { return }
                 self.metadataTask = nil
-                guard self.policy.wantsPlayback else { return }
                 guard (response as? HTTPURLResponse)?.statusCode == 200,
                       let data = data, data.count <= 1_048_576,
                       let root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],

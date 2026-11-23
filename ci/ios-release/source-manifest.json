@@ -437,7 +437,7 @@
     },
     {
       "path": "ci/ios-signed/policy.mjs",
-      "sha256": "0a34d8d5eafa2a5cc8c9504ff2c4214ebb3c585673e366a672d685f789d07ed2"
+      "sha256": "79af6b2d2db65074d2b1cae8a5c8577ec0e090ab13f0c12b67410ba50b0ad49f"
     },
     {
       "path": "ci/ios-signed/run.mjs",
@@ -645,7 +645,7 @@
     },
     {
       "path": "ios/App/App.xcodeproj/project.pbxproj",
-      "sha256": "2d8d091815a76d463f8105a1df8cb974645773120363adb59e9149505f6a23c9"
+      "sha256": "ad776b615ca14bd5c71e28135d8b672c4403764232dcd0bcb911d6ac95bd49c4"
     },
     {
       "path": "ios/App/App.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
@@ -701,7 +701,7 @@
     },
     {
       "path": "ios/App/App/TrueVoiceRadioPlugin.swift",
-      "sha256": "a61bbd1a64268ba65360f6252b8dd8e3fafd0c5c0c1b4b04a1616ddee52df306"
+      "sha256": "d4731bffbfe347790039387248ead8ddbd2b6eb4f940f88b13aace3ba0cf66ec"
     },
     {
       "path": "ios/App/Podfile",
@@ -1301,7 +1301,7 @@
     },
     {
       "path": "src/lib/nativeRadio.js",
-      "sha256": "618d197676387aae11882dfbc53939effd1f2330d0a83379dd81a2feebab45a1"
+      "sha256": "890ac89dff77202b19cefad9e3fe261f0ee508c1fac9dfe8887711d078c8e765"
     },
     {
       "path": "src/lib/previewSafety.js",
@@ -1437,7 +1437,7 @@
     },
     {
       "path": "tests/native-audio.test.mjs",
-      "sha256": "aaa3d4311db899ac2a95fdc9df76606067b2142da26c705f458c518946759259"
+      "sha256": "e6e859dd3bfa6bc54f869bde75310b20125f452247fd2ba1e8afef3d27a90481"
     },
     {
       "path": "tests/native-ci-preparation.test.mjs",
