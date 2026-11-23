@@ -1,0 +1,38 @@
+name: Live365-only browser and PWA routing guard
+on:
+  push:
+    branches:
+      - fix/web-live365-single-distribution-20261123
+  pull_request:
+    paths:
+      - 'src/lib/streamUrl.js'
+      - 'src/App.jsx'
+      - 'src/hooks/useVerseRadioAudio.js'
+      - 'src/components/NowPlayingPanel.jsx'
+      - 'tests/live365-distribution.test.mjs'
+      - 'tools/verify-stream-timing-build.mjs'
+      - '.github/workflows/live365-web-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  licensed-listener-routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Verify Live365-only routing and fail-closed behavior
+        run: node --test tests/live365-distribution.test.mjs
+      - name: Verify no direct-origin listener paths remain in web code
+        run: |
+          if grep -R -E 'https://stream.truevoice.digital/(listen|hls)/' src/App.jsx src/hooks/useVerseRadioAudio.js src/components/NowPlayingPanel.jsx src/lib/streamUrl.js; then
+            echo "Direct AzuraCast public audio URL is forbidden"
+            exit 1
+          fi

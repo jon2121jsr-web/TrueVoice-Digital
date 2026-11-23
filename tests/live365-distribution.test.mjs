@@ -2,15 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { build } from 'esbuild';
-import { preferredStreamUrl, LIVE365_STREAM_URL, AZURACAST_STREAM_URL } from '../src/lib/streamUrl.js';
+import { preferredStreamUrl, LIVE365_STREAM_URL } from '../src/lib/streamUrl.js';
 
-test('website resolver selects approved standard AzuraCast without legacy overrides', () => {
+test('website and PWA resolver selects only Live365 regardless of legacy overrides', () => {
   assert.equal(LIVE365_STREAM_URL, 'https://streaming.live365.com/a61535');
-  assert.equal(AZURACAST_STREAM_URL, 'https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3');
   for (const platform of ['desktop', 'Safari', 'PWA', 'ios']) {
     for (const override of [undefined, '', 'https://stream.truevoice.digital/listen/truevoice_digital/radio.mp3',
       'https://stream.truevoice.digital/hls/truevoice_digital/live.m3u8', 'https://unapproved.invalid/']) {
-      assert.equal(preferredStreamUrl(override, platform), AZURACAST_STREAM_URL);
+      assert.equal(preferredStreamUrl(override, platform), LIVE365_STREAM_URL);
     }
   }
 });
@@ -22,7 +21,7 @@ test('listener entry points do not consume legacy routing overrides or origin UR
   }
 });
 
-test('actual verse helper retains AzuraCast after rejection and retries only on user action', async () => {
+test('actual verse helper retains Live365 after rejection and retries only on user action', async () => {
   const effects = [], cleanups = [], previousAudio = globalThis.Audio;
   let audio, plays = 0;
   globalThis.Audio = class {
@@ -43,13 +42,29 @@ test('actual verse helper retains AzuraCast after rejection and retries only on 
     const state = mod.exports.useVerseRadioAudio(true);
     for (const effect of effects) { const cleanup = effect(); if (cleanup) cleanups.push(cleanup); }
     await Promise.resolve(); await Promise.resolve();
-    assert.equal(audio.src, AZURACAST_STREAM_URL);
+    assert.equal(audio.src, LIVE365_STREAM_URL);
     assert.equal(plays, 1);
     state.toggleMute();
     await Promise.resolve(); await Promise.resolve();
-    assert.equal(audio.src, AZURACAST_STREAM_URL);
+    assert.equal(audio.src, LIVE365_STREAM_URL);
     assert.equal(plays, 2);
   } finally {
     cleanups.forEach(f => f()); globalThis.Audio = previousAudio; delete globalThis.__verseEffects;
+  }
+});
+
+test('exclusive listener URL is fixed while AzuraCast metadata may be fetched separately', () => {
+  const urlSource = fs.readFileSync('src/lib/streamUrl.js', 'utf8');
+  assert.match(urlSource, /return LIVE365_STREAM_URL;/);
+  assert.doesNotMatch(urlSource, /https:\/\/stream\.truevoice\.digital/);
+  const consumerFiles = [
+    'src/App.jsx',
+    'src/hooks/useVerseRadioAudio.js',
+    'src/components/NowPlayingPanel.jsx',
+  ];
+  for (const file of consumerFiles) {
+    const source = fs.readFileSync(file, 'utf8');
+    assert.doesNotMatch(source, /https:\/\/stream\.truevoice\.digital\/(?:listen|hls)\//);
+    assert.doesNotMatch(source, /AZURACAST_FALLBACK|VITE_TRUEVOICE_STREAM_URL/);
   }
 });
