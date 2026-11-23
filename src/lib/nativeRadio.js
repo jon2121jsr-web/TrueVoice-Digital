@@ -28,7 +28,18 @@ export function createNativeRadio(plugin, { canPlay = () => true } = {}) {
   };
   const command = (method, options) => {
     const job = queue.catch(() => {}).then(async () => {
-      await connect();
+      // The WebView can be restored after a Bluetooth/car audio route change.
+      // Reattach a failed listener once before issuing an explicit native
+      // command. Do NOT replay a command that may already have succeeded.
+      try { await connect(); }
+      catch { await connect(); }
+      if (method === 'play') {
+        // A previous remote-control or route event can increment the native
+        // intent version while JS was suspended. Re-read it before Play so a
+        // stale local snapshot cannot reject the user's fresh tap.
+        accept(await plugin.getState());
+        options = { ...options, intentVersion: snapshot.intentVersion ?? 0 };
+      }
       const state = await plugin[method](options);
       accept(state);
       return state;
