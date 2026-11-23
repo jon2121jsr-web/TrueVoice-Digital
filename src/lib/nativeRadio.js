@@ -7,6 +7,7 @@ export const IS_NATIVE_RADIO = Capacitor.isNativePlatform() && Capacitor.getPlat
 export function createNativeRadio(plugin, { canPlay = () => true } = {}) {
   let snapshot = { revision: -1, playing: false, buffering: false, wantsPlayback: false, owner: 'radio', metadata: {} };
   let connection;
+  let connectionHandle;
   let queue = Promise.resolve();
   const listeners = new Set();
   const accept = next => {
@@ -18,12 +19,19 @@ export function createNativeRadio(plugin, { canPlay = () => true } = {}) {
     snapshot = { ...snapshot, error: 'Native radio unavailable. Tap Play to retry.' };
     listeners.forEach(fn => fn(snapshot));
   };
+  const resetConnection = () => {
+    connection = null;
+    const stale = connectionHandle;
+    connectionHandle = null;
+    if (stale) Promise.resolve().then(() => stale.remove()).catch(() => {});
+  };
   const connect = () => {
     if (!connection) connection = (async () => {
       const handle = await plugin.addListener('stateChanged', accept);
+      connectionHandle = handle;
       try { accept(await plugin.getState()); }
-      catch (error) { await handle.remove(); throw error; }
-    })().catch(error => { connection = null; fail(); throw error; });
+      catch (error) { resetConnection(); throw error; }
+    })().catch(error => { resetConnection(); fail(); throw error; });
     return connection;
   };
   const command = (method, options) => {
@@ -37,12 +45,23 @@ export function createNativeRadio(plugin, { canPlay = () => true } = {}) {
         // A previous remote-control or route event can increment the native
         // intent version while JS was suspended. Re-read it before Play so a
         // stale local snapshot cannot reject the user's fresh tap.
-        accept(await plugin.getState());
+        try { accept(await plugin.getState()); }
+        catch {
+          resetConnection();
+          await connect();
+          accept(await plugin.getState());
+        }
         options = { ...options, intentVersion: snapshot.intentVersion ?? 0 };
       }
-      const state = await plugin[method](options);
-      accept(state);
-      return state;
+      try {
+        const state = await plugin[method](options);
+        accept(state);
+        return state;
+      } catch (error) {
+        // Reattach on the next action; never auto-replay a possibly completed Play.
+        resetConnection();
+        throw error;
+      }
     });
     queue = job;
     // Callers may use this as a video-start barrier; errors must fail closed.
