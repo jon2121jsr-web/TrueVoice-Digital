@@ -84,7 +84,7 @@ test('remote/interruption events update subscribers without JavaScript reissuing
   assert.equal(playCalls, 0);
 });
 
-test('a queued Play keeps its original intent version so native can reject it after remote Pause', async () => {
+test('an explicit Play reconciles the latest native intent version after remote Pause', async () => {
   const { api } = await load(); const read = deferred(); let emit, received;
   const radio = api.createNativeRadio({
     addListener: async (_, fn) => { emit = fn; return { remove() {} }; }, getState: () => read.promise,
@@ -94,7 +94,7 @@ test('a queued Play keeps its original intent version so native can reject it af
   emit(state(2, { intentVersion: 1 })); // Native remote Pause supersedes pending JS Play.
   read.resolve(state(2, { intentVersion: 1 }));
   await assert.rejects(play, /stale intent/);
-  assert.equal(received.intentVersion, 0);
+  assert.equal(received.intentVersion, 1);
   assert.equal(radio.getSnapshot().wantsPlayback, false);
 });
 
@@ -272,4 +272,35 @@ test('iOS metadata warm-starts from song history and retains artwork across tran
   assert.match(swift, /loadedArtworkURL != url/);
   assert.match(swift, /self\.loadedArtworkURL = url/);
   assert.doesNotMatch(swift, /artworkURL = url\s+trackArtwork = nil/);
+});
+
+test('iOS preview metadata is polled while paused without starting audio', () => {
+  const swift = fs.readFileSync('ios/App/App/TrueVoiceRadioPlugin.swift', 'utf8');
+  assert.match(swift, /installRemoteCommands\(\)\s+\/\/ Preview metadata[\s\S]*?startMetadata\(\)/);
+  assert.match(swift, /private func pollMetadata\(\) \{\s+guard metadataTask == nil/);
+  assert.doesNotMatch(swift, /guard self\.policy\.wantsPlayback else \{ return \}/);
+  assert.match(swift, /private func stopTransport\(\) \{[\s\S]*?player\.replaceCurrentItem\(with: nil\)/);
+  assert.match(swift, /private func startItem\(reason: String\)/);
+});
+
+test('user-initiated radio Play retries a failed bridge once and uses fresh intent', async () => {
+  const { api } = await load(); let connections = 0, plays = 0;
+  const radio = api.createNativeRadio({
+    addListener: async () => {
+      connections++;
+      if (connections === 1) throw Error('stale WebView bridge');
+      return { remove() {} };
+    },
+    getState: async () => state(4, { intentVersion: 7 }),
+    play: async options => {
+      plays++;
+      assert.equal(options.intentVersion, 7);
+      return state(5, { intentVersion: 8, wantsPlayback: true, playing: true });
+    }
+  });
+  const result = await radio.play();
+  assert.equal(result.playing, true);
+  assert.equal(connections, 2);
+  assert.equal(plays, 1);
+  assert.equal(radio.getSnapshot().error, undefined);
 });
