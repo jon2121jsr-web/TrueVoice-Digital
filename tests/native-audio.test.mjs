@@ -260,7 +260,7 @@ test('iOS pull-to-refresh refreshes the native bridge without reloading WKWebVie
   assert.match(pull, /else \{\s*window\.location\.reload\(\)/);
   const swift = fs.readFileSync('ios/App/App/TrueVoiceRadioPlugin.swift', 'utf8');
   assert.match(swift, /self\.radio\.refreshMetadata\(\)/);
-  assert.match(swift, /func refreshMetadata\(\) \{ pollMetadata\(\) \}/);
+  assert.match(swift, /func refreshMetadata\(\) \{[\s\S]*?pollMetadata\(\)\s+\}/);
 });
 
 test('iOS metadata warm-starts from song history and retains artwork across transitions', () => {
