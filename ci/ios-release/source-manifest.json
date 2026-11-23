@@ -1437,7 +1437,7 @@
     },
     {
       "path": "tests/native-audio.test.mjs",
-      "sha256": "e6e859dd3bfa6bc54f869bde75310b20125f452247fd2ba1e8afef3d27a90481"
+      "sha256": "833b9e5f46264e056dceec66ebbb7e710f813f4a0f728d58b96899396113fa75"
     },
     {
       "path": "tests/native-ci-preparation.test.mjs",
